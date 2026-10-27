@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@400;500;600;700;800&family=Valley+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+@import "tailwindcss";
+
+/* Tailwind CSS v4 Class-Based Dark Mode Variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-primary: 'Valley Sans', 'Baloo Da 2', sans-serif;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-border: #cbd5e1;
+  color-scheme: light;
+}
+
+.dark,
+html.dark,
+html[light-mode="dark"],
+html[data-theme="dark"] {
+  --background: #0b0f19;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-border: #334155;
+  color-scheme: dark;
+}
+
+* {
+  font-family: var(--font-primary);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-primary);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Strict Unified UI Borders from Marss Corp standards */
+.unified-ui-border {
+  border: 1.5px solid #cbd5e1 !important;
+}
+
+.dark .unified-ui-border,
+[light-mode="dark"] .unified-ui-border,
+[data-theme="dark"] .unified-ui-border {
+  border-color: #334155 !important;
+}
+
+/* Table Header Standard: Cool Crimson/Ruby Red Gradient */
+table thead tr,
+.table-header-brand,
+.table-header-emerald {
+  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+}
+
+table thead th {
+  color: #ffffff !important;
+}
+
+/* Modal sticky header: Cool Crimson/Ruby Red Gradient */
+.modal-header-brand,
+.modal-header-emerald {
+  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+}
+
+/* Custom Cool Red Gradient Utilities */
+.bg-cool-red-gradient {
+  background: linear-gradient(145deg, #7f1d1d 0%, #991b1b 40%, #b91c1c 75%, #be123c 100%) !important;
+}
+
+.bg-cool-red-btn {
+  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 60%, #dc2626 100%) !important;
+}
+
+.bg-cool-red-btn:hover {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%) !important;
+}
+
+/* Global Brand Overrides to Cool Crimson / Ruby Red Gradient */
+[class*="15803d"] {
+  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+}
+
+[class*="15803d"]:hover {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%) !important;
+}
+
+/* Global Badge Overrides */
+[class~="bg-emerald-50"],
+.bg-emerald-50 {
+  background-color: #fff1f2 !important;
+}
+
+
+[class*="text-emerald-600"] {
+  color: #e11d48 !important;
+}
+
+[class*="border-emerald-100"] {
+  border-color: #ffe4e6 !important;
+}
+
+[class*="focus:border-emerald-600"]:focus {
+  border-color: #e11d48 !important;
+}
+
+[class*="focus-within:border-emerald-600"]:focus-within {
+  border-color: #e11d48 !important;
+}
+
+[class*="bg-emerald-100"] {
+  background-color: #ffe4e6 !important;
+}
+
+[class*="text-emerald-700"] {
+  color: #be123c !important;
+}
+
+[class*="text-emerald-800"] {
+  color: #9f1239 !important;
+}
+
+.dark [class*="bg-emerald-950"] {
+  background-color: rgba(76, 5, 25, 0.4) !important;
+}
+
+.dark [class*="text-emerald-300"],
+.dark [class*="text-emerald-400"] {
+  color: #fb7185 !important;
+}
+
+/* Sleek Modern Dropdown & Panel Scrollbar (Webkit / Chromium without scrollbar-width overriding) */
+.custom-scrollbar::-webkit-scrollbar,
+.custom-select-scrollbar::-webkit-scrollbar {
+  width: 5px !important;
+  height: 5px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.custom-select-scrollbar::-webkit-scrollbar-track {
+  background: transparent !important;
+  margin: 3px 0 !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.custom-select-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border-radius: 9999px !important;
+  transition: background 0.2s ease !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-select-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb,
+.dark .custom-select-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.dark .custom-select-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
+}
+
+/* Explicitly eliminate the Windows stepper arrow buttons */
+.custom-scrollbar::-webkit-scrollbar-button,
+.custom-select-scrollbar::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner,
+.custom-select-scrollbar::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+/* Firefox specific fallback */
+@supports (-moz-appearance: none) {
+  .custom-scrollbar,
+  .custom-select-scrollbar {
+    scrollbar-width: thin !important;
+    scrollbar-color: #cbd5e1 transparent !important;
+  }
+  .dark .custom-scrollbar,
+  .dark .custom-select-scrollbar {
+    scrollbar-color: #334155 transparent !important;
+  }
+}
+
+/* Global Print Page Margin (10px gap all around) */
+@page {
+  margin: 10px;
+}
