@@ -574,7 +574,7 @@ export default function ProductsPage() {
       {/* Top Header & Export Controls (Rule 5.1 & 5.2) */}
       <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-slate-800 shadow-xs shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-slate-800 shadow-xs shrink-0">
             <Package className="w-4 h-4" />
           </div>
           <div>
@@ -597,7 +597,7 @@ export default function ProductsPage() {
 
           <button
             onClick={() => setBulkModalOpen(true)}
-            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-rose-300 dark:border-blue-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
             title="Bulk percentage price update by brand"
           >
             <Percent className="w-3.5 h-3.5" />
@@ -607,7 +607,7 @@ export default function ProductsPage() {
           {/* Add Product Button */}
           <button
             onClick={handleOpenCreate}
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Product</span>
@@ -793,7 +793,7 @@ export default function ProductsPage() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
                 <th className="p-[10px] text-center w-[45px] rounded-tl-xl">SL</th>
                 <th className="p-[10px]">Product Name</th>
                 <th className="p-[10px]">Barcodes</th>
@@ -1056,7 +1056,7 @@ export default function ProductsPage() {
             {/* Unified Container: border-radius: 16px, max-height 92vh, max-w-4xl for spacious view */}
             <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
               {/* Sticky Header: Cool Crimson / Ruby Red Gradient, Circular Red Close #dc2626 */}
-              <div className="modal-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+              <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
                 <h3 className="text-base font-bold text-white tracking-tight m-0">
                   {editingProduct ? "Edit Product Details" : "Add New Product Item"}
                 </h3>
@@ -1074,7 +1074,7 @@ export default function ProductsPage() {
                 {/* Scrollable Body: scrollbar stops cleanly above footer */}
                 <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4">
                   {error && (
-                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+                    <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-[#0B3D91] dark:text-blue-300 text-xs font-semibold">
                       {error}
                     </div>
                   )}
@@ -1090,7 +1090,7 @@ export default function ProductsPage() {
                       value={formData.product_name}
                       onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
                       placeholder="e.g. Fresh Ceramics 60x60 Floor Tiles"
-                      className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                      className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                     />
                   </div>
 
@@ -1154,7 +1154,7 @@ export default function ProductsPage() {
                         value={formData.cost_price}
                         onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
                         placeholder="0.00"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                       />
                     </div>
 
@@ -1168,7 +1168,7 @@ export default function ProductsPage() {
                         value={formData.sell_price}
                         onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
                         placeholder="0.00"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                       />
                     </div>
 
@@ -1181,7 +1181,7 @@ export default function ProductsPage() {
                         value={formData.quantity}
                         onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
                         placeholder="0"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                       />
                     </div>
                   </div>
@@ -1211,7 +1211,7 @@ export default function ProductsPage() {
                           value={formData.product_code}
                           onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
                           placeholder="e.g. PRD-0001, 8934521093"
-                          className="w-full h-[42px] pl-9 pr-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                          className="w-full h-[42px] pl-9 pr-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                         />
                       </div>
                       <p className="text-[10px] text-slate-400 mt-0.5">
@@ -1222,8 +1222,8 @@ export default function ProductsPage() {
 
                   {/* Tiles Specifications & Packaging Section - STRICTLY VISIBLE ONLY FOR TILES */}
                   {isTilesCategory && (
-                    <div className="border border-rose-200 dark:border-rose-950/70 rounded-2xl p-4 bg-gradient-to-br from-rose-50/50 via-white to-slate-50/50 dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-900/60 space-y-3.5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between pb-2 border-b border-rose-100 dark:border-slate-800">
+                    <div className="border border-rose-200 dark:border-rose-950/70 rounded-2xl p-4 bg-gradient-to-br from-blue-50/40 via-white to-slate-50/50 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-900/60 space-y-3.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-slate-800">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center">
                             <Layers className="w-3.5 h-3.5" />
@@ -1263,7 +1263,7 @@ export default function ProductsPage() {
                                 });
                               }}
                               className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${formData.tile_size === size.value
-                                  ? "bg-rose-600 text-white border-rose-700 shadow-xs"
+                                  ? "bg-rose-600 text-white border-blue-700 shadow-xs"
                                   : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-rose-400"
                                 }`}
                             >
@@ -1286,7 +1286,7 @@ export default function ProductsPage() {
                             });
                           }}
                           placeholder="Or enter custom size (e.g. 8/12, 12x24, 10.5/24)"
-                          className="w-full h-[38px] px-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600 font-medium"
+                          className="w-full h-[38px] px-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-medium"
                         />
                       </div>
 
@@ -1303,7 +1303,7 @@ export default function ProductsPage() {
                             value={formData.sqft_per_box}
                             onChange={(e) => setFormData({ ...formData, sqft_per_box: e.target.value })}
                             placeholder="e.g. 16.66 or 16.0"
-                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-rose-700 dark:text-rose-400 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-rose-700 dark:text-rose-400 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                           />
                           <p className="text-[10px] text-slate-400 mt-0.5">
                             Required for live POS Box ⇄ Sq.Ft billing conversion.
@@ -1329,7 +1329,7 @@ export default function ProductsPage() {
                               });
                             }}
                             placeholder="e.g. 25, 11, 10, 8, 4"
-                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                           />
                           <p className="text-[10px] text-slate-400 mt-0.5">
                             Useful for loose piece calculations.
@@ -1400,7 +1400,7 @@ export default function ProductsPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-70 shadow-sm"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-70 shadow-sm"
                   >
                     {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>{editingProduct ? "Update Product" : "Save Product"}</span>
@@ -1417,7 +1417,7 @@ export default function ProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
             {/* Sticky Header: Ruby Red / Crimson Gradient */}
-            <div className="modal-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-5 py-3.5 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4 text-white" />
@@ -1532,7 +1532,7 @@ export default function ProductsPage() {
               {/* Tiles Specific Information (if applicable) */}
               {(viewingProduct.tile_size || viewingProduct.sqft_per_box || viewingProduct.grade || viewingProduct.surface_finish) && (
                 <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-gradient-to-br from-rose-50/30 via-white to-slate-50/50 dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-900 space-y-2.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800 dark:text-rose-300 border-b border-rose-100 dark:border-slate-800 pb-1.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800 dark:text-rose-300 border-b border-blue-100 dark:border-slate-800 pb-1.5">
                     <Layers className="w-4 h-4 text-rose-600" />
                     <span>Tiles Packaging & Specification</span>
                   </div>
@@ -1606,7 +1606,7 @@ export default function ProductsPage() {
                   setViewingProduct(null);
                   handleOpenEdit(toEdit);
                 }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
                 <Edit2 className="w-3.5 h-3.5" />
                 <span>Edit Product</span>
@@ -1637,7 +1637,7 @@ export default function ProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
           <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2 text-white">
                 <Percent className="w-5 h-5 text-rose-200" />
                 <h3 className="text-base font-bold text-white tracking-tight m-0">
@@ -1732,7 +1732,7 @@ export default function ProductsPage() {
                         value={bulkPercentage}
                         onChange={(e) => setBulkPercentage(e.target.value)}
                         placeholder="e.g. 5 or -5"
-                        className="w-full h-[42px] px-3.5 pr-8 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                        className="w-full h-[42px] px-3.5 pr-8 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
                     </div>
@@ -1871,7 +1871,7 @@ export default function ProductsPage() {
                 <button
                   type="submit"
                   disabled={bulkSubmitting || bulkSelectedIds.size === 0 || !bulkPercentage}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {bulkSubmitting ? (
                     <>
@@ -1896,9 +1896,9 @@ export default function ProductsPage() {
         <div className="border-b-2 border-slate-900 pb-2 mb-3">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-xl font-black tracking-tight text-slate-900 m-0">RUNA TRADERS</h1>
+              <h1 className="text-xl font-black tracking-tight text-[#0B3D91] m-0">PROTIKKHA ELECTRIC</h1>
               <p className="text-xs text-slate-600 font-medium m-0">
-                Tiles, Sanitary &amp; Bath Fitting Wholesale &amp; Retail
+                Electrical Retail &amp; Wholesale POS &amp; Inventory Management
               </p>
               <h2 className="text-sm font-bold text-slate-800 mt-1 uppercase tracking-wider">
                 Product Inventory Price &amp; Stock List

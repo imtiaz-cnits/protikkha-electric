@@ -227,7 +227,7 @@ export function CancelTilesModal({
     <div className="fixed inset-0 z-[70] bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-[#cbd5e1] dark:border-[#334155]/60 animate-in fade-in zoom-in-95 duration-150">
         {/* Sticky Header: Red / Rose Brand Gradient */}
-        <div className="h-[52px] px-5 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#dc2626] text-white flex items-center justify-between shrink-0 shadow-xs">
+        <div className="h-[52px] px-5 bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white flex items-center justify-between shrink-0 shadow-xs">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-xs flex items-center justify-center font-bold">
               <Ban className="w-4 h-4 text-white" />
@@ -511,7 +511,7 @@ export function CancelTilesModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="e.g. Customer cancelled tiles items before challan delivery..."
-              className="w-full h-[42px] px-3.5 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-600"
+              className="w-full h-[42px] px-3.5 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
             />
           </div>
 
@@ -564,7 +564,7 @@ export function CancelTilesModal({
             type="button"
             onClick={handleConfirmCancel}
             disabled={submitting || selectedIds.length === 0}
-            className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>

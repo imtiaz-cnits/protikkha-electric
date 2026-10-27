@@ -463,7 +463,7 @@ function ReturnsManagementContent() {
       {/* 1. Top Section: Page Title & Process Return Button (Fixed 38px, Rule 5.1) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-slate-800 shadow-2xs shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-slate-800 shadow-2xs shrink-0">
             <RotateCcw className="w-5 h-5" />
           </div>
           <div>
@@ -471,7 +471,7 @@ function ReturnsManagementContent() {
               Sales Return Management
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 m-0">
-              RUNA TRADERS - Customer Sales Return &amp; Refund Processing
+              PROTIKKHA ELECTRIC - Customer Sales Return &amp; Refund Processing
             </p>
           </div>
         </div>
@@ -481,7 +481,7 @@ function ReturnsManagementContent() {
           <button
             type="button"
             onClick={() => openModalForRecord("")}
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Sales Return</span>
@@ -489,13 +489,13 @@ function ReturnsManagementContent() {
         </div>
       </div>
 
-      {/* 3. Quick Search Box (Fixed 38px, MARSS reference layout with brand red left border) */}
+      {/* 3. Quick Search Box (Fixed 38px, MARSS reference layout with brand navy left border) */}
       <div
-        className="rounded-2xl border border-[#cbd5e1] dark:border-[#334155] bg-rose-50/40 dark:bg-slate-900/40 p-4 shadow-xs"
-        style={{ borderLeft: "4.5px solid #991b1b" }}
+        className="rounded-2xl border border-[#cbd5e1] dark:border-[#334155] bg-blue-50/40 dark:bg-slate-900/40 p-4 shadow-xs"
+        style={{ borderLeft: "4.5px solid #0B3D91" }}
       >
         <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
-          <Search className="w-4 h-4 text-rose-600" />
+          <Search className="w-4 h-4 text-[#1E65A0]" />
           <span>
             {activeTab === "purchase"
               ? "Quick Purchase Memo Search & Process Return"
@@ -525,7 +525,7 @@ function ReturnsManagementContent() {
 
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-1.5 px-4 h-[38px] rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 h-[38px] rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span>Search & Return</span>
@@ -600,7 +600,7 @@ function ReturnsManagementContent() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
                 <th className="p-3 text-center w-[45px]">SL</th>
                 <th className="p-3 w-[120px] whitespace-nowrap">Return Date</th>
                 <th className="p-3 min-w-[170px] whitespace-nowrap">
@@ -956,7 +956,7 @@ function ReturnsManagementContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
           <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
             {/* Header: Brand Gradient & Circular Close Button */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
                   <RotateCcw className="w-4 h-4" />
@@ -1005,7 +1005,7 @@ function ReturnsManagementContent() {
                     type="button"
                     onClick={() => searchRecordForReturn(modalSearchQuery)}
                     disabled={modalSearching}
-                    className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                    className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                   >
                     {modalSearching ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1088,7 +1088,7 @@ function ReturnsManagementContent() {
                   <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white text-[11px] font-semibold uppercase tracking-wider">
+                        <tr className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white text-[11px] font-semibold uppercase tracking-wider">
                           <th className="p-2.5 text-center w-[40px]">
                             <input
                               type="checkbox"
@@ -1250,7 +1250,7 @@ function ReturnsManagementContent() {
                         value={modalReturnNote}
                         onChange={(e) => setModalReturnNote(e.target.value)}
                         placeholder="e.g. Customer returned extra tiles or broken goods..."
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
                       />
                     </div>
                   </div>
@@ -1272,7 +1272,7 @@ function ReturnsManagementContent() {
                   type="button"
                   onClick={handleSubmitReturn}
                   disabled={submittingReturn || grandRefundTotal <= 0}
-                  className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {submittingReturn ? (
                     <>
@@ -1297,7 +1297,7 @@ function ReturnsManagementContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
           <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
             {/* Header: Brand Gradient & Circular Close Button */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
                   <Eye className="w-4 h-4" />
@@ -1645,7 +1645,7 @@ function ReturnsManagementContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
           <div className="bg-white text-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:border-none print:shadow-none print:w-full">
             {/* Top Bar - Hidden in Print */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-white" />
                 <h3 className="text-sm font-bold tracking-tight text-white m-0 uppercase">
@@ -1675,16 +1675,23 @@ function ReturnsManagementContent() {
             <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-5 print:p-0 print:overflow-visible">
               {/* Company Header */}
               <div className="text-center pb-3 border-b-2 border-slate-800">
-                <h1 className="text-2xl font-black tracking-wider uppercase text-rose-900">
-                  RUNA TRADERS
+                <div className="flex justify-center mb-1">
+                  <img
+                    src="/logo.png"
+                    alt="Protikkha Electric"
+                    className="h-10 w-auto max-w-[200px] object-contain"
+                  />
+                </div>
+                <h1 className="text-xl font-black tracking-wider uppercase text-[#0B3D91]">
+                  PROTIKKHA ELECTRIC
                 </h1>
                 <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                  Tiles, Sanitary &amp; Bath Fittings
+                  Electrical Retail POS &amp; Inventory Management
                 </p>
                 <p className="text-[11px] text-slate-500">
                   Success Super Market, Pabna | Mobile: 01975-703216, 01715-842083
                 </p>
-                <div className="inline-block mt-2 px-3 py-0.5 bg-rose-100 text-rose-900 border border-rose-300 font-bold text-xs uppercase tracking-wider rounded">
+                <div className="inline-block mt-2 px-3 py-0.5 bg-blue-100 text-[#0B3D91] border border-blue-300 font-bold text-xs uppercase tracking-wider rounded">
                   {selectedReturnForPrint.type === "purchase"
                     ? "Supplier Purchase Return Voucher"
                     : "Customer Sales Return Voucher"}
@@ -1817,7 +1824,7 @@ function ReturnsManagementContent() {
               </div>
 
               <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-dashed border-slate-200">
-                Software By: CodeNext IT | RUNA TRADERS POS System
+                Software By: CodeNext IT | PROTIKKHA ELECTRIC POS System
               </div>
             </div>
           </div>

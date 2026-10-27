@@ -164,7 +164,7 @@ export function Pagination({
                 onClick={() => handlePageClick(pageNum)}
                 className={`h-[32px] min-w-[32px] px-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
                   isActive
-                    ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white shadow-xs font-extrabold border border-rose-700"
+                    ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs font-extrabold border border-blue-700"
                     : "border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 shadow-2xs"
                 }`}
               >

@@ -78,7 +78,7 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
       {/* Modal Container: Wider modal (max-w-2xl) per user instruction */}
       <div className="w-full max-w-2xl bg-white text-slate-900 rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col border border-slate-300 print:border-none print:shadow-none print:max-w-none print:m-0 print:p-0">
         {/* Modal Controls Header - Hidden on print */}
-        <div className="print:hidden bg-gradient-to-r from-[#991b1b] to-[#dc2626] px-5 py-3.5 flex items-center justify-between text-white shrink-0 shadow-sm">
+        <div className="print:hidden bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
               <FileText className="w-4 h-4 text-white" />
@@ -103,7 +103,7 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
             )}
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 rounded-xl bg-white text-rose-900 hover:bg-rose-50 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="px-3.5 py-1.5 rounded-xl bg-white text-[#0B3D91] hover:bg-blue-50 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
               <Printer className="w-4 h-4" />
               <span>Print A4</span>
@@ -121,16 +121,23 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
         <div id="printable-invoice" className="flex-1 overflow-y-auto p-6 sm:p-8 font-sans text-xs text-slate-800 thermal-sheet print:p-0">
           {/* Store Branding Header */}
           <div className="text-center pb-4 border-b-2 border-slate-900">
-            <h1 className="text-2xl font-black text-rose-900 tracking-wider uppercase m-0 leading-tight">
-              RUNA TRADERS
+            <div className="flex justify-center mb-1">
+              <img
+                src="/logo.png"
+                alt="Protikkha Electric"
+                className="h-10 w-auto max-w-[220px] object-contain"
+              />
+            </div>
+            <h1 className="text-xl font-black text-[#0B3D91] tracking-wider uppercase m-0 leading-tight">
+              PROTIKKHA ELECTRIC
             </h1>
             <p className="text-xs text-slate-600 font-medium mt-1">
-              Wholesale & Retail: Exclusive Tiles, Sanitary Ware & Modern Bath Fittings
+              Electrical Retail POS &amp; Inventory Management: Wires, Cables, Pipes, Switches, Sockets &amp; Breakers
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
               Bus Terminal Main Road, Pabna | Hotline: 01975-703216, 01711-968720
             </p>
-            <div className="mt-2.5 inline-block px-3.5 py-0.5 rounded-md bg-[#991b1b] text-white font-bold text-[11px] tracking-wider uppercase">
+            <div className="mt-2.5 inline-block px-3.5 py-0.5 rounded-md bg-[#0B3D91] text-white font-bold text-[11px] tracking-wider uppercase">
               CASH SALES RECEIPT / ক্যাশ রসিদ
             </div>
           </div>
@@ -309,7 +316,7 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
 
           {/* Footer Branding */}
           <div className="text-center pt-5 text-[10px] text-slate-400 border-t border-slate-200 mt-4">
-            Thank you for shopping with Runa Traders &bull; Software by: CodeNext IT
+            Thank you for shopping with Protikkha Electric &bull; Software by: CodeNext IT
           </div>
         </div>
       </div>

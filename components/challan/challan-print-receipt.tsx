@@ -74,7 +74,7 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
       {/* Container: Wider modal (max-w-xl) with single unified container */}
       <div className="bg-white text-slate-900 rounded-2xl shadow-2xl max-w-xl w-full max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-slate-300 print:border-none print:shadow-none print:max-w-none print:m-0 print:p-0">
         {/* Modal Top Actions (Hidden on Print) */}
-        <div className="print:hidden h-13 px-4 sm:px-5 bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white flex items-center justify-between shrink-0 shadow-sm">
+        <div className="print:hidden h-13 px-4 sm:px-5 bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-between shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
               <Truck className="w-4 h-4 text-white" />
@@ -91,7 +91,7 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handlePrint}
-              className="h-8 px-3.5 rounded-lg bg-white text-rose-900 hover:bg-rose-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              className="h-8 px-3.5 rounded-lg bg-white text-[#0B3D91] hover:bg-blue-50 font-bold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer whitespace-nowrap shrink-0"
               title="Print Challan Slip"
             >
               <Printer className="w-3.5 h-3.5 shrink-0" />
@@ -161,17 +161,24 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
             {/* Top Main Section */}
             <div className="space-y-3.5 flex-1">
               {/* Header */}
-              <div className="text-center border-b-2 border-red-700 pb-2.5">
-                <h1 className="text-lg font-black text-rose-900 tracking-wider uppercase leading-tight">
-                  RUNA TRADERS
+              <div className="text-center border-b-2 border-[#0B3D91] pb-2.5">
+                <div className="flex justify-center mb-1">
+                  <img
+                    src="/logo.png"
+                    alt="Protikkha Electric"
+                    className="h-9 w-auto max-w-[200px] object-contain"
+                  />
+                </div>
+                <h1 className="text-base font-black text-[#0B3D91] tracking-wider uppercase leading-tight">
+                  PROTIKKHA ELECTRIC
                 </h1>
                 <p className="text-[10px] text-slate-600 font-medium">
-                  Tiles, Sanitary Ware & Bath Fittings
+                  Electrical Retail POS &amp; Inventory Management: Wires, Cables, Pipes &amp; Fittings
                 </p>
                 <p className="text-[9px] text-slate-500 mt-0.5">
                   Bus Terminal Main Road, Pabna | 01711-968720
                 </p>
-                <div className="mt-2 inline-block px-3 py-0.5 rounded-md bg-[#991b1b] text-white font-bold text-[10px] tracking-wider uppercase">
+                <div className="mt-2 inline-block px-3 py-0.5 rounded-md bg-[#0B3D91] text-white font-bold text-[10px] tracking-wider uppercase">
                   DELIVERY CHALLAN / চালান
                 </div>
               </div>
@@ -218,7 +225,7 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
               <div className="overflow-hidden rounded-xl border border-slate-200">
                 <table className="w-full text-left border-collapse text-[11px]">
                   <thead>
-                    <tr className="bg-[#991b1b] text-white font-bold text-[10px]">
+                    <tr className="bg-[#0B3D91] text-white font-bold text-[10px]">
                       <th className="py-1.5 px-2 w-7 text-center">#</th>
                       <th className="py-1.5 px-2">Description</th>
                       <th className="py-1.5 px-1.5 text-center">Size</th>
@@ -308,7 +315,7 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
 
               {/* Footer Brand */}
               <div className="pt-2 text-center text-[9px] text-slate-400 border-t border-slate-200">
-                RUNA TRADERS &bull; Software By CodeNext IT
+                PROTIKKHA ELECTRIC &bull; Software By CodeNext IT
               </div>
             </div>
           </div>

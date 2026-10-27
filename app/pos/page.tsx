@@ -255,7 +255,9 @@ export default function PosPage() {
 
     // Load held invoices from localStorage
     try {
-      const stored = localStorage.getItem("runa_held_invoices");
+      const stored =
+        localStorage.getItem("protikkha_held_invoices") ||
+        localStorage.getItem("runa_held_invoices");
       if (stored) {
         setHeldInvoices(JSON.parse(stored));
       }
@@ -271,7 +273,7 @@ export default function PosPage() {
   const saveHeldInvoices = (list: HeldInvoice[]) => {
     setHeldInvoices(list);
     try {
-      localStorage.setItem("runa_held_invoices", JSON.stringify(list));
+      localStorage.setItem("protikkha_held_invoices", JSON.stringify(list));
     } catch {}
   };
 
@@ -674,17 +676,17 @@ export default function PosPage() {
         <div className="flex items-center gap-2.5">
           <Link
             href="/dashboard"
-            className="h-[32px] px-3 rounded-full bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+            className="h-[32px] px-3 rounded-full bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Back to Dashboard</span>
             <span className="sm:hidden">Back</span>
           </Link>
 
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 rounded-full border border-rose-200 dark:border-rose-900/40">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span className="text-xs font-black tracking-wider text-rose-800 dark:text-rose-400 uppercase">
-              RUNA TRADERS POS
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-blue-50 dark:bg-blue-950/40 rounded-full border border-blue-200 dark:border-blue-900/40">
+            <span className="w-2 h-2 rounded-full bg-[#1E65A0] animate-ping" />
+            <span className="text-xs font-black tracking-wider text-[#0B3D91] dark:text-blue-300 uppercase">
+              PROTIKKHA ELECTRIC POS
             </span>
           </div>
         </div>
@@ -752,14 +754,14 @@ export default function PosPage() {
                   }
                 }}
                 placeholder="🔍 Scan barcode gun or type code / product name... (F2)"
-                className="w-full h-[38px] pl-3 pr-9 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[38px] pl-3 pr-9 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
               <button
                 type="button"
                 onClick={() => {
                   if (searchQuery.trim()) handleScanCode(searchQuery.trim());
                 }}
-                className="absolute right-1 top-1 w-[30px] h-[30px] rounded-lg bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white flex items-center justify-center cursor-pointer transition-colors shadow-xs"
+                className="absolute right-1 top-1 w-[30px] h-[30px] rounded-lg bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white flex items-center justify-center cursor-pointer transition-colors shadow-xs"
               >
                 <Search className="w-3.5 h-3.5" />
               </button>
@@ -776,7 +778,7 @@ export default function PosPage() {
                         setSearchResults([]);
                         showToast(`Added: ${item.name}`);
                       }}
-                      className="px-3 py-2 flex items-center justify-between hover:bg-rose-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+                      className="px-3 py-2 flex items-center justify-between hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-b-0"
                     >
                       <div>
                         <div className="text-xs font-bold text-slate-800 dark:text-slate-100">
@@ -786,7 +788,7 @@ export default function PosPage() {
                           Code: {item.primary_code || "N/A"} &bull; Stock: {item.quantity} {item.unit}
                         </div>
                       </div>
-                      <div className="text-xs font-black text-rose-700 dark:text-rose-400">
+                      <div className="text-xs font-black text-[#0B3D91] dark:text-blue-300">
                         {formatBdCurrency(item.sell_price)}
                       </div>
                     </div>
@@ -802,18 +804,18 @@ export default function PosPage() {
                 onClick={() => setIsFilterDropdownOpen((prev) => !prev)}
                 className={`h-[38px] px-2.5 sm:px-3 rounded-xl border text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-xs ${
                   filterOption !== "all"
-                    ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-900 text-rose-700 dark:text-rose-400"
+                    ? "bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-900 text-[#1E65A0] dark:text-blue-300"
                     : "bg-slate-50 hover:bg-slate-100 dark:bg-[#1e293b] dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border-[#cbd5e1] dark:border-[#334155]"
                 }`}
                 title="Filter & Sort Products"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#1E65A0] dark:text-blue-400 shrink-0" />
                 <span className="hidden sm:inline whitespace-nowrap">
                   {FILTER_OPTIONS.find((o) => o.id === filterOption)?.label || "Sort"}
                 </span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${
-                    isFilterDropdownOpen ? "rotate-180 text-rose-600" : "text-slate-400"
+                    isFilterDropdownOpen ? "rotate-180 text-[#1E65A0]" : "text-slate-400"
                   }`}
                 />
               </button>
@@ -835,12 +837,12 @@ export default function PosPage() {
                         }}
                         className={`w-full px-3 py-2 text-xs font-semibold flex items-center justify-between text-left transition-colors cursor-pointer ${
                           isSelected
-                            ? "bg-rose-50/80 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 font-bold"
+                            ? "bg-blue-50/80 dark:bg-blue-950/40 text-[#1E65A0] dark:text-blue-300 font-bold"
                             : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60"
                         }`}
                       >
                         <span>{opt.label}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#1E65A0] dark:text-blue-400 shrink-0" />}
                       </button>
                     );
                   })}
@@ -852,7 +854,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => setIsCameraOpen(true)}
-              className="h-[38px] px-3 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-xs"
+              className="h-[38px] px-3 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-xs"
               title="Open Camera QR / Barcode Scanner"
             >
               <Camera className="w-4 h-4" />
@@ -877,7 +879,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => scrollCategories("left")}
-              className="w-7 h-7 rounded-lg bg-white dark:bg-[#1e293b] hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300 border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-center shrink-0 transition-colors shadow-2xs cursor-pointer active:scale-95"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-[#1e293b] hover:bg-blue-50 hover:text-[#1E65A0] dark:hover:bg-blue-950/40 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-center shrink-0 transition-colors shadow-2xs cursor-pointer active:scale-95"
               title="Slide Categories Left"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -893,7 +895,7 @@ export default function PosPage() {
                 onClick={() => setSelectedCategory("all")}
                 className={`h-[28px] px-3.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                   selectedCategory === "all"
-                    ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white shadow-xs"
+                    ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
                     : "bg-white dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -906,7 +908,7 @@ export default function PosPage() {
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`h-[28px] px-3.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     selectedCategory === cat.id
-                      ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white shadow-xs"
+                      ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
                       : "bg-white dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -919,7 +921,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => scrollCategories("right")}
-              className="w-7 h-7 rounded-lg bg-white dark:bg-[#1e293b] hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 text-slate-600 dark:text-slate-300 border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-center shrink-0 transition-colors shadow-2xs cursor-pointer active:scale-95"
+              className="w-7 h-7 rounded-lg bg-white dark:bg-[#1e293b] hover:bg-blue-50 hover:text-[#1E65A0] dark:hover:bg-blue-950/40 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-center shrink-0 transition-colors shadow-2xs cursor-pointer active:scale-95"
               title="Slide Categories Right"
             >
               <ChevronRight className="w-4 h-4" />
@@ -953,13 +955,13 @@ export default function PosPage() {
                       className={`relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all text-left group min-h-[148px] ${
                         isOutOfStock
                           ? "bg-slate-100 dark:bg-slate-800/40 border-slate-300 dark:border-slate-800 opacity-60 cursor-not-allowed"
-                          : "bg-white dark:bg-[#1e293b] border-[#cbd5e1] dark:border-[#334155] hover:border-rose-500 dark:hover:border-rose-500 hover:shadow-md cursor-pointer hover:-translate-y-0.5"
+                          : "bg-white dark:bg-[#1e293b] border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0] dark:hover:border-[#1E65A0] hover:shadow-md cursor-pointer hover:-translate-y-0.5"
                       }`}
                     >
                       {/* Top: Product Title, Category & Stock Status */}
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-[11px] font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight group-hover:text-rose-600 transition-colors">
+                          <h4 className="text-[11px] font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-tight group-hover:text-[#1E65A0] transition-colors">
                             {p.product_name}
                           </h4>
                           <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5 font-medium">
@@ -984,7 +986,7 @@ export default function PosPage() {
                                   ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
                                   : p.quantity <= 5
                                   ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                                  : "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/50"
+                                  : "bg-blue-50 text-[#0B3D91] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-900/50"
                               }`}
                             >
                               {isOutOfStock ? "Out of Stock" : `Stock: ${stockText}`}
@@ -999,12 +1001,12 @@ export default function PosPage() {
                           {p.unit}
                         </span>
                         {p.tile_size && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/60 shrink-0 whitespace-nowrap">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#1E65A0] dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 shrink-0 whitespace-nowrap">
                             📐 {p.tile_size}
                           </span>
                         )}
                         {p.sqft_per_box && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/60 shrink-0 whitespace-nowrap">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-[#1E65A0] dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 shrink-0 whitespace-nowrap">
                             {p.sqft_per_box} Sft
                           </span>
                         )}
@@ -1018,7 +1020,7 @@ export default function PosPage() {
                       {/* Bottom Pricing */}
                       <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <div>
-                          <span className="text-sm sm:text-base font-black text-rose-700 dark:text-rose-400 tracking-tight">
+                          <span className="text-sm sm:text-base font-black text-[#0B3D91] dark:text-blue-300 tracking-tight">
                             {formatBdCurrency(p.sell_price)}
                           </span>
                           {p.sqft_per_box && p.sqft_per_box > 0 && (
@@ -1027,7 +1029,7 @@ export default function PosPage() {
                             </span>
                           )}
                         </div>
-                        <div className="w-7 h-7 rounded-xl bg-rose-50 group-hover:bg-gradient-to-r group-hover:from-[#991b1b] group-hover:to-[#dc2626] group-hover:text-white dark:bg-rose-950/50 text-rose-600 flex items-center justify-center transition-all shadow-2xs group-hover:shadow-xs">
+                        <div className="w-7 h-7 rounded-xl bg-blue-50 group-hover:bg-gradient-to-r group-hover:from-[#0B3D91] group-hover:to-[#1E65A0] group-hover:text-white dark:bg-blue-950/50 text-[#1E65A0] flex items-center justify-center transition-all shadow-2xs group-hover:shadow-xs">
                           <Plus className="w-4 h-4" />
                         </div>
                       </div>
@@ -1054,10 +1056,10 @@ export default function PosPage() {
               <div ref={customerDropdownRef} className="relative flex-1 min-w-0">
                 <div
                   onClick={() => setIsCustomerDropdownOpen(!isCustomerDropdownOpen)}
-                  className="h-[38px] px-3 rounded-xl bg-white dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-between cursor-pointer hover:border-rose-500 transition-colors"
+                  className="h-[38px] px-3 rounded-xl bg-white dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] flex items-center justify-between cursor-pointer hover:border-[#1E65A0] transition-colors"
                 >
                   <div className="flex items-center gap-1.5 truncate">
-                    <UserCheck className="w-4 h-4 text-rose-600 shrink-0" />
+                    <UserCheck className="w-4 h-4 text-[#1E65A0] shrink-0" />
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                       {selectedCustomer ? selectedCustomer.customer_name : "Select Customer..."}
                     </span>
@@ -1077,7 +1079,7 @@ export default function PosPage() {
                         placeholder="Search customer name or mobile..."
                         value={customerSearch}
                         onChange={(e) => setCustomerSearch(e.target.value)}
-                        className="w-full h-[38px] pl-9 pr-8 text-xs font-medium rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20 transition-all shadow-xs"
+                        className="w-full h-[38px] pl-9 pr-8 text-xs font-medium rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E65A0] focus:ring-2 focus:ring-[#1E65A0]/20 transition-all shadow-xs"
                       />
                       {customerSearch && (
                         <button
@@ -1106,7 +1108,7 @@ export default function PosPage() {
                             }}
                             className={`p-2.5 rounded-xl text-xs cursor-pointer flex items-center justify-between transition-colors ${
                               selectedCustomer?.id === c.id
-                                ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white font-bold shadow-xs"
+                                ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white font-bold shadow-xs"
                                 : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
                             }`}
                           >
@@ -1137,7 +1139,7 @@ export default function PosPage() {
               <button
                 type="button"
                 onClick={() => setIsCustomerModalOpen(true)}
-                className="h-[38px] px-3 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer shadow-xs"
+                className="h-[38px] px-3 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer shadow-xs"
               >
                 <Plus className="w-4 h-4" />
                 <span>New</span>
@@ -1188,7 +1190,7 @@ export default function PosPage() {
           <div className="flex-1 min-h-0 overflow-y-auto">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-400 p-6">
-                <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30 text-rose-500" />
+                <ShoppingBag className="w-10 h-10 stroke-[1.5] mb-2 opacity-30 text-[#1E65A0]" />
                 <p className="text-xs font-bold">Your Cart is Empty</p>
                 <p className="text-[11px] text-slate-500 text-center max-w-[220px] mt-0.5">
                   Scan a barcode or click any product from the catalog to add items.
@@ -1224,7 +1226,7 @@ export default function PosPage() {
                             {(item.tile_size || item.sqft_per_box) && (
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 {item.tile_size && (
-                                  <span className="text-[9px] font-bold px-1 rounded bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">
+                                  <span className="text-[9px] font-bold px-1 rounded bg-blue-100 dark:bg-blue-950 text-[#0B3D91] dark:text-blue-300">
                                     📐 {item.tile_size}
                                   </span>
                                 )}
@@ -1239,7 +1241,7 @@ export default function PosPage() {
                                     setTileCalcProduct(item);
                                     setIsTileCalcOpen(true);
                                   }}
-                                  className="text-[9px] font-extrabold text-rose-700 dark:text-rose-300 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors border border-rose-200/60 dark:border-rose-900/60 flex items-center gap-0.5"
+                                  className="text-[9px] font-extrabold text-[#1E65A0] dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors border border-blue-200/60 dark:border-blue-900/60 flex items-center gap-0.5"
                                   title="Open Sft & Box Calculator"
                                 >
                                   📐 Sft Calc
@@ -1336,13 +1338,13 @@ export default function PosPage() {
             <div>
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
                 <span>Payment Method</span>
-                <span className="font-mono text-rose-600 dark:text-rose-400">
+                <span className="font-mono text-[#1E65A0] dark:text-blue-400">
                   {paymentMethod}
                 </span>
               </div>
               <div className="grid grid-cols-6 gap-1.5">
                 {[
-                  { name: "Cash", color: "bg-gradient-to-r from-[#991b1b] to-[#dc2626]" },
+                  { name: "Cash", color: "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0]" },
                   { name: "bKash", color: "bg-[#e2136e]" },
                   { name: "Nagad", color: "bg-[#f7931e]" },
                   { name: "Rocket", color: "bg-[#8c3294]" },
@@ -1356,7 +1358,7 @@ export default function PosPage() {
                     className={`h-[30px] rounded-lg text-[11px] font-bold transition-all border cursor-pointer ${
                       paymentMethod === m.name
                         ? `${m.color} text-white border-transparent shadow-xs scale-102`
-                        : "bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-rose-500"
+                        : "bg-white dark:bg-[#0f172a] text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0]"
                     }`}
                   >
                     {m.name}
@@ -1373,7 +1375,7 @@ export default function PosPage() {
                   placeholder="Order Note / Remark"
                   value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)}
-                  className="w-full h-[28px] px-2.5 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-600"
+                  className="w-full h-[28px] px-2.5 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#1E65A0]"
                 />
               </div>
             ) : (
@@ -1383,14 +1385,14 @@ export default function PosPage() {
                   placeholder="Trx ID / Ref No."
                   value={transactionId}
                   onChange={(e) => setTransactionId(e.target.value)}
-                  className="h-[28px] px-2 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-600 font-mono"
+                  className="h-[28px] px-2 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#1E65A0] font-mono"
                 />
                 <input
                   type="text"
                   placeholder="Order Note / Remark"
                   value={orderNote}
                   onChange={(e) => setOrderNote(e.target.value)}
-                  className="h-[28px] px-2 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-600"
+                  className="h-[28px] px-2 text-xs rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#1E65A0]"
                 />
               </div>
             )}
@@ -1419,7 +1421,7 @@ export default function PosPage() {
                       onClick={() => setDiscountType("flat")}
                       className={`px-1.5 text-[10px] font-bold cursor-pointer ${
                         discountType === "flat"
-                          ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white"
+                          ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -1430,7 +1432,7 @@ export default function PosPage() {
                       onClick={() => setDiscountType("percent")}
                       className={`px-1.5 text-[10px] font-bold cursor-pointer ${
                         discountType === "percent"
-                          ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white"
+                          ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white"
                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
@@ -1451,7 +1453,7 @@ export default function PosPage() {
                     placeholder="0"
                     value={discount || ""}
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] focus:outline-none focus:ring-1 focus:ring-rose-600"
+                    className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#1E65A0]"
                   />
                 </div>
               </div>
@@ -1468,7 +1470,7 @@ export default function PosPage() {
                   placeholder="0"
                   value={deliveryCharge || ""}
                   onChange={(e) => setDeliveryCharge(parseFloat(e.target.value) || 0)}
-                  className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] focus:outline-none focus:ring-1 focus:ring-rose-600"
+                  className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] focus:outline-none focus:ring-1 focus:ring-[#1E65A0]"
                 />
               </div>
 
@@ -1484,7 +1486,7 @@ export default function PosPage() {
                   placeholder="0"
                   value={returnAdjustment || ""}
                   onChange={(e) => setReturnAdjustment(parseFloat(e.target.value) || 0)}
-                  className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-amber-700 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-rose-600"
+                  className="w-18 h-[24px] px-1 text-right font-bold text-xs rounded border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-amber-700 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-[#1E65A0]"
                 />
               </div>
 
@@ -1493,7 +1495,7 @@ export default function PosPage() {
                 <span className="font-black text-slate-800 dark:text-white uppercase tracking-wider text-xs">
                   Net Payable:
                 </span>
-                <span className="font-black text-rose-700 dark:text-rose-400 text-sm">
+                <span className="font-black text-[#0B3D91] dark:text-blue-300 text-sm">
                   {formatBdCurrency(grandTotal)}
                 </span>
               </div>
@@ -1507,7 +1509,7 @@ export default function PosPage() {
                   <button
                     type="button"
                     onClick={handleSetFullPaid}
-                    className="px-1.5 py-0.5 rounded bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950 dark:hover:bg-rose-900 dark:text-rose-300 text-[10px] font-bold cursor-pointer"
+                    className="px-1.5 py-0.5 rounded bg-blue-100 hover:bg-blue-200 text-[#0B3D91] dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-200 text-[10px] font-bold cursor-pointer transition-colors"
                   >
                     Full Paid
                   </button>
@@ -1519,20 +1521,20 @@ export default function PosPage() {
                   placeholder="0"
                   value={paidAmount || ""}
                   onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                  className="w-24 h-[26px] px-1 text-right font-black text-xs rounded border-2 border-rose-600 bg-white dark:bg-[#1e293b] text-rose-700 dark:text-rose-300 focus:outline-none"
+                  className="w-24 h-[26px] px-1 text-right font-black text-xs rounded border-2 border-[#1E65A0] bg-white dark:bg-[#1e293b] text-slate-800 dark:text-white focus:outline-none"
                 />
               </div>
 
               {/* Due Amount & Status */}
               <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-rose-600 uppercase tracking-wider text-[11px]">
+                  <span className="font-bold text-amber-600 uppercase tracking-wider text-[11px]">
                     Current Due:
                   </span>
                   <span
                     className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
                       paymentStatus === "PAID"
-                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-200 border border-rose-200 dark:border-rose-900"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900"
                         : paymentStatus === "PARTIAL PAID"
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
                         : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
@@ -1589,7 +1591,7 @@ export default function PosPage() {
                 className={`col-span-2 h-[40px] rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer ${
                   isSubmitting || cart.length === 0
                     ? "bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white hover:shadow-lg active:scale-98"
+                    : "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white hover:shadow-lg active:scale-98"
                 }`}
               >
                 <Send className="w-4 h-4" />
@@ -1604,14 +1606,14 @@ export default function PosPage() {
       <div className="lg:hidden p-2 bg-slate-900/95 text-white backdrop-blur-md border-t border-slate-800 flex items-center justify-between z-30 shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <ShoppingBag className="w-5 h-5 text-rose-400" />
-            <span className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center">
+            <ShoppingBag className="w-5 h-5 text-blue-300" />
+            <span className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-[#F59E0B] text-slate-950 text-[10px] font-bold flex items-center justify-center">
               {cart.length}
             </span>
           </div>
           <div>
             <div className="text-[10px] text-slate-400">Total Payable</div>
-            <div className="text-xs font-black text-rose-400">
+            <div className="text-xs font-black text-white">
               {formatBdCurrency(grandTotal)}
             </div>
           </div>
@@ -1620,7 +1622,7 @@ export default function PosPage() {
         <button
           type="button"
           onClick={() => setMobileTab(mobileTab === "catalog" ? "cart" : "catalog")}
-          className="h-[36px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+          className="h-[36px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
         >
           <span>{mobileTab === "catalog" ? "View Cart / Checkout" : "Back to Catalog"}</span>
         </button>

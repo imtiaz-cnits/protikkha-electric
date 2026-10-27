@@ -145,7 +145,7 @@ export default function ChallansPage() {
                 setPage(1);
               }}
               placeholder="Search Challan No, Invoice, Customer..."
-              className="h-[38px] w-full pl-9 pr-3 text-xs rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-rose-600 focus:border-rose-600 transition-all shadow-2xs"
+              className="h-[38px] w-full pl-9 pr-3 text-xs rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#1E65A0] focus:border-[#1E65A0] transition-all shadow-2xs"
             />
           </div>
 
@@ -209,7 +209,7 @@ export default function ChallansPage() {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white font-bold whitespace-nowrap">
+                  <tr className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white font-bold whitespace-nowrap">
                     <th className="py-3 px-3 text-center w-[50px]">SL</th>
                     <th className="py-3 px-4">Challan No</th>
                     <th className="py-3 px-4">Invoice Ref</th>
@@ -268,7 +268,7 @@ export default function ChallansPage() {
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => handleOpenPrint(c.id)}
-                          className="h-8 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 hover:bg-gradient-to-r hover:from-[#991b1b] hover:to-[#dc2626] hover:text-white border border-rose-200 dark:border-rose-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                          className="h-8 px-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#1E65A0] dark:text-blue-300 hover:bg-gradient-to-r hover:from-[#0B3D91] hover:to-[#1E65A0] hover:text-white border border-blue-200 dark:border-blue-900 text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                         >
                           <Printer className="w-3.5 h-3.5" />
                           <span>View & Print</span>
@@ -317,7 +317,7 @@ export default function ChallansPage() {
                     </span>
                     <button
                       onClick={() => handleOpenPrint(c.id)}
-                      className="h-8 px-3 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
+                      className="h-8 px-3 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span>Print</span>

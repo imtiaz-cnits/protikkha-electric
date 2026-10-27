@@ -203,22 +203,24 @@ export default function InvoiceBillPage({
           <div className="flex flex-col sm:flex-row print:flex-row justify-between items-center sm:items-start print:items-start gap-3 sm:gap-2 print:gap-0 pb-2 border-b border-slate-200">
             {/* Brand Logo & Name */}
             <div className="flex items-start gap-2.5">
-              <div className="w-11 h-11 rounded-lg border-2 border-[#15803d] flex items-center justify-center font-black text-xl text-[#991b1b] bg-white shrink-0 shadow-xs">
-                RT
-              </div>
+              <img
+                src="/fav.png"
+                alt="Protikkha Electric"
+                className="w-11 h-11 rounded-lg object-contain shadow-xs shrink-0"
+              />
               <div className="flex flex-col">
-                <h1 className="text-xl sm:text-2xl print:text-2xl font-black tracking-wide text-[#15803d] m-0 leading-tight">
-                  RUNA TRADERS
+                <h1 className="text-xl sm:text-2xl print:text-2xl font-black tracking-wide text-[#0B3D91] m-0 leading-tight">
+                  PROTIKKHA ELECTRIC
                 </h1>
-                <div className="text-[10px] sm:text-[11px] print:text-[11px] font-bold text-[#166534] border-t border-[#15803d] pt-0.5 mt-0.5 whitespace-normal sm:whitespace-nowrap print:whitespace-nowrap">
-                  All Kinds of Tiles, Sanitary & Fittings Supplier
+                <div className="text-[10px] sm:text-[11px] print:text-[11px] font-bold text-[#1E65A0] border-t border-[#0B3D91] pt-0.5 mt-0.5 whitespace-normal sm:whitespace-nowrap print:whitespace-nowrap">
+                  Electrical Retail POS &amp; Inventory Management
                 </div>
               </div>
             </div>
 
             {/* Middle "Bill" Badge */}
             <div className="self-center">
-              <span className="px-4 sm:px-5 py-0.5 sm:py-1 print:py-1 rounded bg-[#15803d] text-white font-serif font-black text-base sm:text-lg print:text-lg tracking-wider">
+              <span className="px-4 sm:px-5 py-0.5 sm:py-1 print:py-1 rounded bg-[#0B3D91] text-white font-serif font-black text-base sm:text-lg print:text-lg tracking-wider">
                 Bill
               </span>
             </div>
@@ -228,7 +230,7 @@ export default function InvoiceBillPage({
               <div><strong>Office:</strong> Success Super Market,</div>
               <div>Sadar Police Fari, Ataikula Road, Pabna.</div>
               <div><strong>Mobile:</strong> 01975-703216, 01715-842083</div>
-              <div><strong>E-mail:</strong> runatraders2018@gmail.com</div>
+              <div><strong>E-mail:</strong> info@protikkhaelectric.com</div>
             </div>
           </div>
 

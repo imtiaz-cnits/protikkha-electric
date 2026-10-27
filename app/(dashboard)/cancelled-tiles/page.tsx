@@ -243,18 +243,18 @@ export default function CancelledTilesPage() {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
       </div>
 
-      {/* 3. Desktop Table (Solid Brand Header #881337 - #991b1b - #b91c1c) */}
+      {/* 3. Desktop Table (Solid Brand Header #0B3D91 - #1248a3 - #1E65A0) */}
       <div className="hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-bold whitespace-nowrap">
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
                 <th className="py-3 px-3 text-center w-[50px]">SL</th>
                 <th className="py-3 px-4">Invoice # / Date</th>
                 <th className="py-3 px-3">Customer</th>
@@ -434,7 +434,7 @@ export default function CancelledTilesPage() {
                   setRestoreRecord(r);
                   setRestoreError(null);
                 }}
-                className="h-[30px] flex-1 px-3 rounded-lg bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                className="h-[30px] flex-1 px-3 rounded-lg bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-colors"
               >
                 <Undo2 className="w-3.5 h-3.5" />
                 <span>Back</span>
@@ -472,7 +472,7 @@ export default function CancelledTilesPage() {
         <div className="fixed inset-0 z-[70] bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-[#cbd5e1] dark:border-[#334155]/60 animate-in fade-in zoom-in-95 duration-150">
             {/* Sticky Header */}
-            <div className="h-[52px] px-5 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#dc2626] text-white flex items-center justify-between shrink-0 shadow-xs">
+            <div className="h-[52px] px-5 bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-white">
                   <Eye className="w-4 h-4" />
@@ -612,7 +612,7 @@ export default function CancelledTilesPage() {
                   setRestoreRecord(viewRecord);
                   setRestoreError(null);
                 }}
-                className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-colors"
+                className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-colors"
               >
                 <Undo2 className="w-4 h-4" />
                 <span>Restore to Invoice</span>
@@ -627,7 +627,7 @@ export default function CancelledTilesPage() {
         <div className="fixed inset-0 z-[80] bg-slate-900/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <div className="bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-[#cbd5e1] dark:border-[#334155]/60 animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="h-[52px] px-5 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#dc2626] text-white flex items-center justify-between shrink-0 shadow-xs">
+            <div className="h-[52px] px-5 bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2">
                 <Undo2 className="w-4 h-4" />
                 <h3 className="font-bold text-sm tracking-wide text-white m-0">
@@ -697,7 +697,7 @@ export default function CancelledTilesPage() {
                 type="button"
                 disabled={restoring}
                 onClick={handleRestoreConfirm}
-                className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-colors disabled:opacity-50"
+                className="h-[42px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-xs cursor-pointer transition-colors disabled:opacity-50"
               >
                 {restoring ? (
                   <>

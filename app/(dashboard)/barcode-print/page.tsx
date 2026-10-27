@@ -85,7 +85,7 @@ export default function BarcodePrintPage() {
       {/* Top Header - No print */}
       <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-slate-800 shadow-xs shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-slate-800 shadow-xs shrink-0">
             <Barcode className="w-4 h-4" />
           </div>
           <div>
@@ -100,7 +100,7 @@ export default function BarcodePrintPage() {
 
         <button
           onClick={handlePrint}
-          className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+          className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-all cursor-pointer self-start sm:self-auto"
         >
           <Printer className="w-4 h-4" />
           <span>Print Stickers Now</span>
@@ -135,7 +135,7 @@ export default function BarcodePrintPage() {
               type="text"
               value={barcodeValue}
               onChange={(e) => setBarcodeValue(e.target.value)}
-              className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600 font-mono"
+              className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-mono"
             />
           </div>
 
@@ -150,7 +150,7 @@ export default function BarcodePrintPage() {
               max={200}
               value={quantity}
               onChange={(e) => setQuantity(Number(e.target.value) || 1)}
-              className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600"
+              className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
             />
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function BarcodePrintPage() {
             >
               {/* Store Name Header */}
               <p className="text-[10px] font-black tracking-wider text-slate-900 uppercase leading-none">
-                RUNA TRADERS
+                PROTIKKHA ELECTRIC
               </p>
 
               {/* Product Name */}

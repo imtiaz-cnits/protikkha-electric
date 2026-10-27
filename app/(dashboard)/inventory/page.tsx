@@ -362,7 +362,7 @@ export default function InventoryPage() {
                   setCurrentPage(1);
                 }}
                 className={`h-[36px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${statusFilter === "out"
-                    ? "bg-rose-600 text-white border-rose-700 shadow-xs"
+                    ? "bg-rose-600 text-white border-blue-700 shadow-xs"
                     : "bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-900/40 hover:bg-rose-100"
                   }`}
               >
@@ -597,7 +597,7 @@ export default function InventoryPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-bold whitespace-nowrap">
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
                 <th className="py-3 px-3 text-center w-[50px]">SL</th>
                 <th className="py-3 px-4">Product Name / Variant</th>
                 <th className="py-3 px-3">Barcode</th>
@@ -820,7 +820,7 @@ export default function InventoryPage() {
       {isAdjustModalOpen && selectedItem && (
         <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-white dark:bg-[#0f172a] rounded-[16px] shadow-2xl overflow-hidden border border-[#cbd5e1] dark:border-[#334155] max-h-[90vh] flex flex-col">
-            <div className="modal-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
+            <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-white" />
                 <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">
@@ -864,7 +864,7 @@ export default function InventoryPage() {
                   required
                   value={newQty}
                   onChange={(e) => setNewQty(e.target.value)}
-                  className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 font-black text-emerald-600 text-base focus:outline-none focus:ring-2 focus:ring-rose-600"
+                  className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 font-black text-emerald-600 text-base focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
                 />
               </div>
 
@@ -899,7 +899,7 @@ export default function InventoryPage() {
                 <button
                   type="submit"
                   disabled={adjusting}
-                  className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   {adjusting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Save Stock Update</span>
@@ -916,9 +916,9 @@ export default function InventoryPage() {
         <div className="border-b-2 border-slate-900 pb-2 mb-3">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-lg font-black tracking-tight text-slate-900 m-0">RUNA TRADERS</h1>
+              <h1 className="text-lg font-black tracking-tight text-[#0B3D91] m-0">PROTIKKHA ELECTRIC</h1>
               <p className="text-[11px] text-slate-600 font-medium m-0">
-                Tiles, Sanitary & Bath Fitting Wholesale & Retail
+                Electrical Retail &amp; Wholesale POS &amp; Inventory Management
               </p>
               <h2 className="text-xs font-bold text-slate-800 mt-1 uppercase tracking-wider">
                 Stock Inventory & Valuation Report

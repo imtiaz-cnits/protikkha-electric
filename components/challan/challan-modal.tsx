@@ -206,7 +206,7 @@ export function ChallanModal({
       <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
         <div className="bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-[#cbd5e1] dark:border-[#334155]/60 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="h-[52px] px-5 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#dc2626] text-white flex items-center justify-between shrink-0 shadow-xs">
+          <div className="h-[52px] px-5 bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white flex items-center justify-between shrink-0 shadow-xs">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-white/15 backdrop-blur-xs flex items-center justify-center font-bold">
                 <Truck className="w-4 h-4 text-white" />
@@ -300,7 +300,7 @@ export function ChallanModal({
                 </div>
                 <button
                   onClick={handleViewExistingChallan}
-                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer transition-colors"
+                  className="h-10 px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer transition-colors"
                 >
                   <Printer className="w-4 h-4" />
                   <span>View & Reprint Challan</span>
@@ -493,7 +493,7 @@ export function ChallanModal({
                       value={deliveryAddress}
                       onChange={(e) => setDeliveryAddress(e.target.value)}
                       placeholder="e.g. Construction Site, Road 4, Pabna"
-                      className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-600 focus:border-rose-600"
+                      className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E65A0] focus:border-[#1E65A0]"
                     />
                   </div>
 
@@ -507,7 +507,7 @@ export function ChallanModal({
                         value={driverName}
                         onChange={(e) => setDriverName(e.target.value)}
                         placeholder="e.g. Md. Karim"
-                        className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-600 focus:border-rose-600"
+                        className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E65A0] focus:border-[#1E65A0]"
                       />
                     </div>
                     <div>
@@ -519,7 +519,7 @@ export function ChallanModal({
                         value={driverPhone}
                         onChange={(e) => setDriverPhone(e.target.value)}
                         placeholder="e.g. 01700-123456"
-                        className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-600 focus:border-rose-600"
+                        className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E65A0] focus:border-[#1E65A0]"
                       />
                     </div>
                   </div>
@@ -533,7 +533,7 @@ export function ChallanModal({
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       placeholder="e.g. Handle with care, offload ground floor"
-                      className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-rose-600 focus:border-rose-600"
+                      className="h-[42px] w-full px-3 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#1E65A0] focus:border-[#1E65A0]"
                     />
                   </div>
                 </div>
@@ -559,7 +559,7 @@ export function ChallanModal({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="h-[42px] px-6 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
+                  className="h-[42px] px-6 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] disabled:opacity-50 text-white font-bold text-xs flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                 >
                   {submitting ? (
                     <>

@@ -4,18 +4,18 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RUNA TRADERS | Retail Shop Management",
-  description: "Retail Shop Management System & POS for Runa Traders, Powered by CodeNext IT",
+  title: "ARAFAT POULTRY & FISHERIES | Management System & ERP",
+  description: "Poultry Farm, Egg Production, Fish Farming & Feed Trading ERP System for Arafat Poultry & Fisheries, Powered by CodeNext IT",
   icons: {
     icon: [
+      { url: "/fav.png", type: "image/png" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
     ],
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: ["/favicon.ico"],
+    shortcut: ["/fav.png"],
   },
 };
 
@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/fav.png" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#0B3D91" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link

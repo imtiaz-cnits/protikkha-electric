@@ -106,7 +106,7 @@ export default function StockOutReportPage() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <Link
             href="/purchases"
-            className="h-[38px] px-3.5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+            className="h-[38px] px-3.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
             <span>Create Purchase Order</span>
@@ -250,7 +250,7 @@ export default function StockOutReportPage() {
             onClick={() => setActiveTab("all")}
             className={`h-[38px] px-3.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === "all"
-                ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white shadow-xs"
+                ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
             }`}
           >
@@ -264,7 +264,7 @@ export default function StockOutReportPage() {
             placeholder="Search product name, category..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
@@ -274,7 +274,7 @@ export default function StockOutReportPage() {
       <div className="hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-bold whitespace-nowrap">
+            <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
               <th className="py-3 px-4 w-12 text-center">SL</th>
               <th className="py-3 px-4">Product Name</th>
               <th className="py-3 px-3">Category & Brand</th>
@@ -344,7 +344,7 @@ export default function StockOutReportPage() {
                     <span
                       className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                         p.status === "out_of_stock"
-                          ? "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                          ? "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-blue-800"
                           : p.status === "low_stock"
                           ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                           : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"

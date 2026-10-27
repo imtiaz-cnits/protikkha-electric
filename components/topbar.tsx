@@ -96,13 +96,13 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         <button
           onClick={onToggleSidebar}
           aria-label="Toggle Sidebar"
-          className="w-[38px] h-[38px] rounded-xl border-1 border-red-600 dark:border-red-500 hover:border-red-700 bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 shrink-0"
+          className="w-[38px] h-[38px] rounded-xl border border-[#1E65A0] dark:border-[#1E65A0] hover:border-[#0B3D91] bg-white dark:bg-slate-900 text-[#1E65A0] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 shrink-0"
         >
           <Menu className="w-5 h-5 stroke-[2]" />
         </button>
 
         <span className="hidden sm:inline-block font-extrabold text-sm sm:text-base text-slate-800 dark:text-white tracking-tight">
-          RUNA TRADERS
+          PROTIKKHA ELECTRIC
         </span>
       </div>
 
@@ -111,7 +111,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         {/* Quick Launch POS Button */}
         <Link
           href="/pos"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold shadow-xs hover:shadow-sm transition-all"
         >
           <ShoppingCart className="w-3.5 h-3.5" />
           <span>POS</span>
@@ -124,7 +124,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         <button
           onClick={toggleFullscreen}
           aria-label="Toggle Fullscreen"
-          className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer hidden sm:flex"
+          className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer hidden sm:flex"
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>
@@ -133,7 +133,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         <button
           onClick={toggleDarkMode}
           aria-label="Toggle Dark Mode"
-          className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+          className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer"
         >
           {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
         </button>
@@ -142,9 +142,9 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         <div className="relative">
           <button
             onClick={() => setUserDropdown(!userDropdown)}
-            className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 hover:border-rose-600 transition-all cursor-pointer"
+            className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 hover:border-[#1E65A0] transition-all cursor-pointer"
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#991b1b] to-[#dc2626] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
               {userName.charAt(0).toUpperCase()}
             </div>
             <div className="hidden md:block text-left text-xs">
@@ -168,7 +168,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
 
               <Link
                 href="/profile"
-                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-rose-50 dark:hover:bg-slate-800 hover:text-rose-700 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-[#0B3D91] dark:hover:text-blue-300 transition-colors"
               >
                 <UserIcon className="w-3.5 h-3.5" />
                 <span>My Profile</span>

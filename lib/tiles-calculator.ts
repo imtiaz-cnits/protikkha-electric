@@ -1,6 +1,6 @@
 /**
  * Tiles Specification, Geometry & POS Packaging Helper
- * Specially tailored for Runa Traders (Tiles, Sanitary & Fittings)
+ * Specially tailored for Protikkha Electric
  */
 
 export interface TileSizeOption {

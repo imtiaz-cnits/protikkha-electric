@@ -110,7 +110,7 @@ export function CameraScannerModal({ isOpen, onClose, onScanSuccess }: CameraSca
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/75 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
         {/* Sticky Header */}
-        <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-4 py-3 flex items-center justify-between text-white shrink-0">
+        <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-4 py-3 flex items-center justify-between text-white shrink-0">
           <div className="flex items-center gap-2">
             <Camera className="w-5 h-5 text-white" />
             <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">

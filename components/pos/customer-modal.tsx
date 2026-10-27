@@ -73,7 +73,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-lg bg-white dark:bg-[#0f172a] rounded-[16px] shadow-2xl overflow-hidden border border-[#cbd5e1] dark:border-[#334155] max-h-[90vh] flex flex-col">
         {/* Sticky Header (Strict Rule: Cool Red Gradient, white title, circular red close button 28x28) */}
-        <div className="bg-gradient-to-r from-[#991b1b] to-[#dc2626] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
+        <div className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
           <div className="flex items-center gap-2.5">
             <UserPlus className="w-5 h-5 text-white" />
             <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">
@@ -109,7 +109,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="e.g. Haji Abdur Rahim"
                 value={formData.customer_name}
                 onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
 
@@ -124,7 +124,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="017xxxxxxxx"
                 value={formData.mobile}
                 onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
 
@@ -140,7 +140,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="0.00"
                 value={formData.previous_due_amount}
                 onChange={(e) => setFormData({ ...formData, previous_due_amount: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
 
@@ -154,7 +154,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="e.g. Sonargaon, Narayanganj"
                 value={formData.address_details}
                 onChange={(e) => setFormData({ ...formData, address_details: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
 
@@ -168,7 +168,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="customer@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
 
@@ -182,7 +182,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
                 placeholder="National ID"
                 value={formData.nid}
                 onChange={(e) => setFormData({ ...formData, nid: e.target.value })}
-                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+                className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
               />
             </div>
           </div>
@@ -200,7 +200,7 @@ export function CustomerModal({ isOpen, onClose, onCustomerCreated }: CustomerMo
             <button
               type="submit"
               disabled={loading}
-              className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              className="h-[38px] px-5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Save Customer</span>

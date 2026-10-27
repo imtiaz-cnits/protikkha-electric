@@ -204,7 +204,7 @@ export default function DailyLedgerPage() {
             placeholder="Search particulars, voucher, or party..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-600 font-medium"
+            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
           />
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
@@ -233,7 +233,7 @@ export default function DailyLedgerPage() {
               onClick={() => setPreset("today")}
               className={`h-[38px] px-2.5 rounded-xl text-xs font-bold ${
                 startDate === todayStr && endDate === todayStr
-                  ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white"
+                  ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
               }`}
             >
@@ -265,7 +265,7 @@ export default function DailyLedgerPage() {
       <div className="hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-bold whitespace-nowrap">
+            <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
               <th className="py-3 px-3 text-center w-[50px]">SL</th>
               <th className="py-3 px-4 w-36">Date & Time</th>
               <th className="py-3 px-4">Particulars / বিবরণ</th>

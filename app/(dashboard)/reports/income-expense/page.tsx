@@ -217,7 +217,7 @@ export default function IncomeExpensePage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left Card: Cash Receipts / Inflow */}
         <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-          <div className="modal-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-4 py-3 flex items-center justify-between text-white font-bold text-xs uppercase tracking-wider">
+          <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-4 py-3 flex items-center justify-between text-white font-bold text-xs uppercase tracking-wider">
             <div className="flex items-center gap-2">
               <ArrowDownLeft className="w-4 h-4 text-emerald-200" />
               <span>Cash Receipts / মোট প্রাপ্তি (জমা)</span>

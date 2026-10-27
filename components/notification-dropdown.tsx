@@ -157,8 +157,8 @@ export function NotificationDropdown() {
         onClick={toggleDropdown}
         aria-label="Notifications"
         title="View Notifications & Stock Alerts"
-        className={`w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:border-rose-600 dark:hover:border-rose-500 flex items-center justify-center transition-all cursor-pointer relative ${
-          isOpen ? "ring-2 ring-rose-500/30 border-rose-600 dark:border-rose-500 text-rose-600" : ""
+        className={`w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] hover:border-[#1E65A0] dark:hover:border-blue-500 flex items-center justify-center transition-all cursor-pointer relative ${
+          isOpen ? "ring-2 ring-[#1E65A0]/30 border-[#1E65A0] dark:border-blue-500 text-[#1E65A0]" : ""
         }`}
       >
         <Bell className="w-4 h-4" />
@@ -173,7 +173,7 @@ export function NotificationDropdown() {
       {isOpen && (
         <div className="absolute right-0 mt-2 w-[340px] sm:w-[390px] rounded-2xl bg-white dark:bg-slate-900 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
           {/* Header */}
-          <div className="px-4 py-3 bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white flex items-center justify-between shadow-xs">
+          <div className="px-4 py-3 bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
                 <Bell className="w-3.5 h-3.5 text-white" />
@@ -208,7 +208,7 @@ export function NotificationDropdown() {
               onClick={() => setActiveTab("all")}
               className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
                 activeTab === "all"
-                  ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white shadow-xs"
+                  ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
                   : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
               }`}
             >
@@ -305,14 +305,14 @@ export function NotificationDropdown() {
             <Link
               href="/inventory"
               onClick={() => setIsOpen(false)}
-              className="py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-rose-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
+              className="py-1.5 px-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-[#0B3D91] border border-slate-200 dark:border-slate-700 transition-colors shadow-2xs"
             >
               Inventory Stock
             </Link>
             <Link
               href="/invoices"
               onClick={() => setIsOpen(false)}
-              className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white transition-colors shadow-2xs"
+              className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white transition-colors shadow-2xs"
             >
               All Invoices
             </Link>

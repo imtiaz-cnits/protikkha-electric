@@ -1,16 +1,23 @@
-# RUNA TRADERS — Retail Shop Management System & POS Engine
+# PROTIKKHA ELECTRIC — Retail Shop Management System & POS Engine
 ## Architecture Guidelines & Handover Documentation
-### Developed for: Runa Traders | Software by: CodeNext IT
+### Developed for: Protikkha Electric | Software by: CodeNext IT
+### Repository: [https://github.com/imtiaz-cnits/protikkha-electric](https://github.com/imtiaz-cnits/protikkha-electric)
 
 ---
 
 ## 1. System Overview & Technology Stack
 
-**Runa Traders Retail Shop Management System** is a next-generation high-speed web application and Point of Sale (POS) engine built on modern web standards, converted and upgraded from the legacy Laravel 11 architecture to Next.js 15+ App Router with TypeScript and Prisma ORM.
+**Protikkha Electric Retail Shop Management System** is a next-generation high-speed web application and Point of Sale (POS) engine built on modern web standards, designed specifically for electrical retail POS and inventory management (wires, cables, pipes, switches, sockets, circuit breakers, nuts, bolts, and fittings).
 
-- **Frontend & App Engine**: Next.js 15+ (App Router), React 19, TypeScript
+- **Frontend & App Engine**: Next.js 16+ (App Router), React 19, TypeScript
 - **Database & ORM**: MySQL 8.0+, Prisma ORM v6.4.1 (34 relational tables mapped)
-- **Styling**: Tailwind CSS (Strictly Zero Bootstrap, pure custom CSS tokens)
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/turbopack`, Strictly Zero Bootstrap, pure custom CSS tokens)
+- **Brand Palette**: Approved Blue & Amber Theme
+  - **Primary**: Deep Navy Blue (`#0B3D91`)
+  - **Secondary**: Electric Blue (`#1E65A0`)
+  - **Accent**: Amber / Electric Orange (`#F59E0B`)
+  - **Background**: Off-White (`#F8F9FA` light, `#0b0f19` dark)
+  - **Neutral**: Slate Gray (`#6B7280`)
 - **Typography**: `Valley Sans` (English & Numeric text) and `Baloo Da 2` (Bangla text)
 - **Authentication**: JWT Cookie + Bearer Authentication with Bcrypt password hashing
 - **Hardware Integrations**:
@@ -20,29 +27,13 @@
 
 ---
 
-## 2. Strict Architectural & Design Rules (AGENTS.md)
+## 2. Branding Assets & Usage
 
-1. **NO `src` FOLDER [STRICT]**:
-   All directories (`app/`, `components/`, `lib/`, `prisma/`, `public/`) reside directly in the project root. Under no circumstances should a `src/` directory be created.
-2. **Dedicated Database**:
-   Always connects to `runa_traders_db` on MySQL port 3306.
-3. **Color Palette Standards**:
-   - Primary Green: `emerald-700` (`#15803d`), `emerald-600` (`#16a34a`)
-   - Dark Mode Background: `#0b0f19`
-   - Dark Cards / Modals: `#0f172a` (`slate-900`)
-   - Dark Inputs: `#1e293b` (`slate-800/90`)
-   - Unified Border Width: `1.5px` (`#cbd5e1` light, `#334155` dark)
-4. **Table & Sorting Standards**:
-   - All backend queries sort descending: `orderBy: { id: 'desc' }`.
-   - Bangladeshi currency dynamic comma formatting: `formatBdCurrency()` (e.g. `৳ 24,800.00`).
-   - Solid emerald table headers: `#15803d` (`text-white`, `nowrap`).
-5. **Modal Standards**:
-   - Unified container `border-radius: 16px`, max-height `90vh`.
-   - Solid emerald sticky header `#15803d`, circular red close button `28px × 28px` (`#dc2626`).
-   - Input controls standard height: `42px`.
-   - Sticky footer: Cancel button `#dc2626`, Save/Submit button `#15803d`.
-6. **Sticky Footer & Branding**:
-   - Bottom pinned footer with: `© <Year> RUNA TRADERS | Software By: CodeNext IT`.
+The application integrates 4 dedicated branding assets in `public/`:
+1. **`icon-512.png`**: 512 × 512 PWA and installable web application icon.
+2. **`fav.png`**: High-resolution browser favicon and `<head>` shortcut icon.
+3. **`logo.png`**: Horizontal brand logo for sidebar, invoices, challans, and cash receipts.
+4. **`auth-page-logo.png`**: High-impact emblem and brand typography for login and authentication screens.
 
 ---
 
@@ -55,8 +46,8 @@
 ### Environment Configuration (.env)
 ```env
 DATABASE_URL="mysql://root:@localhost:3306/runa_traders_db"
-JWT_SECRET="runa-traders-super-secret-jwt-key-2026"
-NEXT_PUBLIC_APP_NAME="Runa Traders"
+JWT_SECRET="protikkha-electric-super-secret-jwt-key-2026"
+NEXT_PUBLIC_APP_NAME="PROTIKKHA ELECTRIC"
 ```
 
 ### Installation Steps
@@ -95,11 +86,11 @@ The application will be live at `http://localhost:3000`.
 - **`/returns`**: Sales return processor, automatic inventory restock and order refund adjustment.
 
 ### B. Catalog & Inventory Management
-- **`/products`**: Product catalog with barcode preview, cost & selling price, categories (Tiles, Sanitary, Fittings).
+- **`/products`**: Product catalog with barcode preview, cost & selling price, electrical categories.
 - **`/inventory`**: Live stock overview with 4 inventory KPIs, low stock alerts, and manual count adjustment.
 - **`/categories`**: Category taxonomy management.
 - **`/brands`**: Brand management.
-- **`/units`**: Measurement units (Pcs, Box, Kg, Set).
+- **`/units`**: Measurement units (Pcs, Box, Coil, Meter, Set).
 - **`/barcode-print`**: Printable A4 and sticker barcode sheet generator (`JsBarcode`).
 
 ### C. Purchasing & Suppliers
@@ -124,17 +115,16 @@ The application will be live at `http://localhost:3000`.
 
 ### G. Security & User Management
 - **`/users`**: User roles and permissions management (Admin, Manager, Cashier, Staff).
-- **`/login`**: Secure authentication gateway.
+- **`/login`**: Secure authentication gateway with Protikkha Electric branding.
 
 ---
 
 ## 6. Client Handover Checklist
 
-- [x] Database cloned and mapped (`runa_traders_db`).
+- [x] Dedicated branding assets integrated (`icon-512.png`, `fav.png`, `logo.png`, `auth-page-logo.png`).
+- [x] Blue & Amber color theme applied consistently across the application.
 - [x] Zero `src` folder structure maintained.
-- [x] Tailwind CSS utility design verified across all 34 routes.
-- [x] Next.js 15+ Turbopack compilation passing with 0 errors (`npm run build`).
+- [x] Tailwind CSS utility design verified across all routes.
 - [x] POS 100vh terminal tested with physical scanner and thermal printer.
-- [x] Realtime inventory increment on Purchases and restoration on Returns.
 - [x] Bangladeshi Currency formatting `formatBdCurrency()` active globally.
-- [x] Software attribution pinned to CodeNext IT.
+- [x] Software attribution pinned to CodeNext IT (`© <Year> PROTIKKHA ELECTRIC | Software By: CodeNext IT`).

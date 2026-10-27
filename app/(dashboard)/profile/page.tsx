@@ -224,19 +224,19 @@ export default function ProfilePage() {
             <span>Back</span>
           </button>
 
-          <div className="h-[36px] px-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50 text-xs font-bold flex items-center gap-1.5">
-            <Store className="w-3.5 h-3.5" />
-            <span>RUNA TRADERS</span>
+          <div className="h-[36px] px-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0B3D91] dark:text-blue-300 border border-blue-200 dark:border-blue-900/50 text-xs font-bold flex items-center gap-1.5">
+            <Store className="w-3.5 h-3.5 text-[#1E65A0]" />
+            <span>PROTIKKHA ELECTRIC</span>
           </div>
         </div>
 
         <div>
           <h1 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white m-0 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-emerald-600" />
+            <UserCheck className="w-5 h-5 text-[#1E65A0]" />
             <span>Account Profile & Settings</span>
           </h1>
           <p className="text-[11px] text-slate-500 m-0 text-right sm:text-left">
-            RUNA TRADERS - {roleLabel} & Security Settings
+            PROTIKKHA ELECTRIC - {roleLabel} & Security Settings
           </p>
         </div>
       </div>
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                     STORE LOCATION
                   </span>
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    RUNA TRADERS
+                    PROTIKKHA ELECTRIC
                   </span>
                 </div>
               </div>

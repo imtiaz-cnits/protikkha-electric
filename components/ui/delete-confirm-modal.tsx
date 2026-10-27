@@ -90,7 +90,7 @@ export function DeleteConfirmModal({
         aria-labelledby="delete-dialog-title"
       >
         {/* Sticky Header with Red / Burgundy Accent */}
-        <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#7f1d1d] px-5 py-3.5 flex items-center justify-between text-white shadow-sm">
+        <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shadow-sm">
           <div className="flex items-center gap-2 font-bold text-sm">
             <Trash2 className="w-4 h-4 text-rose-200" />
             <h3 id="delete-dialog-title" className="tracking-tight text-white m-0">

@@ -70,55 +70,51 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex w-full bg-slate-50 dark:bg-[#0b0f19]">
       {/* Left Hero Panel (Desktop) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#7f1d1d] via-[#991b1b] to-[#881337] text-white p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0B3D91] via-[#1048a6] to-[#1E65A0] text-white p-12 flex-col justify-between">
         {/* Glow Blobs */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-rose-400/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-red-400/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-lg">
-            <ShoppingBag className="w-6 h-6 text-rose-200" />
-          </div>
-          <div>
-            <h2 className="text-xl font-black tracking-tight text-white leading-none">
-              RUNA TRADERS
-            </h2>
-            <p className="text-xs text-rose-200/85 mt-1 font-medium">Retail Shop Management & POS</p>
-          </div>
+          <img
+            src="/fav.png"
+            alt="Protikkha Electric"
+            className="h-20 w-auto max-w-[220px] object-contain drop-shadow-lg"
+          />
         </div>
 
         {/* Middle Feature Content */}
         <div className="relative z-10 my-auto py-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-rose-100 text-xs font-semibold uppercase tracking-wider mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-rose-200" />
-            Next-Generation Retail Automation
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-6">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+            Electrical Retail POS & Automation
           </div>
 
           <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-tight text-white mb-6">
-            Smart Retail & Point of Sale Operations.
+            Smart Electrical Retail & Inventory Operations.
           </h1>
 
-          <p className="text-rose-100/90 text-sm xl:text-base leading-relaxed max-w-lg mb-8 font-normal">
-            Streamlined high-speed checkout, barcode scanning, live inventory alerts, tiles box & unit calculations, and comprehensive financial reports.
+          <p className="text-blue-100/90 text-sm xl:text-base leading-relaxed max-w-lg mb-8 font-normal">
+            Streamlined high-speed checkout, barcode scanning, live inventory alerts for wires, cables, switches, sockets, circuit breakers, and comprehensive financial reports.
           </p>
 
           <div className="space-y-3.5">
-            <div className="flex items-center gap-3 text-sm text-rose-50">
-              <div className="w-6 h-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-rose-200" />
+            <div className="flex items-center gap-3 text-sm text-blue-50">
+              <div className="w-6 h-6 rounded-full bg-amber-500/25 border border-amber-400/40 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-amber-300" />
               </div>
               <span>100vh Ultra-fast POS with Instant Thermal Receipt</span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-rose-50">
-              <div className="w-6 h-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-rose-200" />
+            <div className="flex items-center gap-3 text-sm text-blue-50">
+              <div className="w-6 h-6 rounded-full bg-amber-500/25 border border-amber-400/40 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-amber-300" />
               </div>
-              <span>Optimized for Tiles, Sanitary & Sanitary Fittings</span>
+              <span>Optimized for Wires, Cables, Pipes, Switches, Sockets & Fittings</span>
             </div>
-            <div className="flex items-center gap-3 text-sm text-rose-50">
-              <div className="w-6 h-6 rounded-full bg-rose-500/30 border border-rose-400/40 flex items-center justify-center">
-                <CheckCircle className="w-4 h-4 text-rose-200" />
+            <div className="flex items-center gap-3 text-sm text-blue-50">
+              <div className="w-6 h-6 rounded-full bg-amber-500/25 border border-amber-400/40 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-amber-300" />
               </div>
               <span>Automated Daily Ledgers & Customer Due Collections</span>
             </div>
@@ -126,9 +122,9 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Security Badge */}
-        <div className="relative z-10 flex items-center gap-2 text-xs text-rose-200/80">
-          <ShieldCheck className="w-4 h-4 text-rose-300" />
-          <span>Protected with Role-Based Access Control (RBAC) & Next.js 15 Engine</span>
+        <div className="relative z-10 flex items-center gap-2 text-xs text-blue-200/80">
+          <ShieldCheck className="w-4 h-4 text-amber-300" />
+          <span>Protected with Role-Based Access Control (RBAC) & Next.js Engine</span>
         </div>
       </div>
 
@@ -136,16 +132,12 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 lg:p-16">
         <div className="w-full max-w-md">
           {/* Mobile Header */}
-          <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white flex items-center justify-center shadow-md">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white">
-                RUNA TRADERS
-              </h2>
-              <p className="text-xs text-slate-500">Retail Shop Management</p>
-            </div>
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            <img
+              src="/auth-page-logo.png"
+              alt="Protikkha Electric"
+              className="h-16 w-auto max-w-[200px] object-contain"
+            />
           </div>
 
           <div className="mb-6">
@@ -158,15 +150,15 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+            <div className="mb-5 p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-[#0B3D91] dark:text-blue-300 text-xs font-semibold flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
               {error}
             </div>
           )}
 
           {success && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-rose-600" />
+            <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
               Login successful! Redirecting to dashboard...
             </div>
           )}
@@ -186,7 +178,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@gmail.com"
-                  className="w-full h-[42px] pl-10 pr-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-sm text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20 transition-all"
+                  className="w-full h-[42px] pl-10 pr-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-sm text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] focus:ring-2 focus:ring-[#1E65A0]/20 transition-all"
                 />
               </div>
             </div>
@@ -207,7 +199,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full h-[42px] pl-10 pr-10 rounded-xl bg-white dark:bg-slate-800/90 text-sm text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-rose-600 focus:ring-2 focus:ring-rose-600/20 transition-all"
+                  className="w-full h-[42px] pl-10 pr-10 rounded-xl bg-white dark:bg-slate-800/90 text-sm text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] focus:ring-2 focus:ring-[#1E65A0]/20 transition-all"
                 />
                 <button
                   type="button"
@@ -222,7 +214,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[42px] rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-70 cursor-pointer"
+              className="w-full h-[42px] rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-70 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -240,9 +232,9 @@ export default function LoginPage() {
 
           {/* Quick Demo Credentials helper */}
           <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800">
-            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-rose-800 dark:text-rose-300 uppercase tracking-wide">
+                <p className="text-[11px] font-bold text-[#0B3D91] dark:text-blue-300 uppercase tracking-wide">
                   Quick Demo Access
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
@@ -252,7 +244,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={fillDemo}
-                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
               >
                 Auto Fill
               </button>

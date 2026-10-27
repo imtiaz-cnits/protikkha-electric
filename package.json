@@ -1,12 +1,13 @@
 {
-  "name": "runa-traders-app",
+  "name": "protikkha-electric",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "npx tsx --test tests/*.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

@@ -96,6 +96,7 @@ model customers {
   users                    users                      @relation(fields: [user_id], references: [id], map: "customers_user_id_foreign")
   orders                   orders[]
   product_returns          product_returns[]
+  party_ledger_entries     party_ledger_entries[]
 
   @@index([district_id], map: "customers_district_id_foreign")
   @@index([location_id], map: "customers_location_id_foreign")
@@ -361,6 +362,14 @@ model products {
   users                  users                    @relation(fields: [user_id], references: [id], map: "products_user_id_foreign")
   purchase_order_details purchase_order_details[]
   purchase_returns       purchase_returns[]
+  stock_movements        stock_movements[]
+  feed_products          feed_products?
+  internal_feed_issues   internal_feed_issues[]
+  egg_collection_grades  egg_collection_grades[]
+  source_regradings      egg_regradings[]         @relation("source_regrading")
+  destination_regradings egg_regradings[]         @relation("destination_regrading")
+  fish_batches           fish_batches[]
+  fish_harvests          fish_harvests[]
 
   @@index([brand_id], map: "products_brand_id_foreign")
   @@index([category_id], map: "products_category_id_foreign")
@@ -527,6 +536,7 @@ model suppliers {
   purchase_returns         purchase_returns[]
   purchases                purchases[]
   supplier_due_collections supplier_due_collections[]
+  party_ledger_entries     party_ledger_entries[]
   users                    users                      @relation(fields: [user_id], references: [id], map: "suppliers_user_id_foreign")
 
   @@index([user_id], map: "suppliers_user_id_foreign")
@@ -558,7 +568,9 @@ model units {
   user_id    BigInt     @db.UnsignedBigInt
   created_at DateTime   @default(now()) @db.Timestamp(0)
   updated_at DateTime   @default(now()) @db.Timestamp(0)
-  products   products[]
+  products               products[]
+  unit_conversions_from  unit_conversions[] @relation("unit_conversions_from")
+  unit_conversions_to    unit_conversions[] @relation("unit_conversions_to")
   users      users      @relation(fields: [user_id], references: [id], map: "units_user_id_foreign")
 
   @@index([user_id], map: "units_user_id_foreign")
@@ -621,6 +633,23 @@ model users {
   thanas                            thanas[]
   units                             units[]
   upazilas                          upazilas[]
+  business_units                    business_units[]
+  stock_movements                   stock_movements[]
+  financial_accounts                financial_accounts[]
+  financial_transactions            financial_transactions[]
+  party_ledger_entries              party_ledger_entries[]
+  unit_conversions                  unit_conversions[]
+  audit_logs                        audit_logs[]
+  feed_products                     feed_products[]
+  internal_feed_issues              internal_feed_issues[]
+  poultry_flocks                    poultry_flocks[]
+  egg_collections                   egg_collections[]
+  egg_regradings                    egg_regradings[]
+  fish_ponds                        fish_ponds[]
+  fish_batches                      fish_batches[]
+  fish_mortalities                  fish_mortalities[]
+  fish_samplings                    fish_samplings[]
+  fish_harvests                     fish_harvests[]
 }
 
 model challan_items {
@@ -670,4 +699,454 @@ model challans {
 enum users_status {
   pending
   approved
+}
+
+model cancelled_tiles {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id        BigInt    @db.UnsignedBigInt
+  order_no        String    @db.VarChar(255)
+  customer_id     BigInt?   @db.UnsignedBigInt
+  customer_name   String?   @db.VarChar(255)
+  customer_mobile String?   @db.VarChar(255)
+  items_data      Json
+  total_amount    Decimal   @default(0.00) @db.Decimal(10, 2)
+  total_items     Decimal   @default(0.00) @db.Decimal(10, 2)
+  reason          String?   @db.Text
+  cancelled_by    BigInt?   @db.UnsignedBigInt
+  cancelled_at    DateTime  @default(now()) @db.Timestamp(0)
+  created_at      DateTime  @default(now()) @db.Timestamp(0)
+  updated_at      DateTime  @default(now()) @db.Timestamp(0)
+
+  @@index([order_id])
+  @@index([created_at])
+}
+
+// ========================================================
+// PHASE 2: SHARED FOUNDATION MODELS
+// ========================================================
+
+model business_units {
+  id                     BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  code                   String                   @unique @db.VarChar(50)
+  name                   String                   @db.VarChar(255)
+  status                 String                   @default("active") @db.VarChar(50)
+  user_id                BigInt                   @db.UnsignedBigInt
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  users                  users                    @relation(fields: [user_id], references: [id])
+  stock_movements        stock_movements[]
+  financial_transactions financial_transactions[]
+  party_ledger_entries   party_ledger_entries[]
+  unit_conversions       unit_conversions[]
+  internal_feed_issues   internal_feed_issues[]
+
+  @@index([user_id])
+}
+
+model stock_movements {
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id       BigInt          @db.UnsignedBigInt
+  business_unit_id BigInt?         @db.UnsignedBigInt
+  movement_type    String          @db.VarChar(50)
+  quantity         Decimal         @db.Decimal(15, 3)
+  unit_price       Decimal         @default(0.00) @db.Decimal(15, 2)
+  total_value      Decimal         @default(0.00) @db.Decimal(15, 2)
+  reference_type   String          @db.VarChar(50)
+  reference_id     BigInt?         @db.UnsignedBigInt
+  reference_no     String?         @db.VarChar(100)
+  stock_after      Decimal         @db.Decimal(15, 3)
+  date             DateTime        @default(dbgenerated("(curdate())")) @db.Date
+  note             String?         @db.Text
+  user_id          BigInt          @db.UnsignedBigInt
+  created_at       DateTime        @default(now()) @db.Timestamp(0)
+  products         products        @relation(fields: [product_id], references: [id])
+  business_units   business_units? @relation(fields: [business_unit_id], references: [id])
+  users            users           @relation(fields: [user_id], references: [id])
+
+  @@index([product_id])
+  @@index([business_unit_id])
+  @@index([movement_type])
+  @@index([reference_type, reference_id])
+  @@index([user_id])
+}
+
+model financial_accounts {
+  id                     BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  account_name           String                   @db.VarChar(255)
+  account_type           String                   @db.VarChar(50)
+  account_number         String?                  @db.VarChar(100)
+  bank_name              String?                  @db.VarChar(255)
+  branch_name            String?                  @db.VarChar(255)
+  balance                Decimal                  @default(0.00) @db.Decimal(15, 2)
+  status                 String                   @default("active") @db.VarChar(50)
+  user_id                BigInt                   @db.UnsignedBigInt
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  users                  users                    @relation(fields: [user_id], references: [id])
+  financial_transactions financial_transactions[]
+
+  @@index([user_id])
+  @@index([account_type])
+}
+
+model financial_transactions {
+  id                 BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  account_id         BigInt             @db.UnsignedBigInt
+  business_unit_id   BigInt?            @db.UnsignedBigInt
+  transaction_type   String             @db.VarChar(50)
+  amount             Decimal            @db.Decimal(15, 2)
+  reference_type     String             @db.VarChar(50)
+  reference_id       BigInt?            @db.UnsignedBigInt
+  reference_no       String?            @db.VarChar(100)
+  balance_after      Decimal            @db.Decimal(15, 2)
+  date               DateTime           @default(dbgenerated("(curdate())")) @db.Date
+  note               String?            @db.Text
+  user_id            BigInt             @db.UnsignedBigInt
+  created_at         DateTime           @default(now()) @db.Timestamp(0)
+  financial_accounts financial_accounts @relation(fields: [account_id], references: [id])
+  business_units     business_units?    @relation(fields: [business_unit_id], references: [id])
+  users              users              @relation(fields: [user_id], references: [id])
+
+  @@index([account_id])
+  @@index([business_unit_id])
+  @@index([reference_type, reference_id])
+  @@index([user_id])
+}
+
+model party_ledger_entries {
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  party_type       String          @db.VarChar(50)
+  customer_id      BigInt?         @db.UnsignedBigInt
+  supplier_id      BigInt?         @db.UnsignedBigInt
+  business_unit_id BigInt?         @db.UnsignedBigInt
+  transaction_type String          @db.VarChar(50)
+  reference_type   String          @db.VarChar(50)
+  reference_id     BigInt?         @db.UnsignedBigInt
+  reference_no     String?         @db.VarChar(100)
+  debit            Decimal         @default(0.00) @db.Decimal(15, 2)
+  credit           Decimal         @default(0.00) @db.Decimal(15, 2)
+  balance          Decimal         @default(0.00) @db.Decimal(15, 2)
+  date             DateTime        @default(dbgenerated("(curdate())")) @db.Date
+  note             String?         @db.Text
+  user_id          BigInt          @db.UnsignedBigInt
+  created_at       DateTime        @default(now()) @db.Timestamp(0)
+  customers        customers?      @relation(fields: [customer_id], references: [id])
+  suppliers        suppliers?      @relation(fields: [supplier_id], references: [id])
+  business_units   business_units? @relation(fields: [business_unit_id], references: [id])
+  users            users           @relation(fields: [user_id], references: [id])
+
+  @@index([party_type, customer_id])
+  @@index([party_type, supplier_id])
+  @@index([business_unit_id])
+  @@index([user_id])
+}
+
+model unit_conversions {
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  from_unit_id     BigInt          @db.UnsignedBigInt
+  to_unit_id       BigInt          @db.UnsignedBigInt
+  conversion_rate  Decimal         @db.Decimal(15, 4)
+  operator         String          @default("MULTIPLY") @db.VarChar(20)
+  business_unit_id BigInt?         @db.UnsignedBigInt
+  note             String?         @db.VarChar(255)
+  user_id          BigInt          @db.UnsignedBigInt
+  created_at       DateTime        @default(now()) @db.Timestamp(0)
+  from_units       units           @relation("unit_conversions_from", fields: [from_unit_id], references: [id])
+  to_units         units           @relation("unit_conversions_to", fields: [to_unit_id], references: [id])
+  business_units   business_units? @relation(fields: [business_unit_id], references: [id])
+  users            users           @relation(fields: [user_id], references: [id])
+
+  @@index([from_unit_id])
+  @@index([to_unit_id])
+  @@index([business_unit_id])
+  @@index([user_id])
+}
+
+model audit_logs {
+  id          BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id     BigInt?  @db.UnsignedBigInt
+  action      String   @db.VarChar(50)
+  entity_type String   @db.VarChar(100)
+  entity_id   String?  @db.VarChar(100)
+  old_values  String?  @db.LongText
+  new_values  String?  @db.LongText
+  ip_address  String?  @db.VarChar(45)
+  user_agent  String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(0)
+  users       users?   @relation(fields: [user_id], references: [id])
+
+  @@index([entity_type, entity_id])
+  @@index([user_id])
+  @@index([action])
+}
+
+// ========================================================
+// PHASE 3: POULTRY & FISH FEED TRADING MODELS
+// ========================================================
+
+model feed_products {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id      BigInt    @unique @db.UnsignedBigInt
+  feed_type       String    @db.VarChar(100)
+  target_type     String    @db.VarChar(50)
+  bag_weight_kg   Decimal   @default(50.00) @db.Decimal(8, 2)
+  manufacturer    String?   @db.VarChar(255)
+  protein_percent Decimal?  @db.Decimal(5, 2)
+  batch_no        String?   @db.VarChar(100)
+  expiry_date     DateTime? @db.Date
+  user_id         BigInt    @db.UnsignedBigInt
+  created_at      DateTime  @default(now()) @db.Timestamp(0)
+  updated_at      DateTime  @default(now()) @db.Timestamp(0)
+  products        products  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  users           users     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([target_type])
+}
+
+model internal_feed_issues {
+  id                      BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  issue_no                String          @unique @db.VarChar(100)
+  product_id              BigInt          @db.UnsignedBigInt
+  source_business_unit_id BigInt          @db.UnsignedBigInt
+  destination_type        String          @db.VarChar(50)
+  destination_id          BigInt?         @db.UnsignedBigInt
+  destination_name        String?         @db.VarChar(255)
+  bags                    Decimal         @default(0.00) @db.Decimal(10, 2)
+  bag_weight_kg           Decimal         @default(50.00) @db.Decimal(8, 2)
+  total_kg                Decimal         @db.Decimal(15, 3)
+  unit_cost_per_kg        Decimal         @db.Decimal(15, 2)
+  total_cost              Decimal         @db.Decimal(15, 2)
+  date                    DateTime        @default(dbgenerated("(curdate())")) @db.Date
+  note                    String?         @db.Text
+  user_id                 BigInt          @db.UnsignedBigInt
+  created_at              DateTime        @default(now()) @db.Timestamp(0)
+  products                products        @relation(fields: [product_id], references: [id])
+  source_business_units   business_units  @relation(fields: [source_business_unit_id], references: [id])
+  users                   users           @relation(fields: [user_id], references: [id])
+
+  @@index([product_id])
+  @@index([source_business_unit_id])
+  @@index([destination_type, destination_id])
+  @@index([user_id])
+}
+
+// ========================================================
+// PHASE 4: EGG PRODUCTION & FLOCK MANAGEMENT MODELS
+// ========================================================
+
+model poultry_flocks {
+  id                   BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  flock_code           String            @unique @db.VarChar(100)
+  shed_name            String            @db.VarChar(150)
+  breed                String            @db.VarChar(100)
+  initial_chicks_count Int               @default(0)
+  current_birds_count  Int               @default(0)
+  housing_date         DateTime          @default(dbgenerated("(curdate())")) @db.Date
+  status               String            @default("ACTIVE") @db.VarChar(50) // "ACTIVE", "MOLTING", "CULLED"
+  feed_consumed_kg     Decimal           @default(0.000) @db.Decimal(15, 3)
+  total_expenses       Decimal           @default(0.00) @db.Decimal(15, 2)
+  note                 String?           @db.Text
+  user_id              BigInt            @db.UnsignedBigInt
+  created_at           DateTime          @default(now()) @db.Timestamp(0)
+  updated_at           DateTime          @default(now()) @db.Timestamp(0)
+  users                users             @relation(fields: [user_id], references: [id])
+  egg_collections      egg_collections[]
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model egg_collections {
+  id                    BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  collection_no         String                  @unique @db.VarChar(100)
+  flock_id              BigInt                  @db.UnsignedBigInt
+  collection_date       DateTime                @default(dbgenerated("(curdate())")) @db.Date
+  total_collected       Int                     @default(0) // total eggs collected
+  rejected_breakage     Int                     @default(0) // broken or cracked eggs
+  accepted_quantity     Int                     @default(0) // total_collected - rejected_breakage
+  allocated_expenses    Decimal                 @default(0.00) @db.Decimal(15, 2) // feed/medicine cost allocated
+  cost_per_accepted_egg Decimal                 @default(0.0000) @db.Decimal(10, 4) // allocated_expenses / accepted_quantity
+  status                String                  @default("COMPLETED") @db.VarChar(50) // "COMPLETED", "REVERSED"
+  note                  String?                 @db.Text
+  user_id               BigInt                  @db.UnsignedBigInt
+  created_at            DateTime                @default(now()) @db.Timestamp(0)
+  updated_at            DateTime                @default(now()) @db.Timestamp(0)
+  poultry_flocks        poultry_flocks          @relation(fields: [flock_id], references: [id])
+  users                 users                   @relation(fields: [user_id], references: [id])
+  egg_collection_grades egg_collection_grades[]
+
+  @@index([flock_id])
+  @@index([collection_date])
+  @@index([user_id])
+}
+
+model egg_collection_grades {
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  collection_id    BigInt          @db.UnsignedBigInt
+  product_id       BigInt          @db.UnsignedBigInt // product representing the egg grade
+  grade_name       String          @db.VarChar(50) // "Grade A", "Grade B", "Grade C"
+  quantity_pieces  Int             @default(0) // number of eggs in this grade
+  tray_capacity    Int             @default(30) // standard 30 or custom 24
+  trays_equivalent Decimal         @default(0.00) @db.Decimal(10, 2) // quantity_pieces / tray_capacity
+  unit_cost        Decimal         @default(0.0000) @db.Decimal(10, 4)
+  total_cost       Decimal         @default(0.00) @db.Decimal(15, 2)
+  created_at       DateTime        @default(now()) @db.Timestamp(0)
+  egg_collections  egg_collections @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  products         products        @relation(fields: [product_id], references: [id])
+
+  @@index([collection_id])
+  @@index([product_id])
+  @@index([grade_name])
+}
+
+model egg_regradings {
+  id                     BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  regrade_no             String   @unique @db.VarChar(100)
+  source_product_id      BigInt   @db.UnsignedBigInt
+  destination_product_id BigInt   @db.UnsignedBigInt
+  quantity_pieces        Int      @default(0)
+  date                   DateTime @default(dbgenerated("(curdate())")) @db.Date
+  note                   String?  @db.Text
+  user_id                BigInt   @db.UnsignedBigInt
+  created_at             DateTime @default(now()) @db.Timestamp(0)
+  source_product         products @relation("source_regrading", fields: [source_product_id], references: [id])
+  destination_product    products @relation("destination_regrading", fields: [destination_product_id], references: [id])
+  users                  users    @relation(fields: [user_id], references: [id])
+
+  @@index([source_product_id])
+  @@index([destination_product_id])
+  @@index([user_id])
+}
+
+// ========================================================
+// PHASE 5: FISH FARMING & POND MANAGEMENT MODELS
+// ========================================================
+
+model fish_ponds {
+  id               BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  pond_code        String         @unique @db.VarChar(100)
+  pond_name        String         @db.VarChar(150)
+  area_decimal     Decimal        @default(0.00) @db.Decimal(8, 2)
+  water_depth_feet Decimal        @default(5.00) @db.Decimal(5, 2)
+  location         String?        @db.VarChar(255)
+  status           String         @default("ACTIVE") @db.VarChar(50) // "ACTIVE", "FALLOW", "MAINTENANCE"
+  note             String?        @db.Text
+  user_id          BigInt         @db.UnsignedBigInt
+  created_at       DateTime       @default(now()) @db.Timestamp(0)
+  updated_at       DateTime       @default(now()) @db.Timestamp(0)
+  users            users          @relation(fields: [user_id], references: [id])
+  fish_batches     fish_batches[]
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model fish_species {
+  id                   BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  species_name         String         @unique @db.VarChar(100)
+  scientific_name      String?        @db.VarChar(150)
+  default_culture_days Int            @default(180)
+  created_at           DateTime       @default(now()) @db.Timestamp(0)
+  updated_at           DateTime       @default(now()) @db.Timestamp(0)
+  fish_batches         fish_batches[]
+}
+
+model fish_batches {
+  id                         BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  batch_no                   String             @unique @db.VarChar(100)
+  pond_id                    BigInt             @db.UnsignedBigInt
+  species_id                 BigInt             @db.UnsignedBigInt
+  product_id                 BigInt?            @db.UnsignedBigInt // linked saleable fish product
+  stocking_date              DateTime           @default(dbgenerated("(curdate())")) @db.Date
+  fingerling_count           Int                @default(0)
+  fingerling_unit_cost       Decimal            @default(0.00) @db.Decimal(10, 2)
+  fingerling_total_cost      Decimal            @default(0.00) @db.Decimal(15, 2)
+  total_mortality_count      Int                @default(0)
+  current_fish_count         Int                @default(0)
+  latest_avg_weight_g        Decimal            @default(0.00) @db.Decimal(10, 2)
+  estimated_biomass_kg       Decimal            @default(0.000) @db.Decimal(15, 3)
+  accumulated_feed_cost      Decimal            @default(0.00) @db.Decimal(15, 2)
+  accumulated_other_expenses Decimal            @default(0.00) @db.Decimal(15, 2)
+  total_harvested_count      Int                @default(0)
+  total_harvested_kg         Decimal            @default(0.000) @db.Decimal(15, 3)
+  total_harvested_cost       Decimal            @default(0.00) @db.Decimal(15, 2)
+  status                     String             @default("ACTIVE") @db.VarChar(50) // "ACTIVE", "PARTIALLY_HARVESTED", "COMPLETED", "CLOSED"
+  note                       String?            @db.Text
+  user_id                    BigInt             @db.UnsignedBigInt
+  created_at                 DateTime           @default(now()) @db.Timestamp(0)
+  updated_at                 DateTime           @default(now()) @db.Timestamp(0)
+  fish_ponds                 fish_ponds         @relation(fields: [pond_id], references: [id])
+  fish_species               fish_species       @relation(fields: [species_id], references: [id])
+  products                   products?          @relation(fields: [product_id], references: [id])
+  users                      users              @relation(fields: [user_id], references: [id])
+  fish_mortalities           fish_mortalities[]
+  fish_samplings             fish_samplings[]
+  fish_harvests              fish_harvests[]
+
+  @@index([pond_id])
+  @@index([species_id])
+  @@index([product_id])
+  @@index([status])
+  @@index([user_id])
+}
+
+model fish_mortalities {
+  id              BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  batch_id        BigInt       @db.UnsignedBigInt
+  mortality_count Int          @default(0)
+  date            DateTime     @default(dbgenerated("(curdate())")) @db.Date
+  reason          String?      @db.VarChar(255)
+  user_id         BigInt       @db.UnsignedBigInt
+  created_at      DateTime     @default(now()) @db.Timestamp(0)
+  fish_batches    fish_batches @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  users           users        @relation(fields: [user_id], references: [id])
+
+  @@index([batch_id])
+  @@index([date])
+  @@index([user_id])
+}
+
+model fish_samplings {
+  id                   BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  batch_id             BigInt       @db.UnsignedBigInt
+  sample_date          DateTime     @default(dbgenerated("(curdate())")) @db.Date
+  sample_count         Int          @default(0)
+  sample_weight_kg     Decimal      @default(0.000) @db.Decimal(10, 3)
+  avg_weight_g         Decimal      @default(0.00) @db.Decimal(10, 2)
+  estimated_biomass_kg Decimal      @default(0.000) @db.Decimal(15, 3)
+  note                 String?      @db.Text
+  user_id              BigInt       @db.UnsignedBigInt
+  created_at           DateTime     @default(now()) @db.Timestamp(0)
+  fish_batches         fish_batches @relation(fields: [batch_id], references: [id], onDelete: Cascade)
+  users                users        @relation(fields: [user_id], references: [id])
+
+  @@index([batch_id])
+  @@index([sample_date])
+  @@index([user_id])
+}
+
+model fish_harvests {
+  id              BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  harvest_no      String       @unique @db.VarChar(100)
+  batch_id        BigInt       @db.UnsignedBigInt
+  product_id      BigInt       @db.UnsignedBigInt
+  harvest_type    String       @default("PARTIAL") @db.VarChar(50) // "PARTIAL", "FINAL"
+  fish_count      Int          @default(0)
+  total_weight_kg Decimal      @default(0.000) @db.Decimal(15, 3)
+  avg_weight_kg   Decimal      @default(0.000) @db.Decimal(8, 3)
+  cost_allocated  Decimal      @default(0.00) @db.Decimal(15, 2)
+  cost_per_kg     Decimal      @default(0.00) @db.Decimal(10, 2)
+  date            DateTime     @default(dbgenerated("(curdate())")) @db.Date
+  note            String?      @db.Text
+  user_id         BigInt       @db.UnsignedBigInt
+  created_at      DateTime     @default(now()) @db.Timestamp(0)
+  fish_batches    fish_batches @relation(fields: [batch_id], references: [id])
+  products        products     @relation(fields: [product_id], references: [id])
+  users           users        @relation(fields: [user_id], references: [id])
+
+  @@index([batch_id])
+  @@index([product_id])
+  @@index([date])
+  @@index([user_id])
 }

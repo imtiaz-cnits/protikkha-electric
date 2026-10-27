@@ -380,7 +380,7 @@ function PurchaseReturnsManagementContent() {
       {/* 1. Top Section: Page Title & Process Return Button */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-slate-800 shadow-2xs shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-slate-800 shadow-2xs shrink-0">
             <RotateCcw className="w-5 h-5" />
           </div>
           <div>
@@ -388,7 +388,7 @@ function PurchaseReturnsManagementContent() {
               Purchase Return Management
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 m-0">
-              RUNA TRADERS - Supplier Purchase Return &amp; Due Adjustment
+              PROTIKKHA ELECTRIC - Supplier Purchase Return &amp; Due Adjustment
             </p>
           </div>
         </div>
@@ -398,7 +398,7 @@ function PurchaseReturnsManagementContent() {
           <button
             type="button"
             onClick={() => openModalForRecord("")}
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Purchase Return</span>
@@ -408,11 +408,11 @@ function PurchaseReturnsManagementContent() {
 
       {/* 2. Quick Search Box */}
       <div
-        className="rounded-2xl border border-[#cbd5e1] dark:border-[#334155] bg-rose-50/40 dark:bg-slate-900/40 p-4 shadow-xs"
-        style={{ borderLeft: "4.5px solid #991b1b" }}
+        className="rounded-2xl border border-[#cbd5e1] dark:border-[#334155] bg-blue-50/40 dark:bg-slate-900/40 p-4 shadow-xs"
+        style={{ borderLeft: "4.5px solid #0B3D91" }}
       >
         <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-1 flex items-center gap-2">
-          <Search className="w-4 h-4 text-rose-600" />
+          <Search className="w-4 h-4 text-[#1E65A0]" />
           <span>Quick Purchase Memo Search &amp; Process Return</span>
         </h4>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
@@ -432,7 +432,7 @@ function PurchaseReturnsManagementContent() {
 
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-1.5 px-4 h-[38px] rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 h-[38px] rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
           >
             <ArrowRight className="w-3.5 h-3.5" />
             <span>Search &amp; Return</span>
@@ -527,7 +527,7 @@ function PurchaseReturnsManagementContent() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
                 <th className="p-3 text-center w-[45px]">SL</th>
                 <th className="p-3 w-[120px] whitespace-nowrap">Return Date</th>
                 <th className="p-3 min-w-[170px] whitespace-nowrap">Purchase Memo</th>
@@ -850,7 +850,7 @@ function PurchaseReturnsManagementContent() {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#0f172a] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
             {/* Sticky Emerald/Red Header */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white px-5 py-3.5 flex items-center justify-between shadow-sm shrink-0">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shadow-sm shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                   <RotateCcw className="w-4 h-4 text-white" />
@@ -923,7 +923,7 @@ function PurchaseReturnsManagementContent() {
                       <span className="font-bold text-xs text-slate-700 dark:text-slate-300">
                         Purchase Memo:
                       </span>
-                      <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                      <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-blue-800">
                         {loadedRecord.purchase_no}
                       </span>
                     </div>
@@ -1141,7 +1141,7 @@ function PurchaseReturnsManagementContent() {
                         value={modalReturnNote}
                         onChange={(e) => setModalReturnNote(e.target.value)}
                         placeholder="State reason for returning items back to supplier (damaged, excess order, etc.)..."
-                        className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white outline-none focus:border-rose-600"
+                        className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white outline-none focus:border-[#1E65A0]"
                       />
                     </div>
                   </div>
@@ -1193,7 +1193,7 @@ function PurchaseReturnsManagementContent() {
                 type="button"
                 onClick={handleSubmitReturn}
                 disabled={submittingReturn || !loadedRecord || calculatedModalTotals.selectedCount === 0}
-                className="px-6 h-[42px] rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                className="px-6 h-[42px] rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
               >
                 {submittingReturn ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1212,7 +1212,7 @@ function PurchaseReturnsManagementContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
           <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
             {/* Header: Brand Gradient & Circular Close Button */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <div className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center shrink-0">
                   <Eye className="w-4 h-4" />
@@ -1497,7 +1497,7 @@ function PurchaseReturnsManagementContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
           <div className="bg-white text-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:border-none print:shadow-none print:w-full">
             {/* Top Bar - Hidden in Print */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">
               <div className="flex items-center gap-2">
                 <Printer className="w-4 h-4 text-white" />
                 <h3 className="text-sm font-bold tracking-tight text-white m-0 uppercase">
@@ -1527,16 +1527,23 @@ function PurchaseReturnsManagementContent() {
             <div className="p-6 sm:p-8 overflow-y-auto flex-1 space-y-5 print:p-0 print:overflow-visible">
               {/* Company Header */}
               <div className="text-center pb-3 border-b-2 border-slate-800">
-                <h1 className="text-2xl font-black tracking-wider uppercase text-rose-900">
-                  RUNA TRADERS
+                <div className="flex justify-center mb-1">
+                  <img
+                    src="/logo.png"
+                    alt="Protikkha Electric"
+                    className="h-10 w-auto max-w-[200px] object-contain"
+                  />
+                </div>
+                <h1 className="text-xl font-black tracking-wider uppercase text-[#0B3D91]">
+                  PROTIKKHA ELECTRIC
                 </h1>
                 <p className="text-xs font-semibold text-slate-600 mt-0.5">
-                  Tiles, Sanitary &amp; Bath Fittings
+                  Electrical Retail POS &amp; Inventory Management
                 </p>
                 <p className="text-[11px] text-slate-500">
                   Success Super Market, Pabna | Mobile: 01975-703216, 01715-842083
                 </p>
-                <div className="inline-block mt-2 px-3 py-0.5 bg-rose-100 text-rose-900 border border-rose-300 font-bold text-xs uppercase tracking-wider rounded">
+                <div className="inline-block mt-2 px-3 py-0.5 bg-blue-100 text-[#0B3D91] border border-blue-300 font-bold text-xs uppercase tracking-wider rounded">
                   Supplier Purchase Return Voucher
                 </div>
               </div>
@@ -1665,7 +1672,7 @@ function PurchaseReturnsManagementContent() {
               </div>
 
               <div className="text-center text-[10px] text-slate-400 pt-2 border-t border-dashed border-slate-200">
-                Software By: CodeNext IT | RUNA TRADERS POS System
+                Software By: CodeNext IT | PROTIKKHA ELECTRIC POS System
               </div>
             </div>
           </div>

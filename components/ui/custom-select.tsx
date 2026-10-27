@@ -234,7 +234,7 @@ export function CustomSelect({
           disabled
             ? "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-[#cbd5e1] dark:border-[#334155]"
             : isOpen
-            ? "border-rose-600 ring-2 ring-rose-600/20 bg-rose-50/20 dark:bg-rose-950/20"
+            ? "border-[#1E65A0] ring-2 ring-[#1E65A0]/20 bg-blue-50/20 dark:bg-blue-950/20"
             : "border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] hover:border-rose-500 hover:bg-slate-50 dark:hover:bg-slate-800/80"
         }`}
       >
@@ -259,7 +259,7 @@ export function CustomSelect({
 
         <ChevronDown
           className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-150 ${
-            isOpen ? "rotate-180 text-rose-600" : ""
+            isOpen ? "rotate-180 text-[#1E65A0]" : ""
           }`}
         />
       </button>
@@ -333,7 +333,7 @@ export function CustomSelect({
                   placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-[34px] pl-8.5 pr-8 text-xs font-medium rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-rose-600 focus:ring-1 focus:ring-rose-600/30 transition-all"
+                  className="w-full h-[34px] pl-8.5 pr-8 text-xs font-medium rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#1E65A0] focus:ring-1 focus:ring-[#1E65A0]/30 transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -362,7 +362,7 @@ export function CustomSelect({
                       onClick={() => handleSelect(opt.value)}
                       className={`px-3 py-2 rounded-xl text-xs cursor-pointer flex items-center justify-between transition-colors ${
                         isSelected
-                          ? "bg-gradient-to-r from-[#991b1b] to-[#dc2626] text-white font-bold shadow-xs"
+                          ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white font-bold shadow-xs"
                           : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
                       }`}
                     >

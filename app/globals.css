@@ -6,10 +6,14 @@
 
 :root {
   --font-primary: 'Valley Sans', 'Baloo Da 2', sans-serif;
-  --background: #f8fafc;
+  --background: #F8F9FA;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-border: #cbd5e1;
+  --brand-primary: #0B3D91;
+  --brand-secondary: #1E65A0;
+  --brand-accent: #F59E0B;
+  --brand-neutral: #6B7280;
   color-scheme: light;
 }
 
@@ -49,11 +53,11 @@ body {
   border-color: #334155 !important;
 }
 
-/* Table Header Standard: Cool Crimson/Ruby Red Gradient */
+/* Table Header Standard: Deep Navy Blue & Electric Blue Gradient */
 table thead tr,
 .table-header-brand,
 .table-header-emerald {
-  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+  background: linear-gradient(135deg, #0B3D91 0%, #1248a3 50%, #1E65A0 100%) !important;
   color: #ffffff !important;
   white-space: nowrap !important;
 }
@@ -62,78 +66,85 @@ table thead th {
   color: #ffffff !important;
 }
 
-/* Modal sticky header: Cool Crimson/Ruby Red Gradient */
+/* Modal sticky header: Deep Navy Blue & Electric Blue Gradient */
 .modal-header-brand,
 .modal-header-emerald {
-  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+  background: linear-gradient(135deg, #0B3D91 0%, #1248a3 50%, #1E65A0 100%) !important;
   color: #ffffff !important;
 }
 
-/* Custom Cool Red Gradient Utilities */
-.bg-cool-red-gradient {
-  background: linear-gradient(145deg, #7f1d1d 0%, #991b1b 40%, #b91c1c 75%, #be123c 100%) !important;
+/* Custom Brand Navy & Electric Blue Gradient Utilities */
+.bg-cool-red-gradient,
+.bg-brand-primary-gradient {
+  background: linear-gradient(145deg, #072a66 0%, #0B3D91 40%, #154ea0 75%, #1E65A0 100%) !important;
 }
 
-.bg-cool-red-btn {
-  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 60%, #dc2626 100%) !important;
+.bg-cool-red-btn,
+.bg-brand-btn {
+  background: linear-gradient(135deg, #0B3D91 0%, #1248a3 60%, #1E65A0 100%) !important;
 }
 
-.bg-cool-red-btn:hover {
-  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%) !important;
+.bg-cool-red-btn:hover,
+.bg-brand-btn:hover {
+  background: linear-gradient(135deg, #072a66 0%, #0B3D91 60%, #1248a3 100%) !important;
 }
 
-/* Global Brand Overrides to Cool Crimson / Ruby Red Gradient */
-[class*="15803d"] {
-  background: linear-gradient(135deg, #881337 0%, #991b1b 50%, #b91c1c 100%) !important;
+/* Global Brand Overrides to Deep Navy Blue Gradient */
+[class*="15803d"],
+[class*="881337"],
+[class*="991b1b"],
+[class*="b91c1c"] {
+  background: linear-gradient(135deg, #0B3D91 0%, #1248a3 50%, #1E65A0 100%) !important;
   color: #ffffff !important;
 }
 
-[class*="15803d"]:hover {
-  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 60%, #b91c1c 100%) !important;
+[class*="15803d"]:hover,
+[class*="hover:to-\\[#b91c1c\\]"]:hover,
+[class*="hover:from-\\[#7f1d1d\\]"]:hover {
+  background: linear-gradient(135deg, #072a66 0%, #0B3D91 60%, #1248a3 100%) !important;
 }
 
 /* Global Badge Overrides */
 [class~="bg-emerald-50"],
 .bg-emerald-50 {
-  background-color: #fff1f2 !important;
+  background-color: #eff6ff !important;
 }
 
-
 [class*="text-emerald-600"] {
-  color: #e11d48 !important;
+  color: #1E65A0 !important;
 }
 
 [class*="border-emerald-100"] {
-  border-color: #ffe4e6 !important;
+  border-color: #dbeafe !important;
 }
 
 [class*="focus:border-emerald-600"]:focus {
-  border-color: #e11d48 !important;
+  border-color: #1E65A0 !important;
 }
 
 [class*="focus-within:border-emerald-600"]:focus-within {
-  border-color: #e11d48 !important;
+  border-color: #1E65A0 !important;
 }
 
 [class*="bg-emerald-100"] {
-  background-color: #ffe4e6 !important;
+  background-color: #dbeafe !important;
 }
 
 [class*="text-emerald-700"] {
-  color: #be123c !important;
+  color: #0B3D91 !important;
 }
 
 [class*="text-emerald-800"] {
-  color: #9f1239 !important;
+  color: #072a66 !important;
 }
 
 .dark [class*="bg-emerald-950"] {
-  background-color: rgba(76, 5, 25, 0.4) !important;
+  background-color: rgba(11, 61, 145, 0.4) !important;
 }
 
 .dark [class*="text-emerald-300"],
 .dark [class*="text-emerald-400"] {
-  color: #fb7185 !important;
+  color: #60a5fa !important;
 }
 
 /* Sleek Modern Dropdown & Panel Scrollbar (Webkit / Chromium without scrollbar-width overriding) */

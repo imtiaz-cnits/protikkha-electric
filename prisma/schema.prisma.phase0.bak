@@ -1,0 +1,673 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model brands {
+  id         BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String     @db.VarChar(255)
+  logo       String?    @db.VarChar(255)
+  status     String     @db.VarChar(255)
+  user_id    BigInt     @db.UnsignedBigInt
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  updated_at DateTime   @default(now()) @db.Timestamp(0)
+  users      users      @relation(fields: [user_id], references: [id], map: "brands_user_id_foreign")
+  products   products[]
+
+  @@index([user_id], map: "brands_user_id_foreign")
+}
+
+model cache {
+  key        String @id @db.VarChar(255)
+  value      String @db.MediumText
+  expiration Int
+}
+
+model cache_locks {
+  key        String @id @db.VarChar(255)
+  owner      String @db.VarChar(255)
+  expiration Int
+}
+
+model categories {
+  id             BigInt           @id @default(autoincrement()) @db.UnsignedBigInt
+  category_name  String           @db.VarChar(255)
+  img_url        String?          @db.VarChar(255)
+  status         String           @db.VarChar(255)
+  user_id        BigInt           @db.UnsignedBigInt
+  created_at     DateTime         @default(now()) @db.Timestamp(0)
+  updated_at     DateTime         @default(now()) @db.Timestamp(0)
+  users          users            @relation(fields: [user_id], references: [id], map: "categories_user_id_foreign")
+  products       products[]
+  sub_categories sub_categories[]
+
+  @@index([user_id], map: "categories_user_id_foreign")
+}
+
+model customer_payment_details {
+  id                  BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  paid_amount         String?   @db.VarChar(255)
+  discount_amount     String?   @db.VarChar(255)
+  due_amount          String?   @db.VarChar(255)
+  previous_due_amount String?   @db.VarChar(255)
+  due_collection_date DateTime? @db.Date
+  payment_method      String?   @db.VarChar(255)
+  transaction_id      String?   @db.VarChar(255)
+  payment_status      String?   @db.VarChar(255)
+  customer_id         BigInt    @db.UnsignedBigInt
+  user_id             BigInt    @db.UnsignedBigInt
+  created_at          DateTime  @default(now()) @db.Timestamp(0)
+  updated_at          DateTime  @default(now()) @db.Timestamp(0)
+  customers           customers @relation(fields: [customer_id], references: [id], map: "customer_payment_details_customer_id_foreign")
+  users               users     @relation(fields: [user_id], references: [id], map: "customer_payment_details_user_id_foreign")
+
+  @@index([customer_id], map: "customer_payment_details_customer_id_foreign")
+  @@index([user_id], map: "customer_payment_details_user_id_foreign")
+}
+
+model customers {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  customer_id              String                     @db.VarChar(255)
+  customer_name            String                     @db.VarChar(255)
+  address_details          String?                    @db.VarChar(255)
+  date                     String?                    @db.VarChar(255)
+  mobile                   String                     @db.VarChar(255)
+  email                    String?                    @db.VarChar(255)
+  img_url                  String?                    @db.VarChar(255)
+  nid                      String?                    @db.VarChar(255)
+  previous_due_amount      String?                    @db.VarChar(255)
+  district_id              BigInt?                    @db.UnsignedBigInt
+  upazila_id               BigInt?                    @db.UnsignedBigInt
+  thana_id                 BigInt?                    @db.UnsignedBigInt
+  user_id                  BigInt                     @db.UnsignedBigInt
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                   @default(now()) @db.Timestamp(0)
+  location_id              BigInt?                    @db.UnsignedBigInt
+  challans                 challans[]
+  customer_payment_details customer_payment_details[]
+  districts                districts?                 @relation(fields: [district_id], references: [id], onDelete: Restrict, map: "customers_district_id_foreign")
+  locations                locations?                 @relation(fields: [location_id], references: [id], onDelete: Restrict, map: "customers_location_id_foreign")
+  thanas                   thanas?                    @relation(fields: [thana_id], references: [id], onDelete: Restrict, map: "customers_thana_id_foreign")
+  upazilas                 upazilas?                  @relation(fields: [upazila_id], references: [id], onDelete: Restrict, map: "customers_upazila_id_foreign")
+  users                    users                      @relation(fields: [user_id], references: [id], map: "customers_user_id_foreign")
+  orders                   orders[]
+  product_returns          product_returns[]
+
+  @@index([district_id], map: "customers_district_id_foreign")
+  @@index([location_id], map: "customers_location_id_foreign")
+  @@index([thana_id], map: "customers_thana_id_foreign")
+  @@index([upazila_id], map: "customers_upazila_id_foreign")
+  @@index([user_id], map: "customers_user_id_foreign")
+}
+
+model districts {
+  id            BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  district_name String      @db.VarChar(255)
+  status        String      @db.VarChar(255)
+  user_id       BigInt      @db.UnsignedBigInt
+  created_at    DateTime    @default(now()) @db.Timestamp(0)
+  updated_at    DateTime    @default(now()) @db.Timestamp(0)
+  customers     customers[]
+  users         users       @relation(fields: [user_id], references: [id], map: "districts_user_id_foreign")
+  thanas        thanas[]
+  upazilas      upazilas[]
+
+  @@index([user_id], map: "districts_user_id_foreign")
+}
+
+model expense_types {
+  id         BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  type_name  String     @db.VarChar(255)
+  status     String     @db.VarChar(255)
+  user_id    BigInt     @db.UnsignedBigInt
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  updated_at DateTime   @default(now()) @db.Timestamp(0)
+  users      users      @relation(fields: [user_id], references: [id], map: "expense_types_user_id_foreign")
+  expenses   expenses[]
+
+  @@index([user_id], map: "expense_types_user_id_foreign")
+}
+
+model expenses {
+  id                             BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
+  expense_type_id                BigInt        @db.UnsignedBigInt
+  staff_id                       BigInt?       @db.UnsignedBigInt
+  expense_amount                 Decimal       @db.Decimal(10, 2)
+  expense_details                String?       @db.LongText
+  date                           String        @db.VarChar(255)
+  user_id                        BigInt        @db.UnsignedBigInt
+  created_at                     DateTime      @default(now()) @db.Timestamp(0)
+  updated_at                     DateTime      @default(now()) @db.Timestamp(0)
+  expense_types                  expense_types @relation(fields: [expense_type_id], references: [id], map: "expenses_expense_type_id_foreign")
+  users_expenses_staff_idTousers users?        @relation("expenses_staff_idTousers", fields: [staff_id], references: [id], onUpdate: NoAction, map: "expenses_staff_id_foreign")
+  users_expenses_user_idTousers  users         @relation("expenses_user_idTousers", fields: [user_id], references: [id], map: "expenses_user_id_foreign")
+
+  @@index([expense_type_id], map: "expenses_expense_type_id_foreign")
+  @@index([staff_id], map: "expenses_staff_id_foreign")
+  @@index([user_id], map: "expenses_user_id_foreign")
+}
+
+model failed_jobs {
+  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  uuid       String   @unique(map: "failed_jobs_uuid_unique") @db.VarChar(255)
+  connection String   @db.Text
+  queue      String   @db.Text
+  payload    String   @db.LongText
+  exception  String   @db.LongText
+  failed_at  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model job_batches {
+  id             String  @id @db.VarChar(255)
+  name           String  @db.VarChar(255)
+  total_jobs     Int
+  pending_jobs   Int
+  failed_jobs    Int
+  failed_job_ids String  @db.LongText
+  options        String? @db.MediumText
+  cancelled_at   Int?
+  created_at     Int
+  finished_at    Int?
+}
+
+model jobs {
+  id           BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  queue        String @db.VarChar(255)
+  payload      String @db.LongText
+  attempts     Int    @db.UnsignedTinyInt
+  reserved_at  Int?   @db.UnsignedInt
+  available_at Int    @db.UnsignedInt
+  created_at   Int    @db.UnsignedInt
+
+  @@index([queue], map: "jobs_queue_index")
+}
+
+model locations {
+  id         BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  name       String      @db.VarChar(255)
+  status     String      @db.VarChar(255)
+  user_id    BigInt      @db.UnsignedBigInt
+  created_at DateTime    @default(now()) @db.Timestamp(0)
+  updated_at DateTime    @default(now()) @db.Timestamp(0)
+  customers  customers[]
+  users      users       @relation(fields: [user_id], references: [id], map: "locations_user_id_foreign")
+
+  @@index([user_id], map: "locations_user_id_foreign")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model opening_balances {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  amount     Decimal   @default(0.00) @db.Decimal(15, 2)
+  date       DateTime  @db.Date
+  note       String?   @db.Text
+  user_id    BigInt    @db.UnsignedBigInt
+  created_at DateTime? @db.Timestamp(0)
+  updated_at DateTime? @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "opening_balances_user_id_foreign")
+
+  @@unique([date, user_id], map: "opening_balances_date_user_id_unique")
+  @@index([user_id], map: "opening_balances_user_id_foreign")
+}
+
+model order_details {
+  id                    BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id              BigInt          @db.UnsignedBigInt
+  product_id            BigInt          @db.UnsignedBigInt
+  quantity              String          @db.VarChar(255)
+  price                 String          @db.VarChar(255)
+  selling_price         String          @db.VarChar(255)
+  user_id               BigInt?         @db.UnsignedBigInt
+  created_at            DateTime        @default(now()) @db.Timestamp(0)
+  updated_at            DateTime        @default(now()) @db.Timestamp(0)
+  stock_lifecycle_state String          @default("DEDUCTED_AT_INVOICE") @db.VarChar(50)
+  challan_items         challan_items[]
+  orders                orders          @relation(fields: [order_id], references: [id], map: "order_details_order_id_foreign")
+  products              products        @relation(fields: [product_id], references: [id], map: "order_details_product_id_foreign")
+  users                 users?          @relation(fields: [user_id], references: [id], onDelete: Restrict, map: "order_details_user_id_foreign")
+
+  @@index([order_id], map: "order_details_order_id_foreign")
+  @@index([product_id], map: "order_details_product_id_foreign")
+  @@index([user_id], map: "order_details_user_id_foreign")
+}
+
+model order_payment_details {
+  id                  BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  order_id            BigInt   @db.UnsignedBigInt
+  paid_amount         Decimal? @db.Decimal(10, 2)
+  discount_amount     Decimal? @db.Decimal(10, 2)
+  transaction_id      String?  @db.VarChar(50)
+  payment_method      String?  @db.VarChar(50)
+  due_collection_date String?  @db.VarChar(255)
+  payment_status      String?  @db.VarChar(50)
+  user_id             BigInt   @db.UnsignedBigInt
+  created_at          DateTime @default(now()) @db.Timestamp(0)
+  updated_at          DateTime @default(now()) @db.Timestamp(0)
+  orders              orders   @relation(fields: [order_id], references: [id], map: "order_payment_details_order_id_foreign")
+  users               users    @relation(fields: [user_id], references: [id], map: "order_payment_details_user_id_foreign")
+
+  @@index([order_id], map: "order_payment_details_order_id_foreign")
+  @@index([user_id], map: "order_payment_details_user_id_foreign")
+}
+
+model orders {
+  id                       BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  order_no                 String?                 @db.VarChar(255)
+  sub_total                Decimal?                @db.Decimal(10, 2)
+  return_adjustment_amount Decimal                 @default(0.00) @db.Decimal(10, 2)
+  paid_amount              Decimal?                @db.Decimal(10, 2)
+  delivery_charge          Decimal?                @default(0.00) @db.Decimal(10, 2)
+  discount_amount          Decimal?                @db.Decimal(10, 2)
+  due_amount               Decimal?                @db.Decimal(10, 2)
+  previous_due_amount      Decimal?                @db.Decimal(10, 2)
+  order_note               String?                 @db.LongText
+  customer_id              BigInt?                 @db.UnsignedBigInt
+  invoice_date             DateTime?               @db.Date
+  user_id                  BigInt                  @db.UnsignedBigInt
+  created_at               DateTime                @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                @default(now()) @db.Timestamp(0)
+  challan_status           String                  @default("NOT_REQUIRED") @db.VarChar(50)
+  challans                 challans?
+  order_details            order_details[]
+  order_payment_details    order_payment_details[]
+  customers                customers?              @relation(fields: [customer_id], references: [id], onDelete: Restrict, map: "orders_customer_id_foreign")
+  users                    users                   @relation(fields: [user_id], references: [id], map: "orders_user_id_foreign")
+  product_returns          product_returns[]
+
+  @@index([customer_id], map: "orders_customer_id_foreign")
+  @@index([user_id], map: "orders_user_id_foreign")
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt    @db.UnsignedBigInt
+  name           String    @db.VarChar(255)
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?   @db.Text
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model product_returns {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  amount          String    @db.VarChar(255)
+  discount_amount String    @db.VarChar(255)
+  due_amount      String    @db.VarChar(255)
+  quantity        Int       @default(1)
+  date            String    @db.VarChar(255)
+  order_id        BigInt    @db.UnsignedBigInt
+  product_id      BigInt?   @db.UnsignedBigInt
+  customer_id     BigInt    @db.UnsignedBigInt
+  user_id         BigInt    @db.UnsignedBigInt
+  created_at      DateTime  @default(now()) @db.Timestamp(0)
+  updated_at      DateTime  @default(now()) @db.Timestamp(0)
+  customers       customers @relation(fields: [customer_id], references: [id], map: "product_returns_customer_id_foreign")
+  orders          orders    @relation(fields: [order_id], references: [id], map: "product_returns_order_id_foreign")
+  users           users     @relation(fields: [user_id], references: [id], map: "product_returns_user_id_foreign")
+
+  @@index([customer_id], map: "product_returns_customer_id_foreign")
+  @@index([order_id], map: "product_returns_order_id_foreign")
+  @@index([user_id], map: "product_returns_user_id_foreign")
+}
+
+model products {
+  id                     BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  img_url                String?                  @db.VarChar(255)
+  product_name           String                   @db.VarChar(255)
+  quantity               String?                  @db.VarChar(255)
+  cost_price             String                   @db.VarChar(255)
+  sell_price             String                   @db.VarChar(255)
+  status                 String                   @db.VarChar(255)
+  product_code           Json
+  brand_id               BigInt                   @db.UnsignedBigInt
+  category_id            BigInt                   @db.UnsignedBigInt
+  door_side              String?                  @db.VarChar(50)
+  sub_category_id        BigInt?                  @db.UnsignedBigInt
+  unit_id                BigInt?                  @db.UnsignedBigInt
+  user_id                BigInt                   @db.UnsignedBigInt
+  created_at             DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at             DateTime                 @default(now()) @db.Timestamp(0)
+  tile_size              String?                  @db.VarChar(50)
+  sqft_per_box           String?                  @db.VarChar(50)
+  pcs_per_box            String?                  @db.VarChar(50)
+  grade                  String?                  @db.VarChar(50)
+  surface_finish         String?                  @db.VarChar(50)
+  challan_items          challan_items[]
+  order_details          order_details[]
+  brands                 brands                   @relation(fields: [brand_id], references: [id], map: "products_brand_id_foreign")
+  categories             categories               @relation(fields: [category_id], references: [id], map: "products_category_id_foreign")
+  sub_categories         sub_categories?          @relation(fields: [sub_category_id], references: [id], onDelete: Restrict, map: "products_sub_category_id_foreign")
+  units                  units?                   @relation(fields: [unit_id], references: [id], onDelete: Restrict, map: "products_unit_id_foreign")
+  users                  users                    @relation(fields: [user_id], references: [id], map: "products_user_id_foreign")
+  purchase_order_details purchase_order_details[]
+  purchase_returns       purchase_returns[]
+
+  @@index([brand_id], map: "products_brand_id_foreign")
+  @@index([category_id], map: "products_category_id_foreign")
+  @@index([sub_category_id], map: "products_sub_category_id_foreign")
+  @@index([unit_id], map: "products_unit_id_foreign")
+  @@index([user_id], map: "products_user_id_foreign")
+}
+
+model purchase_order_details {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id               BigInt                     @db.UnsignedBigInt
+  purchase_id              BigInt                     @db.UnsignedBigInt
+  quantity                 String                     @db.VarChar(255)
+  cost_price               String                     @db.VarChar(255)
+  subtotal                 String                     @db.VarChar(255)
+  user_id                  BigInt                     @db.UnsignedBigInt
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                   @default(now()) @db.Timestamp(0)
+  products                 products                   @relation(fields: [product_id], references: [id], map: "purchase_order_details_product_id_foreign")
+  purchases                purchases                  @relation(fields: [purchase_id], references: [id], map: "purchase_order_details_purchase_id_foreign")
+  users                    users                      @relation(fields: [user_id], references: [id], map: "purchase_order_details_user_id_foreign")
+  purchase_payment_details purchase_payment_details[]
+
+  @@index([product_id], map: "purchase_order_details_product_id_foreign")
+  @@index([purchase_id], map: "purchase_order_details_purchase_id_foreign")
+  @@index([user_id], map: "purchase_order_details_user_id_foreign")
+}
+
+model purchase_payment_details {
+  id                           BigInt                  @id @default(autoincrement()) @db.UnsignedBigInt
+  purchases_id                 BigInt                  @db.UnsignedBigInt
+  paid_amount                  Decimal?                @db.Decimal(10, 2)
+  discount_amount              Decimal?                @db.Decimal(10, 2)
+  payment_method               String?                 @db.VarChar(255)
+  payment_status               String?                 @db.VarChar(255)
+  transaction_id               String?                 @db.VarChar(255)
+  purchase_due_collection_date DateTime?               @db.Date
+  purchase_order_details_id    BigInt?                 @db.UnsignedBigInt
+  user_id                      BigInt                  @db.UnsignedBigInt
+  created_at                   DateTime                @default(now()) @db.Timestamp(0)
+  updated_at                   DateTime                @default(now()) @db.Timestamp(0)
+  purchase_order_details       purchase_order_details? @relation(fields: [purchase_order_details_id], references: [id], map: "purchase_payment_details_purchase_order_details_id_foreign")
+  purchases                    purchases               @relation(fields: [purchases_id], references: [id], map: "purchase_payment_details_purchases_id_foreign")
+  users                        users                   @relation(fields: [user_id], references: [id], map: "purchase_payment_details_user_id_foreign")
+
+  @@index([purchase_order_details_id], map: "purchase_payment_details_purchase_order_details_id_foreign")
+  @@index([purchases_id], map: "purchase_payment_details_purchases_id_foreign")
+  @@index([user_id], map: "purchase_payment_details_user_id_foreign")
+}
+
+model purchase_returns {
+  id              BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  purchase_id     BigInt    @db.UnsignedBigInt
+  supplier_id     BigInt    @db.UnsignedBigInt
+  product_id      BigInt    @db.UnsignedBigInt
+  user_id         BigInt    @db.UnsignedBigInt
+  amount          Decimal   @default(0.00) @db.Decimal(15, 2)
+  discount_amount Decimal   @default(0.00) @db.Decimal(15, 2)
+  due_amount      Decimal   @default(0.00) @db.Decimal(15, 2)
+  quantity        Int       @default(0)
+  date            DateTime  @db.Date
+  created_at      DateTime? @db.Timestamp(0)
+  updated_at      DateTime? @db.Timestamp(0)
+  products        products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "purchase_returns_product_id_foreign")
+  purchases       purchases @relation(fields: [purchase_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "purchase_returns_purchase_id_foreign")
+  suppliers       suppliers @relation(fields: [supplier_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "purchase_returns_supplier_id_foreign")
+  users           users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "purchase_returns_user_id_foreign")
+
+  @@index([product_id], map: "purchase_returns_product_id_foreign")
+  @@index([purchase_id], map: "purchase_returns_purchase_id_foreign")
+  @@index([supplier_id], map: "purchase_returns_supplier_id_foreign")
+  @@index([user_id], map: "purchase_returns_user_id_foreign")
+}
+
+model purchases {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  purchase_id              String                     @db.VarChar(255)
+  referance_no             String?                    @db.VarChar(255)
+  paid_amount              String?                    @db.VarChar(255)
+  due_amount               String?                    @db.VarChar(255)
+  purchase_payable_amount  String?                    @db.VarChar(255)
+  date                     DateTime?                  @db.Date
+  grand_subtotal           String?                    @db.VarChar(255)
+  delivery_charge          Decimal?                   @default(0.00) @db.Decimal(10, 2)
+  return_adjustment_amount Decimal                    @default(0.00) @db.Decimal(10, 2)
+  attach_document          String?                    @db.VarChar(255)
+  supplier_id              BigInt                     @db.UnsignedBigInt
+  user_id                  BigInt                     @db.UnsignedBigInt
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                   @default(now()) @db.Timestamp(0)
+  purchase_order_details   purchase_order_details[]
+  purchase_payment_details purchase_payment_details[]
+  purchase_returns         purchase_returns[]
+  suppliers                suppliers                  @relation(fields: [supplier_id], references: [id], map: "purchases_supplier_id_foreign")
+  users                    users                      @relation(fields: [user_id], references: [id], map: "purchases_user_id_foreign")
+
+  @@index([supplier_id], map: "purchases_supplier_id_foreign")
+  @@index([user_id], map: "purchases_user_id_foreign")
+}
+
+model sessions {
+  id            String  @id @db.VarChar(255)
+  user_id       BigInt? @db.UnsignedBigInt
+  ip_address    String? @db.VarChar(45)
+  user_agent    String? @db.Text
+  payload       String  @db.LongText
+  last_activity Int
+
+  @@index([last_activity], map: "sessions_last_activity_index")
+  @@index([user_id], map: "sessions_user_id_index")
+}
+
+model sub_categories {
+  id                BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  sub_category_name String     @db.VarChar(255)
+  status            String     @db.VarChar(255)
+  category_id       BigInt     @db.UnsignedBigInt
+  user_id           BigInt     @db.UnsignedBigInt
+  created_at        DateTime   @default(now()) @db.Timestamp(0)
+  updated_at        DateTime   @default(now()) @db.Timestamp(0)
+  products          products[]
+  categories        categories @relation(fields: [category_id], references: [id], map: "sub_categories_category_id_foreign")
+  users             users      @relation(fields: [user_id], references: [id], map: "sub_categories_user_id_foreign")
+
+  @@index([category_id], map: "sub_categories_category_id_foreign")
+  @@index([user_id], map: "sub_categories_user_id_foreign")
+}
+
+model supplier_due_collections {
+  id                      BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  paid_amount             String?   @db.VarChar(255)
+  due_amount              String?   @db.VarChar(255)
+  discount_amount         String?   @db.VarChar(255)
+  purchase_payable_amount String?   @db.VarChar(255)
+  payment_method          String?   @db.VarChar(255)
+  transaction_id          String?   @db.VarChar(255)
+  payment_status          String?   @db.VarChar(255)
+  due_collection_date     DateTime? @db.Date
+  supplier_id             BigInt    @db.UnsignedBigInt
+  user_id                 BigInt    @db.UnsignedBigInt
+  created_at              DateTime  @default(now()) @db.Timestamp(0)
+  updated_at              DateTime  @default(now()) @db.Timestamp(0)
+  suppliers               suppliers @relation(fields: [supplier_id], references: [id], map: "supplier_due_collections_supplier_id_foreign")
+  users                   users     @relation(fields: [user_id], references: [id], map: "supplier_due_collections_user_id_foreign")
+
+  @@index([supplier_id], map: "supplier_due_collections_supplier_id_foreign")
+  @@index([user_id], map: "supplier_due_collections_user_id_foreign")
+}
+
+model suppliers {
+  id                       BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  supplier_id              String                     @db.VarChar(255)
+  name                     String                     @db.VarChar(255)
+  company                  String                     @db.VarChar(255)
+  mobile                   String                     @db.VarChar(255)
+  address                  String                     @db.VarChar(255)
+  email                    String?                    @db.VarChar(255)
+  img_url                  String?                    @db.VarChar(255)
+  purchase_payable_amount  String?                    @db.VarChar(255)
+  status                   String                     @db.VarChar(255)
+  user_id                  BigInt                     @db.UnsignedBigInt
+  created_at               DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at               DateTime                   @default(now()) @db.Timestamp(0)
+  purchase_returns         purchase_returns[]
+  purchases                purchases[]
+  supplier_due_collections supplier_due_collections[]
+  users                    users                      @relation(fields: [user_id], references: [id], map: "suppliers_user_id_foreign")
+
+  @@index([user_id], map: "suppliers_user_id_foreign")
+}
+
+model thanas {
+  id          BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  Thana_name  String      @db.VarChar(255)
+  status      String      @db.VarChar(255)
+  district_id BigInt      @db.UnsignedBigInt
+  upazila_id  BigInt      @db.UnsignedBigInt
+  user_id     BigInt      @db.UnsignedBigInt
+  created_at  DateTime    @default(now()) @db.Timestamp(0)
+  updated_at  DateTime    @default(now()) @db.Timestamp(0)
+  customers   customers[]
+  districts   districts   @relation(fields: [district_id], references: [id], map: "thanas_district_id_foreign")
+  upazilas    upazilas    @relation(fields: [upazila_id], references: [id], map: "thanas_upazila_id_foreign")
+  users       users       @relation(fields: [user_id], references: [id], map: "thanas_user_id_foreign")
+
+  @@index([district_id], map: "thanas_district_id_foreign")
+  @@index([upazila_id], map: "thanas_upazila_id_foreign")
+  @@index([user_id], map: "thanas_user_id_foreign")
+}
+
+model units {
+  id         BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  unit_name  String     @db.VarChar(255)
+  status     String     @db.VarChar(255)
+  user_id    BigInt     @db.UnsignedBigInt
+  created_at DateTime   @default(now()) @db.Timestamp(0)
+  updated_at DateTime   @default(now()) @db.Timestamp(0)
+  products   products[]
+  users      users      @relation(fields: [user_id], references: [id], map: "units_user_id_foreign")
+
+  @@index([user_id], map: "units_user_id_foreign")
+}
+
+model upazilas {
+  id           BigInt      @id @default(autoincrement()) @db.UnsignedBigInt
+  upazila_name String      @db.VarChar(255)
+  status       String      @db.VarChar(255)
+  district_id  BigInt      @db.UnsignedBigInt
+  user_id      BigInt      @db.UnsignedBigInt
+  created_at   DateTime    @default(now()) @db.Timestamp(0)
+  updated_at   DateTime    @default(now()) @db.Timestamp(0)
+  customers    customers[]
+  thanas       thanas[]
+  districts    districts   @relation(fields: [district_id], references: [id], map: "upazilas_district_id_foreign")
+  users        users       @relation(fields: [user_id], references: [id], map: "upazilas_user_id_foreign")
+
+  @@index([district_id], map: "upazilas_district_id_foreign")
+  @@index([user_id], map: "upazilas_user_id_foreign")
+}
+
+model users {
+  id                                BigInt                     @id @default(autoincrement()) @db.UnsignedBigInt
+  img_url                           String?                    @db.VarChar(255)
+  name                              String                     @db.VarChar(50)
+  email                             String?                    @unique(map: "users_email_unique") @db.VarChar(50)
+  mobile                            String                     @db.VarChar(50)
+  password                          String                     @db.VarChar(1000)
+  otp                               String                     @db.VarChar(10)
+  otp_expires_at                    DateTime?                  @db.Timestamp(0)
+  status                            users_status               @default(pending)
+  role                              String                     @default("users") @db.VarChar(255)
+  permissions                       String?                    @db.Text
+  created_at                        DateTime                   @default(now()) @db.Timestamp(0)
+  updated_at                        DateTime                   @default(now()) @db.Timestamp(0)
+  brands                            brands[]
+  categories                        categories[]
+  challans                          challans[]
+  customer_payment_details          customer_payment_details[]
+  customers                         customers[]
+  districts                         districts[]
+  expense_types                     expense_types[]
+  expenses_expenses_staff_idTousers expenses[]                 @relation("expenses_staff_idTousers")
+  expenses_expenses_user_idTousers  expenses[]                 @relation("expenses_user_idTousers")
+  locations                         locations[]
+  opening_balances                  opening_balances[]
+  order_details                     order_details[]
+  order_payment_details             order_payment_details[]
+  orders                            orders[]
+  product_returns                   product_returns[]
+  products                          products[]
+  purchase_order_details            purchase_order_details[]
+  purchase_payment_details          purchase_payment_details[]
+  purchase_returns                  purchase_returns[]
+  purchases                         purchases[]
+  sub_categories                    sub_categories[]
+  supplier_due_collections          supplier_due_collections[]
+  suppliers                         suppliers[]
+  thanas                            thanas[]
+  units                             units[]
+  upazilas                          upazilas[]
+}
+
+model challan_items {
+  id              BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  challan_id      BigInt         @db.UnsignedBigInt
+  order_detail_id BigInt?        @db.UnsignedBigInt
+  product_id      BigInt         @db.UnsignedBigInt
+  product_name    String         @db.VarChar(255)
+  product_code    String?        @db.VarChar(255)
+  quantity        Decimal        @db.Decimal(12, 2)
+  unit            String?        @db.VarChar(50)
+  created_at      DateTime       @default(now()) @db.Timestamp(0)
+  updated_at      DateTime       @default(now()) @db.Timestamp(0)
+  challans        challans       @relation(fields: [challan_id], references: [id], onDelete: Cascade, map: "challan_items_challan_id_foreign")
+  order_details   order_details? @relation(fields: [order_detail_id], references: [id], map: "challan_items_order_detail_id_foreign")
+  products        products       @relation(fields: [product_id], references: [id], map: "challan_items_product_id_foreign")
+
+  @@index([challan_id], map: "challan_items_challan_id_foreign")
+  @@index([order_detail_id], map: "challan_items_order_detail_id_foreign")
+  @@index([product_id], map: "challan_items_product_id_foreign")
+}
+
+model challans {
+  id               BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  challan_no       String          @unique(map: "challans_challan_no_unique") @db.VarChar(255)
+  order_id         BigInt          @unique(map: "challans_order_id_unique") @db.UnsignedBigInt
+  customer_id      BigInt          @db.UnsignedBigInt
+  challan_date     DateTime        @default(dbgenerated("(curdate())")) @db.Date
+  delivery_address String?         @db.VarChar(255)
+  driver_name      String?         @db.VarChar(255)
+  driver_phone     String?         @db.VarChar(255)
+  vehicle_no       String?         @db.VarChar(255)
+  status           String          @default("DELIVERED") @db.VarChar(50)
+  note             String?         @db.Text
+  user_id          BigInt          @db.UnsignedBigInt
+  created_at       DateTime        @default(now()) @db.Timestamp(0)
+  updated_at       DateTime        @default(now()) @db.Timestamp(0)
+  challan_items    challan_items[]
+  customers        customers       @relation(fields: [customer_id], references: [id], map: "challans_customer_id_foreign")
+  orders           orders          @relation(fields: [order_id], references: [id], map: "challans_order_id_foreign")
+  users            users           @relation(fields: [user_id], references: [id], map: "challans_user_id_foreign")
+
+  @@index([customer_id], map: "challans_customer_id_foreign")
+  @@index([user_id], map: "challans_user_id_foreign")
+}
+
+enum users_status {
+  pending
+  approved
+}

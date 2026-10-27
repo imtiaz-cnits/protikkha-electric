@@ -104,7 +104,7 @@ export default function DashboardPage() {
       {/* Top Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center shadow-xs">
             <TrendingUp className="w-5 h-5" />
           </div>
           <div>
@@ -112,7 +112,7 @@ export default function DashboardPage() {
               Overview Dashboard
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Welcome back to Runa Traders POS Management
+              Welcome back to Protikkha Electric POS Management
             </p>
           </div>
         </div>
@@ -124,22 +124,22 @@ export default function DashboardPage() {
             onClick={fetchStats}
             title="Refresh Live Metrics"
             disabled={loading}
-            className="h-[38px] w-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-rose-600 flex items-center justify-center transition-all shadow-xs disabled:opacity-50"
+            className="h-[38px] w-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] flex items-center justify-center transition-all shadow-xs disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${loading ? "animate-spin text-rose-600" : ""}`} />
+            <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${loading ? "animate-spin text-[#1E65A0]" : ""}`} />
           </button>
           <Link
             href="/pos"
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] text-white font-bold text-xs flex items-center gap-2 shadow-xs hover:shadow-sm transition-all"
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-xs hover:shadow-sm transition-all"
           >
             <ShoppingCart className="w-4 h-4" />
             <span>Open POS Terminal</span>
           </Link>
           <Link
             href="/products"
-            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-rose-600 font-semibold text-xs flex items-center gap-2 transition-all shadow-xs"
+            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] font-semibold text-xs flex items-center gap-2 transition-all shadow-xs"
           >
-            <PlusCircle className="w-4 h-4 text-rose-600" />
+            <PlusCircle className="w-4 h-4 text-[#1E65A0]" />
             <span>Products</span>
           </Link>
         </div>
@@ -210,14 +210,14 @@ export default function DashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Payable Dues
             </span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1E65A0] dark:text-blue-400 flex items-center justify-center">
               <Truck className="w-4 h-4" />
             </div>
           </div>
           <div className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
             {formatBdCurrency(totalSupplierDue)}
           </div>
-          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-rose-600 font-bold">
+          <div className="flex items-center gap-1.5 mt-2 text-[11px] text-amber-600 font-bold">
             <AlertCircle className="w-3.5 h-3.5" />
             <span>Vendor Payable</span>
           </div>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
             <Wallet className="w-4 h-4" />
           </div>
           <div>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
         {/* Table Header Controls */}
         <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#1E65A0] dark:text-blue-400 flex items-center justify-center font-bold">
               <Receipt className="w-4 h-4" />
             </div>
             <div>
@@ -289,7 +289,7 @@ export default function DashboardPage() {
 
           <Link
             href="/invoices"
-            className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 flex items-center gap-1"
+            className="text-xs font-bold text-[#1E65A0] hover:text-[#0B3D91] dark:text-blue-400 flex items-center gap-1"
           >
             <span>View All Invoices</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -300,7 +300,7 @@ export default function DashboardPage() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
+              <tr className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
                 <th className="p-[10px] text-center w-[45px]">SL</th>
                 <th className="p-[10px]">Order No</th>
                 <th className="p-[10px]">Customer</th>

@@ -235,7 +235,7 @@ export default function CustomerProfilePage({
           <button
             type="button"
             onClick={handleOpenCollectModal}
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
             <Wallet className="w-4 h-4" />
             <span>Collect Due</span>
@@ -362,7 +362,7 @@ export default function CustomerProfilePage({
           onClick={() => setActiveTab("orders")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
             activeTab === "orders"
-              ? "bg-[#991b1b] text-white shadow-xs"
+              ? "bg-[#0B3D91] text-white shadow-xs"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
           }`}
         >
@@ -375,7 +375,7 @@ export default function CustomerProfilePage({
           onClick={() => setActiveTab("payments")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
             activeTab === "payments"
-              ? "bg-[#991b1b] text-white shadow-xs"
+              ? "bg-[#0B3D91] text-white shadow-xs"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
           }`}
         >
@@ -388,7 +388,7 @@ export default function CustomerProfilePage({
           onClick={() => setActiveTab("returns")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
             activeTab === "returns"
-              ? "bg-[#991b1b] text-white shadow-xs"
+              ? "bg-[#0B3D91] text-white shadow-xs"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
           }`}
         >
@@ -403,7 +403,7 @@ export default function CustomerProfilePage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
+                <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
                   <th className="p-3 text-center w-[45px]">SL</th>
                   <th className="p-3">Invoice No</th>
                   <th className="p-3">Order Date</th>
@@ -476,7 +476,7 @@ export default function CustomerProfilePage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
+                <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
                   <th className="p-3 text-center w-[45px]">SL</th>
                   <th className="p-3">Collection Date</th>
                   <th className="p-3 text-right">Previous Due</th>
@@ -549,7 +549,7 @@ export default function CustomerProfilePage({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="table-header-brand bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
+                <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
                   <th className="p-3 text-center w-[45px]">SL</th>
                   <th className="p-3">Return Date</th>
                   <th className="p-3">Order ID</th>
@@ -597,7 +597,7 @@ export default function CustomerProfilePage({
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
           <div className="bg-white dark:bg-[#0f172a] w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#881337] via-[#991b1b] to-[#b91c1c] text-white px-5 py-3.5 flex items-center justify-between shadow-sm shrink-0">
+            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shadow-sm shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                   <Wallet className="w-4 h-4 text-white" />
@@ -654,7 +654,7 @@ export default function CustomerProfilePage({
                     value={payAmount}
                     onChange={(e) => setPayAmount(e.target.value)}
                     placeholder="Enter amount..."
-                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-rose-600"
+                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-[#1E65A0]"
                   />
                 </div>
 
@@ -668,7 +668,7 @@ export default function CustomerProfilePage({
                     value={discountAmount}
                     onChange={(e) => setDiscountAmount(e.target.value)}
                     placeholder="0"
-                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-rose-600"
+                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white outline-none focus:border-[#1E65A0]"
                   />
                 </div>
               </div>
@@ -681,7 +681,7 @@ export default function CustomerProfilePage({
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-medium text-slate-800 dark:text-white outline-none focus:border-rose-600 cursor-pointer"
+                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-medium text-slate-800 dark:text-white outline-none focus:border-[#1E65A0] cursor-pointer"
                   >
                     <option value="Cash">Cash</option>
                     <option value="Bank">Bank Transfer</option>
@@ -700,7 +700,7 @@ export default function CustomerProfilePage({
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
                     placeholder="Optional Trx ID..."
-                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white outline-none focus:border-rose-600"
+                    className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white outline-none focus:border-[#1E65A0]"
                   />
                 </div>
               </div>
@@ -746,7 +746,7 @@ export default function CustomerProfilePage({
                 <button
                   type="submit"
                   disabled={submittingPayment}
-                  className="px-6 h-[42px] rounded-xl bg-gradient-to-r from-[#991b1b] to-[#dc2626] hover:from-[#7f1d1d] hover:to-[#b91c1c] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-6 h-[42px] rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-50"
                 >
                   {submittingPayment ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
