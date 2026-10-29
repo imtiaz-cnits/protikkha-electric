@@ -14,12 +14,18 @@ export type StockMovementType =
   | "ADJUSTMENT"
   | "SCRAP_CABLE_LOSS"
   | "ADJUSTMENT_ADD"
-  | "ADJUSTMENT_SUBTRACT";
+  | "ADJUSTMENT_SUBTRACT"
+  | "TRANSFER_DISPATCH_OUTWARD"
+  | "TRANSFER_RECEIVE_INWARD"
+  | "DRUM_ISSUE_OUTWARD"
+  | "DRUM_RETURN_INWARD";
 
 export type StockReferenceType =
   | "ORDER"
   | "PURCHASE"
   | "INTERNAL_TRANSFER"
+  | "TRANSFER"
+  | "CABLE_DRUM"
   | "HARVEST"
   | "EGG_COLLECTION"
   | "ADJUSTMENT"
@@ -80,7 +86,9 @@ export async function recordStockMovement(
       params.movementType === "PURCHASE_RETURN_OUTWARD" ||
       params.movementType === "DAMAGE_LOSS" ||
       params.movementType === "SCRAP_CABLE_LOSS" ||
-      params.movementType === "ADJUSTMENT_SUBTRACT";
+      params.movementType === "ADJUSTMENT_SUBTRACT" ||
+      params.movementType === "TRANSFER_DISPATCH_OUTWARD" ||
+      params.movementType === "DRUM_ISSUE_OUTWARD";
 
     let newStock: number;
     if (isOutward) {
@@ -274,5 +282,155 @@ export async function adjustProductStock(
   } else {
     return prisma.$transaction(async (newTx) => execute(newTx));
   }
+}
+
+/**
+ * Atomic Inter-Store / Warehouse Transfer Dispatch
+ */
+export async function executeTransferDispatch(
+  transferId: bigint | number,
+  userId: bigint | number,
+  tx?: Prisma.TransactionClient
+) {
+  const execute = async (client: Prisma.TransactionClient) => {
+    const tId = BigInt(transferId);
+    const transfer: any = await client.stock_transfers.findUnique({
+      where: { id: tId },
+      include: { transfer_items: true },
+    });
+
+    if (!transfer) throw new Error(`Transfer #${transferId} not found`);
+    if (transfer.status !== "PENDING") {
+      throw new Error(`Transfer is in "${transfer.status}" status; cannot dispatch.`);
+    }
+
+    for (const item of transfer.transfer_items) {
+      const pId = BigInt(item.product_id);
+      const qty = parseFloat(String(item.quantity || "0"));
+
+      // 1. Lock product row FOR UPDATE
+      const [prod]: any = await client.$queryRawUnsafe(
+        "SELECT id, product_name, quantity, cost_price FROM products WHERE id = ? FOR UPDATE",
+        pId
+      );
+      if (!prod) throw new Error(`Product #${item.product_id} not found`);
+
+      const currentStock = parseFloat(String(prod.quantity || "0"));
+      if (qty > currentStock) {
+        throw new Error(`Insufficient stock for "${prod.product_name}". Available: ${currentStock}, Requested: ${qty}`);
+      }
+
+      const newStock = currentStock - qty;
+      await client.products.update({
+        where: { id: pId },
+        data: { quantity: String(newStock) },
+      });
+
+      // Record outward movement
+      await client.stock_movements.create({
+        data: {
+          product_id: pId,
+          business_unit_id: transfer.from_unit_id,
+          movement_type: "TRANSFER_DISPATCH_OUTWARD",
+          quantity: new Prisma.Decimal(qty.toFixed(3)),
+          unit_price: new Prisma.Decimal(Number(item.unit_cost || prod.cost_price || 0).toFixed(2)),
+          total_value: new Prisma.Decimal((qty * Number(item.unit_cost || prod.cost_price || 0)).toFixed(2)),
+          reference_type: "TRANSFER",
+          reference_id: transfer.id,
+          reference_no: transfer.transfer_no,
+          stock_after: new Prisma.Decimal(newStock.toFixed(3)),
+          date: new Date(),
+          note: `Transfer dispatch to Unit #${transfer.to_unit_id}`,
+          user_id: BigInt(userId),
+        },
+      });
+    }
+
+    const updated = await client.stock_transfers.update({
+      where: { id: tId },
+      data: {
+        status: "DISPATCHED",
+        dispatched_at: new Date(),
+      },
+    });
+
+    return updated;
+  };
+
+  if (tx) return execute(tx);
+  return prisma.$transaction(async (newTx) => execute(newTx));
+}
+
+/**
+ * Atomic Inter-Store / Warehouse Transfer Receive
+ */
+export async function executeTransferReceive(
+  transferId: bigint | number,
+  userId: bigint | number,
+  tx?: Prisma.TransactionClient
+) {
+  const execute = async (client: Prisma.TransactionClient) => {
+    const tId = BigInt(transferId);
+    const transfer: any = await client.stock_transfers.findUnique({
+      where: { id: tId },
+      include: { transfer_items: true },
+    });
+
+    if (!transfer) throw new Error(`Transfer #${transferId} not found`);
+    if (transfer.status !== "DISPATCHED") {
+      throw new Error(`Transfer is in "${transfer.status}" status; only DISPATCHED transfers can be received.`);
+    }
+
+    for (const item of transfer.transfer_items) {
+      const pId = BigInt(item.product_id);
+      const qty = parseFloat(String(item.received_quantity ?? item.quantity ?? "0"));
+
+      const [prod]: any = await client.$queryRawUnsafe(
+        "SELECT id, product_name, quantity, cost_price FROM products WHERE id = ? FOR UPDATE",
+        pId
+      );
+      if (!prod) throw new Error(`Product #${item.product_id} not found`);
+
+      const currentStock = parseFloat(String(prod.quantity || "0"));
+      const newStock = currentStock + qty;
+
+      await client.products.update({
+        where: { id: pId },
+        data: { quantity: String(newStock) },
+      });
+
+      // Record inward movement at destination store
+      await client.stock_movements.create({
+        data: {
+          product_id: pId,
+          business_unit_id: transfer.to_unit_id,
+          movement_type: "TRANSFER_RECEIVE_INWARD",
+          quantity: new Prisma.Decimal(qty.toFixed(3)),
+          unit_price: new Prisma.Decimal(Number(item.unit_cost || prod.cost_price || 0).toFixed(2)),
+          total_value: new Prisma.Decimal((qty * Number(item.unit_cost || prod.cost_price || 0)).toFixed(2)),
+          reference_type: "TRANSFER",
+          reference_id: transfer.id,
+          reference_no: transfer.transfer_no,
+          stock_after: new Prisma.Decimal(newStock.toFixed(3)),
+          date: new Date(),
+          note: `Transfer received from Unit #${transfer.from_unit_id}`,
+          user_id: BigInt(userId),
+        },
+      });
+    }
+
+    const updated = await client.stock_transfers.update({
+      where: { id: tId },
+      data: {
+        status: "RECEIVED",
+        received_at: new Date(),
+      },
+    });
+
+    return updated;
+  };
+
+  if (tx) return execute(tx);
+  return prisma.$transaction(async (newTx) => execute(newTx));
 }
 

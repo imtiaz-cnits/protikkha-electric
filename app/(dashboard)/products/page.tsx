@@ -19,6 +19,7 @@ import {
   Tag,
   CheckCircle,
   Eye,
+  Upload,
 } from "lucide-react";
 import { CustomSelect, Pagination, DeleteConfirmModal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
@@ -215,6 +216,12 @@ export default function ProductsPage() {
   const [bulkTargetField, setBulkTargetField] = useState<"sell_price" | "cost_price" | "both">("sell_price");
   const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<number>>(new Set());
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
+
+  // CSV Import State
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<any>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -610,6 +617,87 @@ export default function ProductsPage() {
     document.body.removeChild(link);
   }
 
+  function downloadSampleCsv() {
+    const sampleHeaders = [
+      "Product Name",
+      "Product Codes",
+      "Category",
+      "Brand",
+      "Unit",
+      "Selling Price",
+      "Cost Price",
+      "Stock Quantity",
+      "Spec Type",
+      "Conductor Material",
+      "Cable Size",
+      "Core Count",
+      "Current Rating",
+      "Voltage Grade",
+      "Wattage",
+      "Is Cut Sellable",
+    ];
+    const sampleRow = [
+      '"BBS 2.5 RM BYA Red"',
+      '"BBS-2.5RM-RED"',
+      '"Wires & Cables"',
+      '"BBS Cables"',
+      '"Reel"',
+      "7800",
+      "6900",
+      "25",
+      "CABLE",
+      "Copper",
+      "2.5 RM BYA",
+      "1",
+      "24A",
+      "450/750V",
+      "",
+      "YES",
+    ];
+    const content = "\uFEFF" + [sampleHeaders.join(","), sampleRow.join(",")].join("\r\n");
+    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "protikkha_product_import_sample.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  async function handleImportSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!importFile) {
+      toast.error("Please select a CSV file to import");
+      return;
+    }
+
+    try {
+      setImporting(true);
+      setImportResult(null);
+      const formData = new FormData();
+      formData.append("file", importFile);
+
+      const res = await fetch("/api/products/import", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        setImportResult(data);
+        toast.success(data.message || "Import completed!");
+        await loadData();
+      } else {
+        toast.error(data.message || "Import failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Error processing import");
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* 1. Header Section */}
@@ -644,6 +732,18 @@ export default function ProductsPage() {
             className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          </button>
+
+          <button
+            onClick={() => {
+              setImportFile(null);
+              setImportResult(null);
+              setImportModalOpen(true);
+            }}
+            title="Import Catalog CSV"
+            className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+          >
+            <Upload className="w-4 h-4 text-[#1E65A0]" />
           </button>
 
           <button
@@ -1835,7 +1935,98 @@ export default function ProductsPage() {
       )}
 
       {/* ================================================================ */}
-      {/* 7. Delete Confirmation Modal                                     */}
+      {/* 7. Product CSV Import Modal                                      */}
+      {/* ================================================================ */}
+      {importModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-4 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Upload className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-bold">Import Electrical Catalog (CSV)</h2>
+              </div>
+              <button
+                onClick={() => setImportModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-[#dc2626] hover:bg-red-700 text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleImportSubmit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+                <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100">
+                  <div className="text-slate-700 dark:text-slate-300">
+                    <span className="font-bold block">Need standard format?</span>
+                    Download the pre-configured CSV template with electrical fields.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={downloadSampleCsv}
+                    className="px-3 py-1.5 bg-[#0B3D91] text-white rounded-lg text-xs font-bold hover:opacity-95"
+                  >
+                    Template (.csv)
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-2">
+                    Select CSV File (.csv) *
+                  </label>
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#1E65A0] file:text-white hover:file:bg-[#0B3D91] cursor-pointer"
+                  />
+                </div>
+
+                {importResult && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2 border border-slate-200 dark:border-slate-700">
+                    <div className="font-bold text-slate-800 dark:text-white flex items-center justify-between">
+                      <span>Import Results:</span>
+                      <span className="text-emerald-600 font-bold">
+                        {importResult.imported_count} Added Successfully
+                      </span>
+                    </div>
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div className="text-[11px] text-red-600 space-y-1 max-h-32 overflow-y-auto">
+                        <span className="font-bold block">Row warnings/errors:</span>
+                        {importResult.errors.map((err: any, idx: number) => (
+                          <div key={idx}>
+                            Row #{err.row}: {err.error}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setImportModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#dc2626] rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={importing || !importFile}
+                  className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] rounded-xl flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {importing && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {importing ? "Importing..." : "Start Import"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 8. Delete Confirmation Modal                                     */}
       {/* ================================================================ */}
       <DeleteConfirmModal
         isOpen={Boolean(productToDelete)}

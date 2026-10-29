@@ -176,3 +176,110 @@ export function calculateWarrantyStatus(
     daysRemaining: Math.max(0, daysRemaining),
   };
 }
+
+/**
+ * Landed Cost Allocation Engine
+ * Apportions freight, transport, carrying and labor charges across purchase line items
+ * to produce accurate capitalized inventory unit costs.
+ */
+export type LandedCostMethod = "BY_VALUE" | "BY_QUANTITY" | "MANUAL";
+
+export interface LandedCostItemInput {
+  productId: number | bigint;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  manualFreightAllocation?: number;
+}
+
+export interface LandedCostItemResult {
+  productId: number | bigint;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  allocatedFreight: number;
+  totalLandedCost: number;
+  landedCostPerUnit: number;
+}
+
+export interface LandedCostAllocationResult {
+  method: LandedCostMethod;
+  totalFreight: number;
+  totalGoodsSubtotal: number;
+  totalLandedCost: number;
+  items: LandedCostItemResult[];
+  isBalanced: boolean;
+}
+
+export function allocateLandedCosts(
+  items: LandedCostItemInput[],
+  totalFreight: number,
+  method: LandedCostMethod = "BY_VALUE"
+): LandedCostAllocationResult {
+  const freight = Math.max(0, Number(totalFreight) || 0);
+  const totalSubtotal = items.reduce((sum, item) => {
+    const q = Math.max(0, Number(item.quantity) || 0);
+    const p = Math.max(0, Number(item.unitPrice) || 0);
+    return sum + q * p;
+  }, 0);
+
+  const totalQuantity = items.reduce((sum, item) => sum + Math.max(0, Number(item.quantity) || 0), 0);
+
+  const results: LandedCostItemResult[] = [];
+  let allocatedSum = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const qty = Math.max(0, Number(it.quantity) || 0);
+    const price = Math.max(0, Number(it.unitPrice) || 0);
+    const lineSubtotal = parseFloat((qty * price).toFixed(2));
+
+    let allocatedLineFreight = 0;
+    if (freight > 0) {
+      if (method === "BY_VALUE" && totalSubtotal > 0) {
+        allocatedLineFreight = parseFloat(((lineSubtotal / totalSubtotal) * freight).toFixed(2));
+      } else if (method === "BY_QUANTITY" && totalQuantity > 0) {
+        allocatedLineFreight = parseFloat(((qty / totalQuantity) * freight).toFixed(2));
+      } else if (method === "MANUAL") {
+        allocatedLineFreight = Math.max(0, Number(it.manualFreightAllocation) || 0);
+      }
+    }
+
+    // For the last item under proportional allocation, absorb any 1-cent rounding difference
+    if (i === items.length - 1 && method !== "MANUAL" && freight > 0) {
+      const remainingFreight = parseFloat((freight - allocatedSum).toFixed(2));
+      if (Math.abs(remainingFreight - allocatedLineFreight) <= 0.05) {
+        allocatedLineFreight = remainingFreight;
+      }
+    }
+
+    allocatedSum = parseFloat((allocatedSum + allocatedLineFreight).toFixed(2));
+
+    const totalLandedCost = parseFloat((lineSubtotal + allocatedLineFreight).toFixed(2));
+    const landedCostPerUnit = qty > 0 ? parseFloat((totalLandedCost / qty).toFixed(2)) : price;
+
+    results.push({
+      productId: it.productId,
+      productName: it.productName,
+      quantity: qty,
+      unitPrice: price,
+      subtotal: lineSubtotal,
+      allocatedFreight: allocatedLineFreight,
+      totalLandedCost,
+      landedCostPerUnit,
+    });
+  }
+
+  const grandLandedCost = parseFloat((totalSubtotal + freight).toFixed(2));
+  const sumOfLandedCosts = results.reduce((sum, r) => sum + r.totalLandedCost, 0);
+
+  return {
+    method,
+    totalFreight: freight,
+    totalGoodsSubtotal: totalSubtotal,
+    totalLandedCost: grandLandedCost,
+    items: results,
+    isBalanced: Math.abs(sumOfLandedCosts - grandLandedCost) < 0.02,
+  };
+}

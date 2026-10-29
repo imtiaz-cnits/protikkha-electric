@@ -98,6 +98,7 @@ model customers {
   product_returns          product_returns[]
   party_ledger_entries     party_ledger_entries[]
   warranty_records         warranty_records[]
+  cable_drums              cable_drums[]
 
   @@index([district_id], map: "customers_district_id_foreign")
   @@index([location_id], map: "customers_location_id_foreign")
@@ -377,6 +378,8 @@ model products {
   electrical_specifications electrical_specifications?
   packaging_conversions     packaging_conversions[]
   warranty_records          warranty_records[]
+  stock_transfer_items      stock_transfer_items[]
+  cable_drums               cable_drums[]
 
   @@index([brand_id], map: "products_brand_id_foreign")
   @@index([category_id], map: "products_category_id_foreign")
@@ -544,6 +547,7 @@ model suppliers {
   purchases                purchases[]
   supplier_due_collections supplier_due_collections[]
   party_ledger_entries     party_ledger_entries[]
+  cable_drums              cable_drums[]
   users                    users                      @relation(fields: [user_id], references: [id], map: "suppliers_user_id_foreign")
 
   @@index([user_id], map: "suppliers_user_id_foreign")
@@ -658,6 +662,10 @@ model users {
   fish_samplings                    fish_samplings[]
   fish_harvests                     fish_harvests[]
   project_quotations                project_quotations[]
+  contractors                       contractors[]
+  contractor_commissions            contractor_commissions[]
+  stock_transfers                   stock_transfers[]
+  cable_drums                       cable_drums[]
 }
 
 model challan_items {
@@ -747,6 +755,8 @@ model business_units {
   party_ledger_entries   party_ledger_entries[]
   unit_conversions       unit_conversions[]
   internal_feed_issues   internal_feed_issues[]
+  transfers_from         stock_transfers[]        @relation("TransferFromUnit")
+  transfers_to           stock_transfers[]        @relation("TransferToUnit")
 
   @@index([user_id])
 }
@@ -1282,5 +1292,139 @@ model quotation_items {
 
   @@index([quotation_id])
   @@index([product_id])
+}
+
+// ========================================================
+// PHASE 12: CONTRACTORS, COMMISSIONS, TRANSFERS & DRUMS
+// ========================================================
+
+model contractors {
+  id                      BigInt                   @id @default(autoincrement()) @db.UnsignedBigInt
+  contractor_code         String                   @unique @db.VarChar(50) // e.g. CON-1001, ELEC-2001
+  name                    String                   @db.VarChar(255)
+  mobile                  String                   @db.VarChar(50)
+  email                   String?                  @db.VarChar(255)
+  address                 String?                  @db.Text
+  specialization          String?                  @db.VarChar(100) // e.g. House Wiring, Industrial Substation, Panel Builder
+  commission_percent      Decimal                  @default(5.00) @db.Decimal(5, 2)
+  total_commission_earned Decimal                  @default(0.00) @db.Decimal(15, 2)
+  total_commission_paid   Decimal                  @default(0.00) @db.Decimal(15, 2)
+  balance_payable         Decimal                  @default(0.00) @db.Decimal(15, 2)
+  status                  String                   @default("active") @db.VarChar(50)
+  user_id                 BigInt                   @db.UnsignedBigInt
+  created_at              DateTime                 @default(now()) @db.Timestamp(0)
+  updated_at              DateTime                 @default(now()) @db.Timestamp(0)
+
+  users                   users                    @relation(fields: [user_id], references: [id])
+  commissions             contractor_commissions[]
+
+  @@index([contractor_code])
+  @@index([mobile])
+  @@index([status])
+  @@index([user_id])
+}
+
+model contractor_commissions {
+  id                 BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  commission_no      String       @unique @db.VarChar(50) // e.g. COM-20261029-001
+  contractor_id      BigInt       @db.UnsignedBigInt
+  order_id           BigInt?      @db.UnsignedBigInt
+  quotation_id       BigInt?      @db.UnsignedBigInt
+  invoice_no         String?      @db.VarChar(100)
+  commission_basis   String       @default("NET_SALES") @db.VarChar(50) // GROSS_SALES, NET_SALES, GROSS_PROFIT, FLAT
+  sale_amount        Decimal      @default(0.00) @db.Decimal(15, 2)
+  commission_percent Decimal      @default(0.00) @db.Decimal(5, 2)
+  commission_amount  Decimal      @default(0.00) @db.Decimal(15, 2)
+  status             String       @default("PENDING") @db.VarChar(50) // PENDING, APPROVED, PAID, REVERSED
+  paid_amount        Decimal      @default(0.00) @db.Decimal(15, 2)
+  payment_method     String?      @db.VarChar(50) // CASH, BKASH, BANK
+  payment_date       DateTime?    @db.Date
+  note               String?      @db.Text
+  user_id            BigInt       @db.UnsignedBigInt
+  created_at         DateTime     @default(now()) @db.Timestamp(0)
+  updated_at         DateTime     @default(now()) @db.Timestamp(0)
+
+  contractors        contractors  @relation(fields: [contractor_id], references: [id], onDelete: Cascade)
+  users              users        @relation(fields: [user_id], references: [id])
+
+  @@index([contractor_id])
+  @@index([status])
+  @@index([user_id])
+}
+
+model stock_transfers {
+  id                   BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  transfer_no          String                 @unique @db.VarChar(50) // e.g. TRF-20261029-1001
+  from_unit_id         BigInt                 @db.UnsignedBigInt
+  to_unit_id           BigInt                 @db.UnsignedBigInt
+  status               String                 @default("PENDING") @db.VarChar(50) // PENDING, DISPATCHED, RECEIVED, CANCELLED
+  total_items          Int                    @default(0)
+  total_quantity       Decimal                @default(0.00) @db.Decimal(15, 3)
+  dispatched_at        DateTime?              @db.Timestamp(0)
+  received_at          DateTime?              @db.Timestamp(0)
+  note                 String?                @db.Text
+  user_id              BigInt                 @db.UnsignedBigInt
+  created_at           DateTime               @default(now()) @db.Timestamp(0)
+  updated_at           DateTime               @default(now()) @db.Timestamp(0)
+
+  users                users                  @relation(fields: [user_id], references: [id])
+  from_business_unit   business_units         @relation("TransferFromUnit", fields: [from_unit_id], references: [id])
+  to_business_unit     business_units         @relation("TransferToUnit", fields: [to_unit_id], references: [id])
+  transfer_items       stock_transfer_items[]
+
+  @@index([transfer_no])
+  @@index([status])
+  @@index([from_unit_id])
+  @@index([to_unit_id])
+  @@index([user_id])
+}
+
+model stock_transfer_items {
+  id                BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  transfer_id       BigInt          @db.UnsignedBigInt
+  product_id        BigInt          @db.UnsignedBigInt
+  quantity          Decimal         @db.Decimal(15, 3)
+  received_quantity Decimal?        @db.Decimal(15, 3)
+  packaging_unit    String?         @db.VarChar(50)
+  unit_cost         Decimal         @default(0.00) @db.Decimal(15, 2)
+  note              String?         @db.VarChar(255)
+  created_at        DateTime        @default(now()) @db.Timestamp(0)
+
+  transfers         stock_transfers @relation(fields: [transfer_id], references: [id], onDelete: Cascade)
+  products          products        @relation(fields: [product_id], references: [id])
+
+  @@index([transfer_id])
+  @@index([product_id])
+}
+
+model cable_drums {
+  id                   BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  drum_code            String     @unique @db.VarChar(50) // e.g. DRM-1001
+  product_id           BigInt?    @db.UnsignedBigInt
+  supplier_id          BigInt?    @db.UnsignedBigInt
+  customer_id          BigInt?    @db.UnsignedBigInt
+  drum_type            String     @default("Wooden Drum 1000m") @db.VarChar(100) // Wooden Drum, Steel Reel, Heavy Coil Drum
+  deposit_amount       Decimal    @default(0.00) @db.Decimal(12, 2)
+  refund_amount        Decimal    @default(0.00) @db.Decimal(12, 2)
+  status               String     @default("IN_STOCK") @db.VarChar(50) // IN_STOCK, ISSUED, RETURNED, REFUNDED, DAMAGED_LOST
+  issue_date           DateTime?  @db.Date
+  return_date          DateTime?  @db.Date
+  order_no             String?    @db.VarChar(100)
+  purchase_no          String?    @db.VarChar(100)
+  note                 String?    @db.Text
+  user_id              BigInt     @db.UnsignedBigInt
+  created_at           DateTime   @default(now()) @db.Timestamp(0)
+  updated_at           DateTime   @default(now()) @db.Timestamp(0)
+
+  users                users      @relation(fields: [user_id], references: [id])
+  products             products?  @relation(fields: [product_id], references: [id])
+  suppliers            suppliers? @relation(fields: [supplier_id], references: [id])
+  customers            customers? @relation(fields: [customer_id], references: [id])
+
+  @@index([drum_code])
+  @@index([status])
+  @@index([user_id])
+  @@index([customer_id])
+  @@index([supplier_id])
 }
 

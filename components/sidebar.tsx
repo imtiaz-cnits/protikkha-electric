@@ -27,6 +27,8 @@ import {
   Scale,
   FileText,
   ShieldAlert,
+  Database,
+  Ban,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 
@@ -67,6 +69,8 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Categories", href: "/categories", icon: Layers },
       { label: "Brands", href: "/brands", icon: Tag },
       { label: "Units & Packaging", href: "/units", icon: Boxes },
+      { label: "Store Transfers", href: "/inventory/transfers", icon: Truck },
+      { label: "Cable Drums & Deposits", href: "/cable-drums", icon: Boxes },
       { label: "Barcode Labels", href: "/barcode-print", icon: Barcode },
     ],
   },
@@ -79,6 +83,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Delivery Challans", href: "/challans", icon: FileSpreadsheet },
       { label: "Project Quotations", href: "/quotations", icon: FileText },
       { label: "Sales Returns", href: "/returns", icon: RotateCcw },
+      { label: "Order Cancellations", href: "/order-cancellations", icon: Ban },
       { label: "Warranty & Claims", href: "/warranty", icon: ShieldCheck },
     ],
   },
@@ -95,11 +100,12 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "customers",
-    label: "Customers",
+    label: "Customers & Partners",
     icon: Users,
     children: [
       { label: "Customer List", href: "/customers", icon: Users },
       { label: "Customer Due", href: "/customer-dues", icon: Wallet },
+      { label: "Contractors & Electricians", href: "/contractors", icon: Zap },
     ],
   },
   {
@@ -131,6 +137,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Settings,
     children: [
       { label: "User List & Roles", href: "/users", icon: Users },
+      { label: "Database Backup", href: "/settings/backup", icon: Database },
       { label: "Profile", href: "/profile", icon: User },
     ],
   },
