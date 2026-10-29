@@ -76,6 +76,7 @@ export async function GET(req: NextRequest) {
         all_codes: codes,
         cost_price: allowCostView ? parseFloat(p.cost_price || "0") : null,
         sell_price: parseFloat(p.sell_price || "0"),
+        wholesale_price: p.wholesale_price ? parseFloat(p.wholesale_price) : null,
         quantity: parseFloat(p.quantity || "0"),
         status: p.status,
         img_url: p.img_url,
@@ -174,6 +175,7 @@ export async function POST(req: NextRequest) {
       product_code,
       cost_price,
       sell_price,
+      wholesale_price,
       quantity,
       brand_id,
       category_id,
@@ -239,6 +241,7 @@ export async function POST(req: NextRequest) {
         product_code: finalCodes as any, // stored as json array
         cost_price: String(cost_price || "0"),
         sell_price: String(sell_price || "0"),
+        wholesale_price: wholesale_price ? String(wholesale_price) : null,
         quantity: String(quantity || "0"),
         brand_id: BigInt(brand_id),
         category_id: BigInt(category_id),

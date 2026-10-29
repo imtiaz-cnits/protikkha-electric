@@ -6,9 +6,7 @@ import { validateDiscountLimit } from "@/lib/rbac";
 import { logAudit } from "@/lib/audit-service";
 import {
   getBangladeshDate,
-  getProductCategoryMap,
   lockProductsAscending,
-  getAvailableStockWithPendingReservations,
 } from "@/lib/challan-service";
 
 export const dynamic = "force-dynamic";
@@ -94,57 +92,29 @@ export async function POST(req: NextRequest) {
       // 1. Lock affected product rows in ascending order to prevent deadlocks and lost updates
       await lockProductsAscending(productIds, tx);
 
-      // 2. Classify products by category (Tiles vs Non-Tiles)
-      const categoryMap = await getProductCategoryMap(productIds, tx);
-
-      let hasTiles = false;
+      // 2. Pre-validate stock availability for all electrical items with packaging conversion ratio
       for (const item of validItems) {
-        const catInfo = categoryMap.get(String(item.product_id));
-        if (catInfo?.isTiles) {
-          hasTiles = true;
-          break;
-        }
-      }
-
-      // 3. Pre-validate stock availability for all items
-      for (const item of validItems) {
-        const catInfo = categoryMap.get(String(item.product_id));
         const reqQty = parseFloat(String(item.quantity || "0"));
-        const prodName = catInfo?.product?.product_name || `Product #${item.product_id}`;
+        const [currentProd]: any = await tx.$queryRawUnsafe(
+          "SELECT product_name, quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
+          BigInt(item.product_id)
+        );
+        const prodName = currentProd?.product_name || `Product #${item.product_id}`;
+        const physicalStock = parseFloat(currentProd?.quantity || "0");
+        const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
+        const requiredBaseQty = item.base_quantity != null
+          ? parseFloat(String(item.base_quantity))
+          : reqQty * ratio;
 
-        if (catInfo?.isTiles) {
-          // Tiles: check available stock taking into account pending challan reservations
-          const { availableStock } = await getAvailableStockWithPendingReservations(
-            item.product_id,
-            tx
+        if (requiredBaseQty > physicalStock) {
+          throw new Error(
+            `Insufficient stock for "${prodName}". In Stock: ${physicalStock}, Requested: ${requiredBaseQty}`
           );
-          if (reqQty > availableStock) {
-            throw new Error(
-              `Insufficient stock for "${prodName}". Available (after reservations): ${availableStock}, Requested: ${reqQty}`
-            );
-          }
-        } else {
-          // Non-Tiles: check direct physical stock with electrical packaging conversion ratio
-          const [currentProd]: any = await tx.$queryRawUnsafe(
-            "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
-            BigInt(item.product_id)
-          );
-          const physicalStock = parseFloat(currentProd?.quantity || "0");
-          const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
-          const requiredBaseQty = item.base_quantity != null
-            ? parseFloat(String(item.base_quantity))
-            : reqQty * ratio;
-
-          if (requiredBaseQty > physicalStock) {
-            throw new Error(
-              `Insufficient stock for "${prodName}". In Stock: ${physicalStock}, Requested: ${requiredBaseQty}`
-            );
-          }
         }
       }
 
-      // 4. Create Order with appropriate Challan status
-      const initialChallanStatus = hasTiles ? "PENDING" : "NOT_REQUIRED";
+      // 3. Create Order
+      const initialChallanStatus = Number(delivery_charge || 0) > 0 ? "PENDING" : "NOT_REQUIRED";
       const newOrder = await tx.orders.create({
         data: {
           customer_id: BigInt(customer_id),
@@ -163,12 +133,8 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 5. Insert OrderDetails and mutate stock only for non-Tiles items
+      // 4. Insert OrderDetails and deduct electrical stock immediately
       for (const item of validItems) {
-        const catInfo = categoryMap.get(String(item.product_id));
-        const isTiles = !!catInfo?.isTiles;
-        const lineState = isTiles ? "PENDING_CHALLAN" : "DEDUCTED_AT_INVOICE";
-
         await tx.order_details.create({
           data: {
             order_id: newOrder.id,
@@ -177,28 +143,26 @@ export async function POST(req: NextRequest) {
             price: String(item.price || "0"), // Cost price
             selling_price: String(item.selling_price || item.price || "0"),
             user_id: BigInt(userId),
-            stock_lifecycle_state: lineState,
+            stock_lifecycle_state: "DEDUCTED_AT_INVOICE",
           },
         });
 
-        // Deduct stock immediately ONLY if NOT Tiles
-        if (!isTiles) {
-          const [currentProd]: any = await tx.$queryRawUnsafe(
-            "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
-            BigInt(item.product_id)
-          );
-          const currentQty = parseFloat(currentProd?.quantity || "0");
-          const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
-          const decrementQty = item.base_quantity != null
-            ? parseFloat(String(item.base_quantity))
-            : parseFloat(String(item.quantity || "0")) * ratio;
-          const newStock = Math.max(0, currentQty - decrementQty);
+        // Deduct electrical stock immediately
+        const [currentProd]: any = await tx.$queryRawUnsafe(
+          "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
+          BigInt(item.product_id)
+        );
+        const currentQty = parseFloat(currentProd?.quantity || "0");
+        const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
+        const decrementQty = item.base_quantity != null
+          ? parseFloat(String(item.base_quantity))
+          : parseFloat(String(item.quantity || "0")) * ratio;
+        const newStock = Math.max(0, currentQty - decrementQty);
 
-          await tx.products.update({
-            where: { id: BigInt(item.product_id) },
-            data: { quantity: String(newStock) },
-          });
-        }
+        await tx.products.update({
+          where: { id: BigInt(item.product_id) },
+          data: { quantity: String(newStock) },
+        });
       }
 
       // 6. Create Payment Details
@@ -251,7 +215,7 @@ export async function POST(req: NextRequest) {
 
       return {
         ...newOrder,
-        has_tiles: hasTiles,
+        has_tiles: false,
         challan_status: initialChallanStatus,
       };
     });

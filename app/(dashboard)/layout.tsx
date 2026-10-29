@@ -41,7 +41,7 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-[#0b0f19] transition-colors">
-      {/* Sidebar: Expanded (215px) or Collapsed (70px) + Mobile Drawer */}
+      {/* Sidebar: Expanded (260px) or Collapsed (70px) + Mobile Drawer */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -62,7 +62,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div
         className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-          isCollapsed ? "lg:ml-[70px]" : "lg:ml-[215px]"
+          isCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"
         }`}
       >
         {/* Sticky Topbar */}

@@ -163,6 +163,9 @@ interface ProductItem {
   quantity: number;
   status: string;
   img_url?: string | null;
+  wholesale_price?: number | null;
+  sub_category_id?: number | null;
+  sub_category?: string | null;
   category: string;
   brand: string;
   unit: string;
@@ -178,6 +181,8 @@ interface OptionItem {
   id: number;
   name?: string;
   category_name?: string;
+  sub_category_name?: string;
+  category_id?: number;
   unit_name?: string;
 }
 
@@ -185,6 +190,7 @@ export default function ProductsPage() {
   const { toast } = useToast();
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [categories, setCategories] = useState<OptionItem[]>([]);
+  const [subCategories, setSubCategories] = useState<OptionItem[]>([]);
   const [brands, setBrands] = useState<OptionItem[]>([]);
   const [units, setUnits] = useState<OptionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,9 +235,11 @@ export default function ProductsPage() {
     product_code: "",
     cost_price: "",
     sell_price: "",
+    wholesale_price: "",
     quantity: "0",
     brand_id: "",
     category_id: "",
+    sub_category_id: "",
     unit_id: "",
     status: "active",
     // Electrical Specs
@@ -257,22 +265,25 @@ export default function ProductsPage() {
   async function loadData() {
     setLoading(true);
     try {
-      const [prodRes, catRes, brandRes, unitRes] = await Promise.all([
+      const [prodRes, catRes, subCatRes, brandRes, unitRes] = await Promise.all([
         fetch("/api/products"),
         fetch("/api/categories"),
+        fetch("/api/sub-categories"),
         fetch("/api/brands"),
         fetch("/api/units"),
       ]);
 
-      const [prodData, catData, brandData, unitData] = await Promise.all([
+      const [prodData, catData, subCatData, brandData, unitData] = await Promise.all([
         prodRes.json(),
         catRes.json(),
+        subCatRes.json(),
         brandRes.json(),
         unitRes.json(),
       ]);
 
       if (prodData.status === "success") setProducts(prodData.data);
       if (catData.status === "success") setCategories(catData.data);
+      if (subCatData.status === "success") setSubCategories(subCatData.data);
       if (brandData.status === "success") setBrands(brandData.data);
       if (unitData.status === "success") setUnits(unitData.data);
     } catch (err: any) {
@@ -347,9 +358,11 @@ export default function ProductsPage() {
       product_code: "",
       cost_price: "",
       sell_price: "",
+      wholesale_price: "",
       quantity: "0",
       brand_id: brands[0]?.id ? String(brands[0].id) : "",
       category_id: categories[0]?.id ? String(categories[0].id) : "",
+      sub_category_id: "",
       unit_id: units[0]?.id ? String(units[0].id) : "",
       status: "active",
       spec_type: "GENERAL",
@@ -385,9 +398,11 @@ export default function ProductsPage() {
       product_code: prod.primary_code,
       cost_price: String(prod.cost_price),
       sell_price: String(prod.sell_price),
+      wholesale_price: prod.wholesale_price ? String(prod.wholesale_price) : "",
       quantity: String(prod.quantity),
       brand_id: String(prod.brand_id),
       category_id: String(prod.category_id),
+      sub_category_id: prod.sub_category_id ? String(prod.sub_category_id) : "",
       unit_id: prod.unit_id ? String(prod.unit_id) : "",
       status: prod.status || "active",
       spec_type: spec?.spec_type || "GENERAL",
@@ -967,9 +982,16 @@ export default function ProductsPage() {
                           {formatBdCurrency(p.cost_price)}
                         </td>
 
-                        {/* Sell Price */}
-                        <td className="py-3 px-3.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                          {formatBdCurrency(p.sell_price)}
+                        {/* Sell & Wholesale Price */}
+                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                          <p className="font-bold text-slate-900 dark:text-white">
+                            {formatBdCurrency(p.sell_price)}
+                          </p>
+                          {p.wholesale_price && p.wholesale_price > 0 ? (
+                            <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold" title="Wholesale Price">
+                              W: {formatBdCurrency(p.wholesale_price)}
+                            </p>
+                          ) : null}
                         </td>
 
                         {/* Stock */}
@@ -1228,8 +1250,28 @@ export default function ProductsPage() {
                         label: c.category_name || "Category",
                       }))}
                       value={formData.category_id}
-                      onChange={(val) => setFormData({ ...formData, category_id: String(val) })}
+                      onChange={(val) => setFormData({ ...formData, category_id: String(val), sub_category_id: "" })}
                       placeholder="Select Category"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Subcategory
+                    </label>
+                    <CustomSelect
+                      options={[
+                        { value: "", label: "None / General" },
+                        ...subCategories
+                          .filter((sc) => !formData.category_id || String(sc.category_id) === formData.category_id)
+                          .map((sc) => ({
+                            value: String(sc.id),
+                            label: sc.name || sc.sub_category_name || "Subcategory",
+                          })),
+                      ]}
+                      value={formData.sub_category_id}
+                      onChange={(val) => setFormData({ ...formData, sub_category_id: String(val) })}
+                      placeholder="Select Subcategory"
                     />
                   </div>
 
@@ -1273,6 +1315,20 @@ export default function ProductsPage() {
                       required
                       value={formData.sell_price}
                       onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Wholesale Price (৳)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.wholesale_price}
+                      onChange={(e) => setFormData({ ...formData, wholesale_price: e.target.value })}
                       placeholder="0.00"
                       className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
                     />

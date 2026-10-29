@@ -342,6 +342,7 @@ model products {
   quantity               String?                  @db.VarChar(255)
   cost_price             String                   @db.VarChar(255)
   sell_price             String                   @db.VarChar(255)
+  wholesale_price        String?                  @db.VarChar(255)
   status                 String                   @db.VarChar(255)
   product_code           Json
   brand_id               BigInt                   @db.UnsignedBigInt
@@ -380,6 +381,7 @@ model products {
   warranty_records          warranty_records[]
   stock_transfer_items      stock_transfer_items[]
   cable_drums               cable_drums[]
+  product_variants          product_variants[]
 
   @@index([brand_id], map: "products_brand_id_foreign")
   @@index([category_id], map: "products_category_id_foreign")
@@ -1426,5 +1428,27 @@ model cable_drums {
   @@index([user_id])
   @@index([customer_id])
   @@index([supplier_id])
+}
+
+model product_variants {
+  id              BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id      BigInt   @db.UnsignedBigInt
+  variant_name    String   @db.VarChar(255)
+  sku             String?  @unique @db.VarChar(100)
+  barcode         String?  @unique @db.VarChar(100)
+  attributes      Json?
+  cost_price      String?  @default("0") @db.VarChar(255)
+  sell_price      String   @default("0") @db.VarChar(255)
+  wholesale_price String?  @default("0") @db.VarChar(255)
+  stock_quantity  String?  @default("0") @db.VarChar(255)
+  status          String   @default("active") @db.VarChar(50)
+  created_at      DateTime @default(now()) @db.Timestamp(0)
+  updated_at      DateTime @default(now()) @db.Timestamp(0)
+
+  products        products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([product_id])
+  @@index([sku])
+  @@index([barcode])
 }
 

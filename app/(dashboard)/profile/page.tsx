@@ -211,7 +211,7 @@ export default function ProfilePage() {
       : "Store User";
 
   return (
-    <div className="space-y-4 max-w-6xl mx-auto font-sans pb-8">
+    <div className="w-full space-y-4 font-sans pb-8">
       {/* 1. Header Toolbar matching MARSS CORPORATION Screenshot */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-3">

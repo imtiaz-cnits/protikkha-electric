@@ -29,6 +29,12 @@ import {
   ShieldAlert,
   Database,
   Ban,
+  Building2,
+  Percent,
+  Activity,
+  Calculator,
+  TrendingUp,
+  PackageCheck,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 
@@ -55,75 +61,126 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "pos",
-    label: "Point of Sale",
+    label: "Point of Sale (POS)",
     href: "/pos",
     icon: ShoppingCart,
-  },
-  {
-    id: "inventory",
-    label: "Products & Stock",
-    icon: Package,
-    children: [
-      { label: "Stock Overview", href: "/inventory", icon: Boxes },
-      { label: "Products Catalog", href: "/products", icon: Package },
-      { label: "Categories", href: "/categories", icon: Layers },
-      { label: "Brands", href: "/brands", icon: Tag },
-      { label: "Units & Packaging", href: "/units", icon: Boxes },
-      { label: "Store Transfers", href: "/inventory/transfers", icon: Truck },
-      { label: "Cable Drums & Deposits", href: "/cable-drums", icon: Boxes },
-      { label: "Barcode Labels", href: "/barcode-print", icon: Barcode },
-    ],
   },
   {
     id: "sales",
     label: "Sales & Invoices",
     icon: Receipt,
     children: [
-      { label: "Invoices List", href: "/invoices", icon: Receipt },
+      { label: "Sales Invoices", href: "/invoices", icon: Receipt },
       { label: "Delivery Challans", href: "/challans", icon: FileSpreadsheet },
-      { label: "Project Quotations", href: "/quotations", icon: FileText },
       { label: "Sales Returns", href: "/returns", icon: RotateCcw },
-      { label: "Order Cancellations", href: "/order-cancellations", icon: Ban },
-      { label: "Warranty & Claims", href: "/warranty", icon: ShieldCheck },
+      { label: "Item Cancellations", href: "/order-cancellations", icon: Ban },
+      { label: "Due Collection", href: "/customer-dues", icon: Wallet },
+    ],
+  },
+  {
+    id: "catalog",
+    label: "Products & Catalog",
+    icon: Package,
+    children: [
+      { label: "Products Catalog", href: "/products", icon: Package },
+      { label: "Product Variants", href: "/products/variants", icon: Boxes },
+      { label: "Retail & Wholesale Rates", href: "/products/price-lists", icon: Tag },
+      { label: "Categories", href: "/categories", icon: Layers },
+      { label: "Subcategories", href: "/sub-categories", icon: Layers },
+      { label: "Brands & Makers", href: "/brands", icon: Tag },
+      { label: "Units & Packaging", href: "/units", icon: Boxes },
+      { label: "Barcode Label Print", href: "/barcode-print", icon: Barcode },
+    ],
+  },
+  {
+    id: "inventory",
+    label: "Inventory & Stock",
+    icon: Boxes,
+    children: [
+      { label: "Stock Overview", href: "/inventory", icon: Boxes },
+      { label: "Stock Movement Ledger", href: "/inventory/movements", icon: FileSpreadsheet },
+      { label: "Stock Reconciliation", href: "/inventory/adjustments", icon: AlertTriangle },
+      { label: "Cable Reels & Cut-Length", href: "/inventory/cable-reels", icon: Zap },
+      { label: "Store Transfers", href: "/inventory/transfers", icon: Truck },
     ],
   },
   {
     id: "purchases",
-    label: "Purchases",
+    label: "Purchases & Procurement",
     icon: Truck,
     children: [
       { label: "Purchase Bills", href: "/purchases", icon: ShoppingCart },
+      { label: "Goods Receipts (GRN)", href: "/purchases/receipts", icon: PackageCheck },
       { label: "Purchase Returns", href: "/purchase-returns", icon: RotateCcw },
-      { label: "Suppliers", href: "/suppliers", icon: Users },
       { label: "Supplier Due Pay", href: "/supplier-dues", icon: Wallet },
     ],
   },
   {
+    id: "suppliers",
+    label: "Suppliers & Vendors",
+    icon: Building2,
+    children: [
+      { label: "Supplier Directory", href: "/suppliers", icon: Users },
+      { label: "Supplier Statements & Ledger", href: "/suppliers/ledger", icon: FileSpreadsheet },
+    ],
+  },
+  {
     id: "customers",
-    label: "Customers & Partners",
+    label: "Customers & Contractors",
     icon: Users,
     children: [
-      { label: "Customer List", href: "/customers", icon: Users },
-      { label: "Customer Due", href: "/customer-dues", icon: Wallet },
+      { label: "Customer Directory", href: "/customers", icon: Users },
+      { label: "Customer Dues Ledger", href: "/customer-dues", icon: Wallet },
       { label: "Contractors & Electricians", href: "/contractors", icon: Zap },
+      { label: "Contractor Commission Ledger", href: "/contractors/commissions", icon: Percent },
+    ],
+  },
+  {
+    id: "quotations",
+    label: "Project Quotations & BOQ",
+    icon: FileText,
+    children: [
+      { label: "Project Quotations", href: "/quotations", icon: FileText },
+      { label: "Contractor Jobs & BOQ", href: "/quotations/contractor-jobs", icon: FileText },
     ],
   },
   {
     id: "expenses",
-    label: "Expenses & Staff",
-    icon: Wallet,
+    label: "Accounts & Finance",
+    icon: Scale,
     children: [
+      { label: "General Journal", href: "/accounts/journal", icon: Scale },
+      { label: "Cash Book & Bank", href: "/accounts/cash-bank", icon: Wallet },
       { label: "Daily Expenses", href: "/expenses", icon: Wallet },
       { label: "Expense Categories", href: "/expense-types", icon: Layers },
-      { label: "Staff & Payroll", href: "/staff", icon: Users },
+    ],
+  },
+  {
+    id: "warranty",
+    label: "Warranty & Service",
+    icon: ShieldCheck,
+    children: [
+      { label: "Warranty Register", href: "/warranty", icon: ShieldCheck },
+      { label: "Warranty Claims & Repairs", href: "/warranty/claims", icon: ShieldCheck },
+    ],
+  },
+  {
+    id: "cable-drums",
+    label: "Cable Drum Management",
+    icon: Boxes,
+    children: [
+      { label: "Drum Register", href: "/cable-drums", icon: Boxes },
+      { label: "Refundable Drum Deposits", href: "/cable-drums/deposits", icon: Wallet },
     ],
   },
   {
     id: "reports",
-    label: "Reports & Ledger",
+    label: "Reports & Analytics",
     icon: FileSpreadsheet,
     children: [
       { label: "Sales Report", href: "/reports/sales", icon: FileSpreadsheet },
+      { label: "Stock Valuation (Asset)", href: "/reports/stock-valuation", icon: Boxes },
+      { label: "Gross Profit & Margins", href: "/reports/profit-margin", icon: TrendingUp },
       { label: "Daily Ledger", href: "/reports/daily-ledger", icon: FileSpreadsheet },
       { label: "General Ledger & COA", href: "/reports/general-ledger", icon: Scale },
       { label: "Income & Expense", href: "/reports/income-expense", icon: Wallet },
@@ -132,13 +189,32 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    id: "staff",
+    label: "Staff & Access Control",
+    icon: Users,
+    children: [
+      { label: "Staff Directory", href: "/staff", icon: Users },
+      { label: "User Accounts & Roles", href: "/users", icon: Users },
+    ],
+  },
+  {
     id: "settings",
-    label: "Settings",
+    label: "Settings & Administration",
     icon: Settings,
     children: [
-      { label: "User List & Roles", href: "/users", icon: Users },
+      { label: "Store Profile Settings", href: "/settings", icon: Settings },
+      { label: "System Health Diagnostics", href: "/settings/health", icon: Activity },
       { label: "Database Backup", href: "/settings/backup", icon: Database },
-      { label: "Profile", href: "/profile", icon: User },
+      { label: "My Profile", href: "/profile", icon: User },
+    ],
+  },
+  {
+    id: "tools",
+    label: "Electrical Tools",
+    icon: Calculator,
+    children: [
+      { label: "Cable Length & Drop Calculator", href: "/tools/cable-calculator", icon: Calculator },
+      { label: "Data Import & Export", href: "/tools/import-export", icon: FileSpreadsheet },
     ],
   },
 ];
@@ -290,12 +366,12 @@ export function Sidebar({
       <aside
         className={`fixed top-0 bottom-0 left-0 z-50 bg-gradient-to-b from-[#0B3D91] via-[#0e3271] to-[#08224d] text-white flex flex-col transition-all duration-300 ease-in-out border-r border-white/10 shadow-2xl select-none ${isCollapsed
           ? "w-[70px] -translate-x-full lg:translate-x-0"
-          : "w-[215px] " +
+          : "w-[260px] " +
           (isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")
           }`}
       >
         {/* Brand Header */}
-        <div className="h-[60px] px-3 flex items-center justify-between border-b border-white/10 shrink-0">
+        <div className="h-[60px] px-3.5 flex items-center justify-between border-b border-white/10 shrink-0">
           <Link
             href="/dashboard"
             className={`flex items-center gap-2.5 ${isCollapsed ? "justify-center w-full" : ""
@@ -315,7 +391,7 @@ export function Sidebar({
                   className="w-8 h-8 rounded-xl object-contain shadow-xs shrink-0"
                 />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[12px] font-black tracking-wider text-white leading-tight uppercase truncate">
+                  <span className="text-[13px] font-black tracking-wider text-white leading-tight uppercase truncate">
                     PROTIKKHA
                   </span>
                   <span className="text-[10px] text-amber-300 font-semibold tracking-tight leading-tight truncate">
@@ -342,7 +418,7 @@ export function Sidebar({
           <div className="relative flex-1 overflow-hidden w-full">
             {/* 1. Main Navigation Panel (Slides Left when drilled) */}
             <div
-              className={`absolute inset-0 w-full h-full overflow-y-auto px-2 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out scrollbar-thin ${drilledParent !== null
+              className={`absolute inset-0 w-full h-full overflow-y-auto px-2.5 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent !== null
                 ? "-translate-x-full pointer-events-none"
                 : "translate-x-0 pointer-events-auto"
                 }`}
@@ -412,7 +488,7 @@ export function Sidebar({
             {NAV_ITEMS.filter((item) => item.children).map((parent) => (
               <div
                 key={parent.id}
-                className={`absolute inset-0 w-full h-full overflow-y-auto px-2 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out scrollbar-thin ${drilledParent === parent.id
+                className={`absolute inset-0 w-full h-full overflow-y-auto px-2.5 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent === parent.id
                   ? "translate-x-0 pointer-events-auto"
                   : "translate-x-full pointer-events-none"
                   }`}

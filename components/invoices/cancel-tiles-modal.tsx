@@ -41,27 +41,18 @@ export function CancelTilesModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Extract tiles products from the invoice details
-  const tilesItems = useMemo<InvoiceActionDetail[]>(() => {
+  // Extract products from the invoice details
+  const invoiceItems = useMemo<InvoiceActionDetail[]>(() => {
     if (!invoice || !Array.isArray(invoice.details)) return [];
-    return invoice.details.filter((d: any) => {
-      if (typeof d.is_tiles === "boolean") return d.is_tiles;
-      return Boolean(
-        d.tile_size ||
-          d.sqft_per_box ||
-          (d.pcs_per_box && d.pcs_per_box > 0) ||
-          (d.product_name && d.product_name.toLowerCase().includes("tile")) ||
-          (d.category && d.category.toLowerCase().includes("tile"))
-      );
-    });
+    return invoice.details;
   }, [invoice]);
 
-  // When modal opens or invoice changes, auto-select all tiles items and initialize box/pcs quantities
+  // When modal opens or invoice changes, auto-select all invoice items and initialize box/pcs quantities
   useEffect(() => {
-    if (isOpen && tilesItems.length > 0) {
-      setSelectedIds(tilesItems.map((item) => item.id));
+    if (isOpen && invoiceItems.length > 0) {
+      setSelectedIds(invoiceItems.map((item) => item.id));
       const initialQty: Record<number, CancelItemQuantity> = {};
-      tilesItems.forEach((it) => {
+      invoiceItems.forEach((it) => {
         const pcsPerBox = it.pcs_per_box || 1;
         const { fullBoxes, pcs } = parseBoxAndPcs(it.quantity, pcsPerBox, it.tile_size);
         initialQty[it.id] = {
@@ -78,7 +69,7 @@ export function CancelTilesModal({
       setReason("");
       setError(null);
     }
-  }, [isOpen, tilesItems]);
+  }, [isOpen, invoiceItems]);
 
   if (!isOpen || !invoice) return null;
 
@@ -91,13 +82,13 @@ export function CancelTilesModal({
 
   // Toggle all items
   const isAllSelected =
-    tilesItems.length > 0 && selectedIds.length === tilesItems.length;
+    invoiceItems.length > 0 && selectedIds.length === invoiceItems.length;
 
   const toggleAll = () => {
     if (isAllSelected) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(tilesItems.map((it) => it.id));
+      setSelectedIds(invoiceItems.map((it) => it.id));
     }
   };
 
@@ -166,7 +157,7 @@ export function CancelTilesModal({
   };
 
   // Financial calculations preview
-  const selectedItems = tilesItems.filter((it) => selectedIds.includes(it.id));
+  const selectedItems = invoiceItems.filter((it) => selectedIds.includes(it.id));
   const cancelAmount = selectedItems.reduce((sum, it) => {
     const data = getItemCancelData(it);
     return sum + data.itemCancelAmount;
@@ -180,7 +171,7 @@ export function CancelTilesModal({
 
   const handleConfirmCancel = async () => {
     if (selectedIds.length === 0) {
-      setError("Please select at least one tiles item to cancel.");
+      setError("Please select at least one item to cancel.");
       return;
     }
 
@@ -214,7 +205,7 @@ export function CancelTilesModal({
         onSuccess();
         onClose();
       } else {
-        setError(data.message || "Failed to cancel tiles products.");
+        setError(data.message || "Failed to cancel invoice items.");
       }
     } catch (err: any) {
       setError(err?.message || "Communication error while cancelling items.");
@@ -234,7 +225,7 @@ export function CancelTilesModal({
             </div>
             <div>
               <h2 className="text-sm font-bold text-white tracking-wide leading-none m-0">
-                Cancel Tiles Items
+                Cancel Invoice Items
               </h2>
               <p className="text-[11px] text-rose-100/80 mt-0.5 m-0">
                 Invoice #{invoice.order_no} • {invoice.customer_name}
@@ -350,23 +341,23 @@ export function CancelTilesModal({
                   onClick={toggleAll}
                   className="text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer select-none"
                 >
-                  Select All Tiles ({selectedIds.length}/{tilesItems.length})
+                  Select All Items ({selectedIds.length}/{invoiceItems.length})
                 </label>
               </div>
 
               <span className="text-[11px] text-slate-400">
-                Click checkbox or row to toggle • Edit Box & Pcs
+                Click checkbox or row to toggle • Edit Quantity
               </span>
             </div>
 
             {/* Items Table / Cards */}
             <div className="rounded-xl border border-[#cbd5e1] dark:border-[#334155] divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden bg-white dark:bg-[#0f172a]">
-              {tilesItems.length === 0 ? (
+              {invoiceItems.length === 0 ? (
                 <div className="p-6 text-center text-slate-400 text-xs font-medium">
-                  No tiles products found in this invoice.
+                  No items found in this invoice.
                 </div>
               ) : (
-                tilesItems.map((item) => {
+                invoiceItems.map((item) => {
                   const isChecked = selectedIds.includes(item.id);
                   const itemData = getItemCancelData(item);
                   const pcsPerBox = item.pcs_per_box || 1;

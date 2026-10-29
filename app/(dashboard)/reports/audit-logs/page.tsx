@@ -194,7 +194,6 @@ export default function AuditLogsPage() {
                 { value: "CANCEL", label: "CANCEL" },
               ]}
               placeholder="All Actions"
-              className="h-[38px] px-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
             />
           </div>
 
@@ -217,7 +216,6 @@ export default function AuditLogsPage() {
                 { value: "USER", label: "USER" },
               ]}
               placeholder="All Entities"
-              className="h-[38px] px-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
             />
           </div>
 

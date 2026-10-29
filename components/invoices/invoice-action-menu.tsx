@@ -80,19 +80,9 @@ export function InvoiceActionMenu<T extends Record<string, any>>({
     setMounted(true);
   }, []);
 
-  // Check if invoice has any tiles product items
-  const hasTilesProducts = Boolean(
-    Array.isArray(invoice.details) &&
-      invoice.details.some((d) => {
-        if (typeof d.is_tiles === "boolean") return d.is_tiles;
-        return Boolean(
-          d.tile_size ||
-            d.sqft_per_box ||
-            (d.pcs_per_box && d.pcs_per_box > 0) ||
-            (d.product_name && d.product_name.toLowerCase().includes("tile")) ||
-            (d.category && d.category.toLowerCase().includes("tile"))
-        );
-      })
+  // Check if invoice has any cancellable product items
+  const hasCancellableItems = Boolean(
+    Array.isArray(invoice.details) && invoice.details.length > 0
   );
 
   const hasChallanEligible = Boolean(
@@ -334,8 +324,8 @@ export function InvoiceActionMenu<T extends Record<string, any>>({
               </button>
             )}
 
-            {/* 6. Cancel Tiles Items - STRICTLY ONLY IF INVOICE HAS TILES PRODUCTS */}
-            {hasTilesProducts && onCancelTiles && (
+            {/* 6. Cancel Invoice Items */}
+            {hasCancellableItems && onCancelTiles && (
               <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800/80">
                 <button
                   type="button"
@@ -346,9 +336,9 @@ export function InvoiceActionMenu<T extends Record<string, any>>({
                     <Ban className="w-3.5 h-3.5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span>Cancel Tiles</span>
+                    <span>Cancel Items</span>
                     <span className="block text-[10px] font-normal text-rose-500/80 dark:text-rose-400/70">
-                      Remove tile items
+                      Cancel invoice items
                     </span>
                   </div>
                 </button>

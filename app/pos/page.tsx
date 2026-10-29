@@ -272,9 +272,7 @@ export default function PosPage() {
 
     // Load held invoices from localStorage
     try {
-      const stored =
-        localStorage.getItem("protikkha_held_invoices") ||
-        localStorage.getItem("runa_held_invoices");
+      const stored = localStorage.getItem("protikkha_held_invoices");
       if (stored) {
         setHeldInvoices(JSON.parse(stored));
       }

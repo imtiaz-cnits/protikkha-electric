@@ -1,8 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import prisma from "./prisma";
 
 const JWT_SECRET = process.env.JWT_SECRET || "protikkha_electric_super_secret_jwt_key_2026_codenext_it";
 
@@ -64,8 +63,13 @@ export async function getAuthUser(req?: NextRequest) {
         token = req.cookies.get("token")?.value;
       }
     } else {
-      const cookieStore = await cookies();
-      token = cookieStore.get("token")?.value;
+      try {
+        const nextHeaders: any = await import("next/headers");
+        const cookieStore = await nextHeaders.cookies();
+        token = cookieStore.get("token")?.value;
+      } catch {
+        token = undefined;
+      }
     }
 
     if (!token) return null;
