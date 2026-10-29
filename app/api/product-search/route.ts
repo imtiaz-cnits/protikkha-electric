@@ -16,6 +16,15 @@ function formatProduct(p: any) {
     }
   }
 
+  const spec = p.electrical_specifications;
+  const conversions = (p.packaging_conversions || []).map((c: any) => ({
+    id: Number(c.id),
+    packaging_unit: c.packaging_unit,
+    base_unit: c.base_unit,
+    conversion_ratio: parseFloat(c.conversion_ratio.toString()),
+    is_default: Boolean(c.is_default),
+  }));
+
   return {
     id: Number(p.id),
     name: p.product_name,
@@ -32,13 +41,33 @@ function formatProduct(p: any) {
     category: p.categories?.category_name || "N/A",
     brand: p.brands?.name || "N/A",
     unit: p.units?.unit_name || "Pcs",
+    img_url: p.img_url || null,
+    status: p.status,
+    electrical_spec: spec
+      ? {
+          id: Number(spec.id),
+          spec_type: spec.spec_type,
+          conductor_material: spec.conductor_material,
+          cable_size: spec.cable_size,
+          core_count: spec.core_count,
+          voltage_grade: spec.voltage_grade,
+          current_rating: spec.current_rating,
+          pole_type: spec.pole_type,
+          breaking_capacity: spec.breaking_capacity,
+          tripping_curve: spec.tripping_curve,
+          gang_module: spec.gang_module,
+          conduit_diameter: spec.conduit_diameter,
+          wattage: spec.wattage,
+          color_temperature: spec.color_temperature,
+          warranty_months: spec.warranty_months || 0,
+        }
+      : null,
+    packaging_conversions: conversions,
     tile_size: p.tile_size || null,
     sqft_per_box: p.sqft_per_box ? parseFloat(p.sqft_per_box) : null,
     pcs_per_box: p.pcs_per_box ? parseInt(p.pcs_per_box) : null,
     grade: p.grade || null,
     surface_finish: p.surface_finish || null,
-    img_url: p.img_url || null,
-    status: p.status,
   };
 }
 
@@ -57,6 +86,8 @@ async function handleBarcodeSearch(query: string) {
       categories: true,
       brands: true,
       units: true,
+      electrical_specifications: true,
+      packaging_conversions: true,
     },
   });
 

@@ -4,8 +4,8 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ARAFAT POULTRY & FISHERIES | Management System & ERP",
-  description: "Poultry Farm, Egg Production, Fish Farming & Feed Trading ERP System for Arafat Poultry & Fisheries, Powered by CodeNext IT",
+  title: "PROTIKKHA ELECTRIC | Electrical Shop Management & POS",
+  description: "Electrical Retail & Wholesale POS, Inventory, Cable Reeling & Accounting ERP for Protikkha Electric, Powered by CodeNext IT",
   icons: {
     icon: [
       { url: "/fav.png", type: "image/png" },

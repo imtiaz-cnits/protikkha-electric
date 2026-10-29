@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
+import { canCancelOrder } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit-service";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,13 @@ export async function POST(req: NextRequest) {
     const user = await getAuthUser(req);
     const fallbackUser = await prisma.users.findFirst({ select: { id: true } });
     const userId = user?.id || (fallbackUser ? Number(fallbackUser.id) : 1);
+
+    if (user && !canCancelOrder(user.role, user.permissions)) {
+      return NextResponse.json(
+        { status: "fail", message: "Forbidden. Only Managers and Admins can cancel invoice orders." },
+        { status: 403 }
+      );
+    }
 
     const body = await req.json();
     const { order_id, order_detail_ids, items, reason } = body;
@@ -384,6 +393,20 @@ export async function POST(req: NextRequest) {
         cancelledCount: itemsToCancel.length,
         remainingCount: remainingDetails.length,
       };
+    });
+
+    // Write immutable audit log for cancellation
+    await logAudit({
+      userId,
+      action: "CANCEL",
+      entityType: "ORDER",
+      entityId: String(order_id),
+      newValues: {
+        reason: reason || "User requested cancellation",
+        cancelled_items_count: result.cancelledCount,
+        cancelled_amount: result.cancelledAmount,
+        remaining_subtotal: result.newSubTotal,
+      },
     });
 
     return NextResponse.json({

@@ -28,7 +28,7 @@ import {
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomSelect, Pagination } from "@/components/ui";
 import { CustomDatePicker } from "@/components/ui/date-picker";
-import { formatBoxAndPcs, formatTileOrItemQty, parseBoxAndPcs } from "@/lib/tiles-calculator";
+import { formatBoxAndPcs, formatTileOrItemQty, parseBoxAndPcs } from "@/lib/electrical-unit-service";
 import { useToast } from "@/components/ui/toast";
 
 interface ReturnItem {

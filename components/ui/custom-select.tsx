@@ -34,7 +34,7 @@ export function CustomSelect({
   className = "",
   disabled = false,
   required = false,
-  searchThreshold = 8,
+  searchThreshold = 5,
   name,
   placement = "auto",
   matchTriggerWidth = false,

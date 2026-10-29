@@ -26,10 +26,14 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomSelect, Pagination } from "@/components/ui";
-import { CustomDatePicker } from "@/components/ui/date-picker";
-import { formatBoxAndPcs, formatTileOrItemQty, parseBoxAndPcs } from "@/lib/tiles-calculator";
+import { CustomSelect, Pagination, CustomDatePicker } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+
+function formatElectricalQty(qty: number | string, item?: any): string {
+  const num = typeof qty === "number" ? qty : parseFloat(String(qty || "0"));
+  const unit = item?.unit || item?.unit_name || "";
+  return unit ? `${num} ${unit}` : `${num}`;
+}
 
 interface ReturnItem {
   id: number;
@@ -625,7 +629,7 @@ function PurchaseReturnsManagementContent() {
                       </td>
                       <td className="p-3 text-center font-bold text-slate-800 dark:text-white">
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-xs whitespace-nowrap">
-                          {formatTileOrItemQty(item.quantity, item)}
+                          {formatElectricalQty(item.quantity, item)}
                         </span>
                       </td>
                       <td className="p-3 text-right font-black text-rose-700 dark:text-rose-400 text-xs">
@@ -681,29 +685,7 @@ function PurchaseReturnsManagementContent() {
                     Total Return Adjusted Value:
                   </td>
                   <td className="p-3 text-center font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                    {(() => {
-                      const hasTiles = filteredHistory.some((i) => Boolean(i.tile_size || i.pcs_per_box));
-                      const totalQty = filteredHistory.reduce((acc, i) => acc + i.quantity, 0);
-                      if (hasTiles) {
-                        let totalBoxes = 0;
-                        let totalPcs = 0;
-                        filteredHistory.forEach((i) => {
-                          const isTile = Boolean(i.tile_size || i.pcs_per_box);
-                          if (isTile) {
-                            const { fullBoxes, pcs } = parseBoxAndPcs(i.quantity, i.pcs_per_box, i.tile_size);
-                            totalBoxes += fullBoxes;
-                            totalPcs += pcs;
-                          } else {
-                            totalPcs += i.quantity;
-                          }
-                        });
-                        if (totalBoxes > 0 && totalPcs > 0) return `${totalBoxes} Boxes ${totalPcs} Pcs`;
-                        if (totalBoxes > 0) return `${totalBoxes} Box${totalBoxes > 1 ? "es" : ""}`;
-                        if (totalPcs > 0) return `${totalPcs} Pcs`;
-                        return "0 Box";
-                      }
-                      return `${totalQty} Pcs`;
-                    })()}
+                    {filteredHistory.reduce((acc, i) => acc + i.quantity, 0)} Units
                   </td>
                   <td className="p-3 text-right font-black text-rose-700 dark:text-rose-400 text-sm">
                     {formatBdCurrency(filteredHistory.reduce((acc, i) => acc + i.amount, 0))}
@@ -790,7 +772,7 @@ function PurchaseReturnsManagementContent() {
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-slate-800 dark:text-white whitespace-nowrap">
-                        {formatTileOrItemQty(item.quantity, item)}
+                        {formatElectricalQty(item.quantity, item)}
                       </span>
                     </div>
                   </div>
@@ -1062,12 +1044,12 @@ function PurchaseReturnsManagementContent() {
                                 </div>
                               </td>
                               <td className="p-2.5 text-center font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                {formatTileOrItemQty(item.purchased_quantity, item)}
+                                {formatElectricalQty(item.purchased_quantity, item)}
                               </td>
                               <td className="p-2.5 text-center text-slate-500">
                                 {item.already_returned_quantity > 0 ? (
                                   <span className="text-rose-600 font-bold whitespace-nowrap">
-                                    {formatTileOrItemQty(item.already_returned_quantity, item)}
+                                    {formatElectricalQty(item.already_returned_quantity, item)}
                                   </span>
                                 ) : (
                                   "-"
@@ -1076,7 +1058,7 @@ function PurchaseReturnsManagementContent() {
                               <td className="p-2.5 text-center font-bold text-slate-800 dark:text-white">
                                 {isEligible ? (
                                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold whitespace-nowrap">
-                                    {formatTileOrItemQty(item.returnable_quantity, item)}
+                                    {formatElectricalQty(item.returnable_quantity, item)}
                                   </span>
                                 ) : (
                                   <span className="text-slate-400 text-[11px]">Fully Returned</span>
@@ -1128,7 +1110,8 @@ function PurchaseReturnsManagementContent() {
                       <CustomDatePicker
                         value={modalReturnDate}
                         onChange={(val) => setModalReturnDate(val)}
-                        placement="auto"
+                        placeholder="Select Return Date"
+                        className="w-full h-10 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
 
@@ -1260,7 +1243,7 @@ function PurchaseReturnsManagementContent() {
                     Returned Qty
                   </span>
                   <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                    {formatTileOrItemQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
+                    {formatElectricalQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
                   </span>
                 </div>
 
@@ -1353,7 +1336,7 @@ function PurchaseReturnsManagementContent() {
                   <div className="grid grid-cols-3 px-5 py-2.5 bg-slate-50 dark:bg-slate-800/50">
                     <span className="font-semibold text-slate-500 dark:text-slate-400">Return Quantity:</span>
                     <span className="col-span-2 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                      {formatTileOrItemQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
+                      {formatElectricalQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
                     </span>
                   </div>
                   <div className="grid grid-cols-3 px-5 py-2.5 bg-white dark:bg-slate-800/90">
@@ -1409,7 +1392,7 @@ function PurchaseReturnsManagementContent() {
                         )}
                       </td>
                       <td className="p-2.5 text-center font-bold whitespace-nowrap">
-                        {formatTileOrItemQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
+                        {formatElectricalQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
                       </td>
                       <td className="p-2.5 text-right font-medium">
                         {formatBdCurrency(
@@ -1429,7 +1412,7 @@ function PurchaseReturnsManagementContent() {
                         Total Returned:
                       </td>
                       <td className="p-2.5 text-center font-bold whitespace-nowrap">
-                        {formatTileOrItemQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
+                        {formatElectricalQty(selectedReturnForQuickView.quantity, selectedReturnForQuickView)}
                       </td>
                       <td className="p-2.5 text-right text-slate-500 uppercase text-[10px]">
                         Total Value:
@@ -1614,7 +1597,7 @@ function PurchaseReturnsManagementContent() {
                         </div>
                       </td>
                       <td className="p-2.5 text-center font-bold whitespace-nowrap">
-                        {formatTileOrItemQty(selectedReturnForPrint.quantity, selectedReturnForPrint)}
+                        {formatElectricalQty(selectedReturnForPrint.quantity, selectedReturnForPrint)}
                       </td>
                       <td className="p-2.5 text-right">
                         {formatBdCurrency(
@@ -1634,7 +1617,7 @@ function PurchaseReturnsManagementContent() {
                         Total Returned Quantity:
                       </td>
                       <td className="p-2.5 text-center whitespace-nowrap">
-                        {formatTileOrItemQty(selectedReturnForPrint.quantity, selectedReturnForPrint)}
+                        {formatElectricalQty(selectedReturnForPrint.quantity, selectedReturnForPrint)}
                       </td>
                       <td className="p-2.5 text-right uppercase text-[11px] text-slate-600">
                         Total Adjusted:

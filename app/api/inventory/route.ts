@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getAuthUser } from "@/lib/auth";
+import { adjustProductStock } from "@/lib/stock-service";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim().toLowerCase();
     const filter = searchParams.get("filter"); // 'all', 'low', 'out'
     const categoryId = searchParams.get("category_id");
+    const specType = searchParams.get("spec_type");
 
     const where: any = {};
     if (categoryId) where.category_id = BigInt(categoryId);
@@ -22,6 +24,8 @@ export async function GET(req: NextRequest) {
         categories: true,
         brands: true,
         units: true,
+        electrical_specifications: true,
+        packaging_conversions: true,
       },
     });
 
@@ -57,7 +61,7 @@ export async function GET(req: NextRequest) {
 
       if (availableQty <= 0) {
         outOfStockCount++;
-      } else if (availableQty <= 5) {
+      } else if (availableQty <= 10) {
         lowStockCount++;
       }
 
@@ -70,6 +74,28 @@ export async function GET(req: NextRequest) {
         } catch {
           codes = [String(p.product_code)];
         }
+      }
+
+      const spec = p.electrical_specifications;
+      const defaultPkg = p.packaging_conversions?.find((pc) => pc.is_default) || p.packaging_conversions?.[0];
+      const packagingUnit = defaultPkg?.packaging_unit || (spec?.spec_type === "CABLE" ? "Reel" : "Box");
+      const conversionRatio = defaultPkg
+        ? parseFloat(String(defaultPkg.conversion_ratio || "1"))
+        : (spec?.spec_type === "CABLE" ? 100 : 1);
+
+      let packagingSummary = "";
+      if (spec?.spec_type === "CABLE" || conversionRatio > 1) {
+        const fullPkg = Math.floor(qty / conversionRatio);
+        const loose = parseFloat((qty % conversionRatio).toFixed(2));
+        if (fullPkg > 0 && loose > 0) {
+          packagingSummary = `${fullPkg} ${packagingUnit}${fullPkg > 1 ? "s" : ""} + ${loose} ${p.units?.unit_name || "Mtr"}`;
+        } else if (fullPkg > 0) {
+          packagingSummary = `${fullPkg} ${packagingUnit}${fullPkg > 1 ? "s" : ""}`;
+        } else {
+          packagingSummary = `${loose} ${p.units?.unit_name || "Mtr"}`;
+        }
+      } else {
+        packagingSummary = `${qty} ${p.units?.unit_name || "Pcs"}`;
       }
 
       return {
@@ -86,20 +112,35 @@ export async function GET(req: NextRequest) {
         sell_price: sell,
         total_cost_value: totalCost,
         total_retail_value: totalRetail,
+        spec_type: spec?.spec_type || "GENERAL",
+        cable_size: spec?.cable_size || null,
+        current_rating: spec?.current_rating || null,
+        voltage_grade: spec?.voltage_grade || null,
+        wattage: spec?.wattage || null,
+        gang_module: spec?.gang_module || null,
+        packaging_unit: packagingUnit,
+        conversion_ratio: conversionRatio,
+        packaging_summary: packagingSummary,
         tile_size: p.tile_size || null,
         sqft_per_box: p.sqft_per_box ? parseFloat(p.sqft_per_box) : null,
         pcs_per_box: p.pcs_per_box ? parseInt(p.pcs_per_box) : null,
         grade: p.grade || null,
         surface_finish: p.surface_finish || null,
-        stock_status: availableQty <= 0 ? "Out of Stock" : availableQty <= 5 ? "Low Stock" : "In Stock",
+        stock_status: availableQty <= 0 ? "Out of Stock" : availableQty <= 10 ? "Low Stock" : "In Stock",
       };
     });
 
     let filteredList = formatted;
     if (filter === "low") {
-      filteredList = filteredList.filter((p) => p.quantity > 0 && p.quantity <= 5);
+      filteredList = filteredList.filter((p) => p.quantity > 0 && p.quantity <= 10);
     } else if (filter === "out") {
       filteredList = filteredList.filter((p) => p.quantity <= 0);
+    }
+
+    if (specType && specType !== "all") {
+      filteredList = filteredList.filter(
+        (p) => (p.spec_type || "GENERAL").toUpperCase() === specType.toUpperCase()
+      );
     }
 
     if (search) {
@@ -108,7 +149,10 @@ export async function GET(req: NextRequest) {
           p.name.toLowerCase().includes(search) ||
           p.primary_code.toLowerCase().includes(search) ||
           p.category.toLowerCase().includes(search) ||
-          p.brand.toLowerCase().includes(search)
+          p.brand.toLowerCase().includes(search) ||
+          (p.cable_size && p.cable_size.toLowerCase().includes(search)) ||
+          (p.current_rating && p.current_rating.toLowerCase().includes(search)) ||
+          (p.wattage && p.wattage.toLowerCase().includes(search))
       );
     }
 
@@ -134,7 +178,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Manual Stock Adjustment (recount / damage / adjustment)
+// POST: Manual Stock Adjustment (recount / damage / scrap / physical audit)
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
@@ -152,19 +196,23 @@ export async function POST(req: NextRequest) {
     }
 
     const prodId = BigInt(product_id);
-    const updated = await prisma.products.update({
-      where: { id: prodId },
-      data: {
-        quantity: String(new_quantity),
-      },
-    });
+    const result = await adjustProductStock(
+      prodId,
+      parseFloat(String(new_quantity)),
+      reason || "Manual Physical Count Adjustment",
+      userId
+    );
 
     return NextResponse.json({
       status: "success",
-      message: `Stock updated for ${updated.product_name} (${reason || "Physical Adjustment"})`,
-      new_quantity: parseFloat(updated.quantity || "0"),
+      message: `Stock updated for ${result.productName} (${reason || "Physical Adjustment"})`,
+      new_quantity: result.newStock,
+      previous_quantity: result.previousStock,
+      delta: result.delta,
     });
   } catch (error: any) {
+    console.error("Stock Adjustment Error:", error);
     return NextResponse.json({ status: "fail", message: error?.message }, { status: 500 });
   }
 }
+

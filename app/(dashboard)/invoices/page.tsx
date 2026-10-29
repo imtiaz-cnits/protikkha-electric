@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatBdCurrency } from "@/lib/utils";
-import { formatBoxAndPcs, formatTileOrItemQty, formatOrderQty } from "@/lib/tiles-calculator";
+import { formatElectricalQty, formatElectricalOrderQty, formatTileOrItemQty, formatOrderQty } from "@/lib/electrical-unit-service";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt";
 import { ChallanModal } from "@/components/challan/challan-modal";
 import { CustomSelect, Pagination } from "@/components/ui";
@@ -60,6 +60,14 @@ interface Invoice {
     id: number;
     product_name: string;
     product_code?: string;
+    spec_type?: string | null;
+    cable_size?: string | null;
+    current_rating?: string | null;
+    voltage_grade?: string | null;
+    wattage?: string | null;
+    gang_module?: string | null;
+    packaging_unit?: string | null;
+    conversion_ratio?: number | null;
     is_tiles?: boolean;
     tile_size?: string | null;
     sqft_per_box?: number | null;
@@ -658,21 +666,26 @@ export default function InvoicesPage() {
                       <tr key={d.id}>
                         <td className="py-2 px-3 font-medium">
                           <div>{d.product_name}</div>
-                          {(d.tile_size || d.sqft_per_box) && (
+                          {(d.cable_size || d.voltage_grade || d.current_rating || d.wattage || d.gang_module) && (
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              {d.tile_size && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                                  📐 {d.tile_size}
+                              {d.cable_size && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                                  ⚡ {d.cable_size}
                                 </span>
                               )}
-                              {d.sqft_per_box && (
-                                <span className="text-[9px] font-medium text-slate-500">
-                                  ({(d.quantity * d.sqft_per_box).toFixed(1)} Sft)
+                              {d.current_rating && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                                  ⚡ {d.current_rating}
                                 </span>
                               )}
-                              {d.grade && (
-                                <span className="text-[9px] font-bold text-emerald-600">
-                                  ★ {d.grade}
+                              {d.wattage && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                                  💡 {d.wattage}
+                                </span>
+                              )}
+                              {d.gang_module && (
+                                <span className="text-[9px] font-bold text-slate-500">
+                                  {d.gang_module}
                                 </span>
                               )}
                             </div>

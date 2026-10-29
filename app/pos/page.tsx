@@ -40,13 +40,29 @@ import { ThermalReceiptModal } from "@/components/pos/thermal-receipt";
 import { CameraScannerModal } from "@/components/pos/camera-scanner";
 import { CustomerModal } from "@/components/pos/customer-modal";
 import { HeldInvoicesModal, HeldInvoice } from "@/components/pos/held-invoices-modal";
-import { QuickProductModal } from "@/components/pos/quick-product-modal";
-import { TileCalculatorModal } from "@/components/pos/tile-calculator-modal";
 import { ChallanModal } from "@/components/challan/challan-modal";
 import { PosDatePicker } from "@/components/pos/date-picker";
+import { QuickProductModal } from "@/components/pos/quick-product-modal";
 import { getInitialTheme, applyTheme } from "@/lib/theme";
 import { useToast } from "@/components/ui/toast";
-import { formatBoxAndPcs } from "@/lib/tiles-calculator";
+
+interface ElectricalSpec {
+  id?: number;
+  spec_type: string;
+  cable_size?: string | null;
+  voltage_grade?: string | null;
+  current_rating?: string | null;
+  wattage?: string | null;
+  gang_module?: string | null;
+}
+
+interface PackagingConversion {
+  id?: number;
+  packaging_unit: string;
+  base_unit: string;
+  conversion_ratio: number;
+  is_default?: boolean;
+}
 
 interface Product {
   id: number;
@@ -62,12 +78,15 @@ interface Product {
   category: string;
   brand: string;
   unit: string;
+  electrical_spec?: ElectricalSpec | null;
+  packaging_conversions?: PackagingConversion[];
+  img_url?: string | null;
+  // Legacy compatibility
   tile_size?: string | null;
   sqft_per_box?: number | null;
   pcs_per_box?: number | null;
   grade?: string | null;
   surface_finish?: string | null;
-  img_url?: string | null;
 }
 
 interface Category {
@@ -156,8 +175,6 @@ export default function PosPage() {
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isHeldModalOpen, setIsHeldModalOpen] = useState(false);
   const [isQuickProductModalOpen, setIsQuickProductModalOpen] = useState(false);
-  const [tileCalcProduct, setTileCalcProduct] = useState<any | null>(null);
-  const [isTileCalcOpen, setIsTileCalcOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<any | null>(null);
   const [challanOrderId, setChallanOrderId] = useState<number | null>(null);
 
@@ -425,17 +442,22 @@ export default function PosPage() {
   const ringProduct = (p: Product) => {
     addItem({
       product_id: p.id,
-      product_name: p.name,
+      product_name: p.name || p.product_name,
       barcode: p.primary_code,
       cost_price: p.cost_price,
       selling_price: p.sell_price,
       stock: p.quantity,
-      unit: p.unit,
-      tile_size: p.tile_size,
-      sqft_per_box: p.sqft_per_box,
-      pcs_per_box: p.pcs_per_box,
-      grade: p.grade,
-      surface_finish: p.surface_finish,
+      unit: p.unit || "Pcs",
+      category: p.category,
+      brand: p.brand,
+      spec_type: p.electrical_spec?.spec_type,
+      cable_size: p.electrical_spec?.cable_size,
+      voltage_grade: p.electrical_spec?.voltage_grade,
+      current_rating: p.electrical_spec?.current_rating,
+      wattage: p.electrical_spec?.wattage,
+      gang_module: p.electrical_spec?.gang_module,
+      packaging_unit: p.packaging_conversions?.[0]?.packaging_unit,
+      conversion_ratio: p.packaging_conversions?.[0]?.conversion_ratio,
     });
   };
 
@@ -972,11 +994,7 @@ export default function PosPage() {
                         {(() => {
                           const stockText = isOutOfStock
                             ? "Out of Stock"
-                            : p.tile_size || p.pcs_per_box || p.unit?.toLowerCase() === "box"
-                            ? formatBoxAndPcs(p.quantity, p.pcs_per_box, p.tile_size)
-                            : p.quantity % 1 !== 0
-                            ? `${parseFloat(p.quantity.toFixed(2))} ${p.unit || ""}`.trim()
-                            : `${p.quantity} ${p.unit || ""}`.trim();
+                            : `${p.quantity} ${p.unit || "Pcs"}`;
 
                           return (
                             <span
@@ -995,24 +1013,29 @@ export default function PosPage() {
                         })()}
                       </div>
 
-                      {/* Product Tags (Wrapped cleanly to 2nd line) */}
+                      {/* Product Electrical Specs Badges */}
                       <div className="flex items-center gap-1 flex-wrap my-1.5">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shrink-0 whitespace-nowrap">
-                          {p.unit}
+                          {p.unit || "Pcs"}
                         </span>
-                        {p.tile_size && (
+                        {p.electrical_spec?.cable_size && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#1E65A0] dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 shrink-0 whitespace-nowrap">
-                            📐 {p.tile_size}
+                            ⚡ {p.electrical_spec.cable_size}
                           </span>
                         )}
-                        {p.sqft_per_box && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-[#1E65A0] dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60 shrink-0 whitespace-nowrap">
-                            {p.sqft_per_box} Sft
+                        {p.electrical_spec?.current_rating && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/60 shrink-0 whitespace-nowrap">
+                            ⚡ {p.electrical_spec.current_rating}
                           </span>
                         )}
-                        {p.grade && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/60 shrink-0 whitespace-nowrap">
-                            ★ {p.grade}
+                        {p.electrical_spec?.wattage && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/60 shrink-0 whitespace-nowrap">
+                            💡 {p.electrical_spec.wattage}
+                          </span>
+                        )}
+                        {p.electrical_spec?.gang_module && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200/60 dark:border-purple-900/60 shrink-0 whitespace-nowrap">
+                            ⚡ {p.electrical_spec.gang_module}
                           </span>
                         )}
                       </div>
@@ -1023,14 +1046,9 @@ export default function PosPage() {
                           <span className="text-sm sm:text-base font-black text-[#0B3D91] dark:text-blue-300 tracking-tight">
                             {formatBdCurrency(p.sell_price)}
                           </span>
-                          {p.sqft_per_box && p.sqft_per_box > 0 && (
-                            <span className="text-[10px] text-slate-400 block font-medium -mt-0.5">
-                              ৳{(p.sell_price / p.sqft_per_box).toFixed(2)} / Sq.Ft
-                            </span>
-                          )}
                         </div>
-                        <div className="w-7 h-7 rounded-xl bg-blue-50 group-hover:bg-gradient-to-r group-hover:from-[#0B3D91] group-hover:to-[#1E65A0] group-hover:text-white dark:bg-blue-950/50 text-[#1E65A0] flex items-center justify-center transition-all shadow-2xs group-hover:shadow-xs">
-                          <Plus className="w-4 h-4" />
+                        <div className="w-7 h-7 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-center transition-all shadow-xs group-hover:scale-105 shrink-0">
+                          <Plus className="w-4 h-4 text-white stroke-[2.5]" />
                         </div>
                       </div>
                     </div>
@@ -1197,138 +1215,120 @@ export default function PosPage() {
                 </p>
               </div>
             ) : (
-              (() => {
-                const hasTilesInCart = cart.some((it) => !!(it.tile_size || it.sqft_per_box));
-                return (
-                  <table className="w-full text-left text-xs border-collapse">
+              <table className="w-full text-left text-xs border-collapse">
                     <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                       <tr>
-                        <th className="py-2 pl-3">Item</th>
-                        <th className="py-2 text-center w-28">Qty</th>
-                        <th className="py-2 text-right w-20">Price</th>
-                        {hasTilesInCart && (
-                          <th className="py-2 text-right w-24">Sqft. Price</th>
-                        )}
-                        <th className="py-2 text-right w-20">Total</th>
+                        <th className="py-2 pl-3">Item &amp; Specs</th>
+                        <th className="py-2 text-center w-36">Qty &amp; Mode</th>
+                        <th className="py-2 text-right w-24">Rate (৳)</th>
+                        <th className="py-2 text-right w-24">Total (৳)</th>
                         <th className="py-2 pr-3 text-center w-10"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {cart.map((item, idx) => (
-                        <tr
-                          key={item.product_id}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
-                        >
-                          <td className="py-2 pl-3">
-                            <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
-                              {item.product_name}
-                            </div>
-                            {(item.tile_size || item.sqft_per_box) && (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                {item.tile_size && (
-                                  <span className="text-[9px] font-bold px-1 rounded bg-blue-100 dark:bg-blue-950 text-[#0B3D91] dark:text-blue-300">
-                                    📐 {item.tile_size}
+                      {cart.map((item, idx) => {
+                        const isCable = item.spec_type === "CABLE" || Boolean(item.cable_size);
+                        return (
+                          <tr
+                            key={item.product_id}
+                            className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                          >
+                            <td className="py-2 pl-3">
+                              <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
+                                {item.product_name}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                {item.cable_size && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-[#0B3D91] dark:text-blue-300">
+                                    ⚡ {item.cable_size}
                                   </span>
                                 )}
-                                {item.sqft_per_box && (
-                                  <span className="text-[9px] font-semibold text-slate-500">
-                                    ({(item.quantity * item.sqft_per_box).toFixed(1)} Sft)
+                                {item.current_rating && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                                    ⚡ {item.current_rating}
                                   </span>
                                 )}
+                                {item.wattage && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                    💡 {item.wattage}
+                                  </span>
+                                )}
+                                {item.gang_module && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300">
+                                    ⚡ {item.gang_module}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* QTY Controller */}
+                            <td className="py-2 text-center">
+                              <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] overflow-hidden shadow-2xs">
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    setTileCalcProduct(item);
-                                    setIsTileCalcOpen(true);
+                                    const step = isCable ? 1 : 1;
+                                    const next = Math.max(0.1, parseFloat((item.quantity - step).toFixed(2)));
+                                    updateQty(item.product_id, next);
                                   }}
-                                  className="text-[9px] font-extrabold text-[#1E65A0] dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/80 px-1.5 py-0.5 rounded cursor-pointer transition-colors border border-blue-200/60 dark:border-blue-900/60 flex items-center gap-0.5"
-                                  title="Open Sft & Box Calculator"
+                                  className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
                                 >
-                                  📐 Sft Calc
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <input
+                                  type="number"
+                                  step={isCable ? "any" : "1"}
+                                  min="0.1"
+                                  value={item.quantity}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    updateQty(item.product_id, isNaN(val) ? 0 : val);
+                                  }}
+                                  className="w-16 h-6 text-center text-xs font-bold bg-transparent border-x border-[#cbd5e1] dark:border-[#334155] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const step = isCable ? 1 : 1;
+                                    const next = parseFloat((item.quantity + step).toFixed(2));
+                                    updateQty(item.product_id, next);
+                                  }}
+                                  className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                                >
+                                  <Plus className="w-3 h-3" />
                                 </button>
                               </div>
-                            )}
-                          </td>
-
-                          {/* QTY Controller */}
-                          <td className="py-2 text-center">
-                            <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] overflow-hidden shadow-2xs">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = Math.max(0.01, parseFloat((item.quantity - 1).toFixed(2)));
-                                  updateQty(item.product_id, next);
-                                }}
-                                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <input
-                                type="number"
-                                step="any"
-                                min="0.01"
-                                value={item.quantity}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  updateQty(item.product_id, isNaN(val) ? 0 : val);
-                                }}
-                                className="w-14 h-6 text-center text-xs font-bold bg-transparent border-x border-[#cbd5e1] dark:border-[#334155] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const next = parseFloat((item.quantity + 1).toFixed(2));
-                                  updateQty(item.product_id, next);
-                                }}
-                                className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
-                            {/* If fractional tile quantity, show clean dynamic breakdown */}
-                            {item.pcs_per_box && item.quantity % 1 !== 0 && (
-                              <div className="text-[9px] font-bold text-rose-600 dark:text-rose-400 mt-0.5 whitespace-nowrap">
-                                {formatBoxAndPcs(item.quantity, item.pcs_per_box)}
+                              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
+                                {isCable ? `${item.quantity} Mtr (Cut)` : item.unit || "Pcs"}
                               </div>
-                            )}
-                          </td>
-
-                          {/* Price */}
-                          <td className="py-2 text-right text-slate-600 dark:text-slate-400 font-medium">
-                            {item.selling_price.toFixed(2)}
-                          </td>
-
-                          {/* Sqft. PRICE (Dynamic - only shown when tiles present in cart) */}
-                          {hasTilesInCart && (
-                            <td className="py-2 text-right text-slate-600 dark:text-slate-400 font-medium">
-                              {item.sqft_per_box && item.sqft_per_box > 0
-                                ? `৳${(item.selling_price / item.sqft_per_box).toFixed(2)}`
-                                : "-"}
                             </td>
-                          )}
 
-                          {/* Line Total */}
-                          <td className="py-2 text-right font-bold text-slate-900 dark:text-white">
-                            {(item.selling_price * item.quantity).toFixed(2)}
-                          </td>
+                            {/* Price */}
+                            <td className="py-2 text-right text-slate-700 dark:text-slate-300 font-mono font-medium">
+                              {item.selling_price.toFixed(2)}
+                            </td>
 
-                          {/* Delete */}
-                          <td className="py-2 pr-3 text-center">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(item.product_id)}
-                              className="w-6 h-6 rounded-md hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                              title="Remove from cart"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                            {/* Line Total */}
+                            <td className="py-2 text-right font-bold font-mono text-slate-900 dark:text-white">
+                              {(item.selling_price * item.quantity).toFixed(2)}
+                            </td>
+
+                            {/* Delete */}
+                            <td className="py-2 pr-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.product_id)}
+                                className="w-6 h-6 rounded-md hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                                title="Remove Item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
-                );
-              })()
             )}
           </div>
 
@@ -1685,7 +1685,8 @@ export default function PosPage() {
         categories={categories}
         brands={brands}
         units={units}
-        onProductCreated={(created) => {
+        onProductCreated={(created: any) => {
+          const spec = created.electrical_specifications || created.electrical_spec;
           const formatted: Product = {
             id: created.id,
             name: created.product_name,
@@ -1700,32 +1701,18 @@ export default function PosPage() {
             category: categories.find((c) => c.id === Number(created.category_id))?.category_name || "N/A",
             brand: brands.find((b) => b.id === Number(created.brand_id))?.name || "N/A",
             unit: units.find((u) => u.id === Number(created.unit_id))?.unit_name || "Pcs",
-            tile_size: created.tile_size || null,
-            sqft_per_box: created.sqft_per_box ? Number(created.sqft_per_box) : null,
-            pcs_per_box: created.pcs_per_box ? Number(created.pcs_per_box) : null,
-            grade: created.grade || null,
-            surface_finish: created.surface_finish || null,
+            electrical_spec: spec ? {
+              spec_type: spec.spec_type,
+              cable_size: spec.cable_size,
+              current_rating: spec.current_rating,
+              voltage_grade: spec.voltage_grade,
+              gang_module: spec.gang_module,
+              wattage: spec.wattage,
+            } : null,
           };
           setProducts((curr) => [formatted, ...curr]);
           ringProduct(formatted);
           showToast(`Created & Added: ${formatted.name}`, "success");
-        }}
-      />
-
-      {/* Tiles Calculator Modal */}
-      <TileCalculatorModal
-        isOpen={isTileCalcOpen}
-        onClose={() => setIsTileCalcOpen(false)}
-        product={tileCalcProduct}
-        onApply={(res) => {
-          if (tileCalcProduct) {
-            updateTileCalculation(tileCalcProduct.product_id, {
-              quantity: res.quantity,
-              price: res.price,
-              custom_sqft: res.custom_sqft,
-            });
-            showToast(`Updated to ${res.quantity} Boxes`, "success");
-          }
         }}
       />
     </div>

@@ -14,7 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { formatBoxAndPcs, parseBoxAndPcs } from "@/lib/tiles-calculator";
+import { formatBoxAndPcs, parseBoxAndPcs } from "@/lib/electrical-unit-service";
 import { InvoiceActionData, InvoiceActionDetail } from "./invoice-action-menu";
 
 interface CancelTilesModalProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatBdCurrency } from "@/lib/utils";
 import {
   Package,
@@ -12,24 +12,143 @@ import {
   Loader2,
   Printer,
   FileSpreadsheet,
-  Copy,
   Boxes,
-  Barcode,
-  Layers,
-  Sparkles,
-  RotateCcw,
-  Eye,
   Percent,
+  ShieldCheck,
+  Zap,
+  Tag,
+  CheckCircle,
+  Eye,
 } from "lucide-react";
-import {
-  POPULAR_TILE_SIZES,
-  TILE_GRADES,
-  SURFACE_FINISHES,
-  autoCalculateSqftPerBox,
-  formatBoxAndPcs,
-} from "@/lib/tiles-calculator";
 import { CustomSelect, Pagination, DeleteConfirmModal } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+
+export const SPEC_TYPE_OPTIONS = [
+  { value: "all", label: "All Spec Types" },
+  { value: "CABLE", label: "Wires & Cables (Reel/Coil)" },
+  { value: "BREAKER", label: "Circuit Breakers & Protection" },
+  { value: "SWITCH", label: "Switches, Sockets & Dimmers" },
+  { value: "LIGHTING", label: "LED Lighting & Fixtures" },
+  { value: "CONDUIT", label: "Conduits, Pipes & Fittings" },
+  { value: "ACCESSORY", label: "Accessories & Tools" },
+  { value: "GENERAL", label: "General Electrical" },
+];
+
+export const CABLE_SIZES = [
+  "1.0 RM",
+  "1.3 RM",
+  "1.5 RM BYA",
+  "2.0 RM",
+  "2.5 RM BYA",
+  "3.0 RM",
+  "4.0 RM BYA",
+  "6.0 RM BYA",
+  "10.0 RM",
+  "16.0 RM",
+  "7/0.029",
+  "3/0.029",
+];
+
+export const BREAKER_CURRENTS = [
+  "6A",
+  "10A",
+  "16A",
+  "20A",
+  "25A",
+  "32A",
+  "40A",
+  "50A",
+  "63A",
+  "80A",
+  "100A",
+];
+
+export const BREAKER_POLES = [
+  "1P (Single Pole)",
+  "2P (Double Pole)",
+  "3P (Triple Pole)",
+  "4P (Four Pole)",
+  "1P+N",
+  "3P+N",
+];
+
+export const BREAKING_CAPACITIES = ["3kA", "4.5kA", "6kA", "10kA", "15kA"];
+
+export const SWITCH_GANGS = [
+  "1-Gang Switch",
+  "2-Gang Switch",
+  "3-Gang Switch",
+  "4-Gang Switch",
+  "2-Pin Socket",
+  "3-Pin Socket",
+  "Combined 13A Socket",
+  "Power 15A/16A Socket",
+  "Fan Dimmer / Regulator",
+];
+
+export const LIGHT_WATTAGES = [
+  "5W",
+  "7W",
+  "9W",
+  "12W",
+  "15W",
+  "18W",
+  "20W",
+  "24W",
+  "30W",
+  "40W",
+  "50W",
+  "100W",
+];
+
+export const COLOR_TEMPS = [
+  "Daylight (6500K)",
+  "Cool White (4000K)",
+  "Warm White (3000K)",
+];
+
+export const CONDUIT_SIZES = [
+  '16mm (0.5")',
+  '20mm (0.75")',
+  '25mm (1.0")',
+  '32mm (1.25")',
+  '40mm (1.5")',
+];
+
+export const PACKAGING_UNITS = [
+  "Reel",
+  "Coil",
+  "Box",
+  "Bundle",
+  "Packet",
+  "Carton",
+];
+
+interface ElectricalSpec {
+  id?: number;
+  spec_type: string;
+  conductor_material?: string | null;
+  cable_size?: string | null;
+  core_count?: number | null;
+  voltage_grade?: string | null;
+  current_rating?: string | null;
+  pole_type?: string | null;
+  breaking_capacity?: string | null;
+  tripping_curve?: string | null;
+  gang_module?: string | null;
+  conduit_diameter?: string | null;
+  wattage?: string | null;
+  color_temperature?: string | null;
+  warranty_months?: number | null;
+}
+
+interface PackagingConversion {
+  id?: number;
+  packaging_unit: string;
+  base_unit: string;
+  conversion_ratio: number;
+  is_default?: boolean;
+}
 
 interface ProductItem {
   id: number;
@@ -41,18 +160,17 @@ interface ProductItem {
   cost_price: number;
   sell_price: number;
   quantity: number;
-  tile_size?: string | null;
-  sqft_per_box?: number | null;
-  pcs_per_box?: number | null;
-  grade?: string | null;
-  surface_finish?: string | null;
   status: string;
+  img_url?: string | null;
   category: string;
   brand: string;
   unit: string;
   brand_id: number;
   category_id: number;
   unit_id?: number | null;
+  electrical_spec?: ElectricalSpec | null;
+  packaging_conversions?: PackagingConversion[];
+  created_at?: string;
 }
 
 interface OptionItem {
@@ -69,29 +187,28 @@ export default function ProductsPage() {
   const [brands, setBrands] = useState<OptionItem[]>([]);
   const [units, setUnits] = useState<OptionItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [selectedSpecType, setSelectedSpecType] = useState<string>("all");
   const [selectedStockStatus, setSelectedStockStatus] = useState<string>("all");
-  const [selectedUnit, setSelectedUnit] = useState<string>("all");
-  const [selectedTileSize, setSelectedTileSize] = useState<string>("all");
-  const [selectedGrade, setSelectedGrade] = useState<string>("all");
-  const [selectedSurfaceFinish, setSelectedSurfaceFinish] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Modal State
+  // Modals
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [viewingProduct, setViewingProduct] = useState<ProductItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Custom Delete Modal State
+  // Delete Modal
   const [productToDelete, setProductToDelete] = useState<ProductItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Bulk Price Update Modal State
+  // Bulk Price Update Modal
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [bulkBrandId, setBulkBrandId] = useState<string>("all");
   const [bulkPercentage, setBulkPercentage] = useState<string>("");
@@ -99,21 +216,35 @@ export default function ProductsPage() {
   const [bulkSelectedIds, setBulkSelectedIds] = useState<Set<number>>(new Set());
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
+  // Form State
   const [formData, setFormData] = useState({
     product_name: "",
     product_code: "",
     cost_price: "",
     sell_price: "",
     quantity: "0",
-    tile_size: "",
-    sqft_per_box: "",
-    pcs_per_box: "",
-    grade: "",
-    surface_finish: "",
     brand_id: "",
     category_id: "",
     unit_id: "",
     status: "active",
+    // Electrical Specs
+    spec_type: "GENERAL",
+    conductor_material: "Copper",
+    cable_size: "",
+    core_count: "1",
+    voltage_grade: "450/750V",
+    current_rating: "",
+    pole_type: "",
+    breaking_capacity: "",
+    tripping_curve: "C",
+    gang_module: "",
+    conduit_diameter: "",
+    wattage: "",
+    color_temperature: "",
+    warranty_months: "0",
+    // Packaging Conversion
+    packaging_unit: "",
+    conversion_ratio: "",
   });
 
   async function loadData() {
@@ -126,19 +257,19 @@ export default function ProductsPage() {
         fetch("/api/units"),
       ]);
 
-      const [prods, cats, brs, unts] = await Promise.all([
+      const [prodData, catData, brandData, unitData] = await Promise.all([
         prodRes.json(),
         catRes.json(),
         brandRes.json(),
         unitRes.json(),
       ]);
 
-      if (prods.status === "success") setProducts(prods.data || []);
-      if (cats.status === "success") setCategories(cats.data || []);
-      if (brs.status === "success") setBrands(brs.data || []);
-      if (unts.status === "success") setUnits(unts.data || []);
-    } catch {
-      // ignore
+      if (prodData.status === "success") setProducts(prodData.data);
+      if (catData.status === "success") setCategories(catData.data);
+      if (brandData.status === "success") setBrands(brandData.data);
+      if (unitData.status === "success") setUnits(unitData.data);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load product catalog");
     } finally {
       setLoading(false);
     }
@@ -148,7 +279,61 @@ export default function ProductsPage() {
     loadData();
   }, []);
 
-  function handleOpenCreate() {
+  // Filtered Products
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      // Search
+      if (search.trim()) {
+        const q = search.toLowerCase().trim();
+        const spec = p.electrical_spec;
+        const specStr = spec
+          ? `${spec.spec_type} ${spec.cable_size || ""} ${spec.current_rating || ""} ${spec.wattage || ""} ${spec.gang_module || ""}`.toLowerCase()
+          : "";
+
+        const matchName = p.product_name.toLowerCase().includes(q);
+        const matchCode = p.display_codes.toLowerCase().includes(q);
+        const matchBrand = p.brand.toLowerCase().includes(q);
+        const matchCategory = p.category.toLowerCase().includes(q);
+        const matchSpec = specStr.includes(q);
+
+        if (!matchName && !matchCode && !matchBrand && !matchCategory && !matchSpec) {
+          return false;
+        }
+      }
+
+      // Category filter
+      if (selectedCategory !== "all" && String(p.category_id) !== selectedCategory) {
+        return false;
+      }
+
+      // Brand filter
+      if (selectedBrand !== "all" && String(p.brand_id) !== selectedBrand) {
+        return false;
+      }
+
+      // Spec Type filter
+      if (selectedSpecType !== "all") {
+        if (!p.electrical_spec || p.electrical_spec.spec_type !== selectedSpecType) {
+          return false;
+        }
+      }
+
+      // Stock status filter
+      if (selectedStockStatus === "in_stock" && p.quantity <= 0) return false;
+      if (selectedStockStatus === "low_stock" && (p.quantity <= 0 || p.quantity > 10)) return false;
+      if (selectedStockStatus === "out_of_stock" && p.quantity > 0) return false;
+
+      return true;
+    });
+  }, [products, search, selectedCategory, selectedBrand, selectedSpecType, selectedStockStatus]);
+
+  // Paginated Products
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, currentPage, pageSize]);
+
+  function handleOpenAdd() {
     setEditingProduct(null);
     setFormData({
       product_name: "",
@@ -156,73 +341,79 @@ export default function ProductsPage() {
       cost_price: "",
       sell_price: "",
       quantity: "0",
-      tile_size: "",
-      sqft_per_box: "",
-      pcs_per_box: "",
-      grade: "",
-      surface_finish: "",
       brand_id: brands[0]?.id ? String(brands[0].id) : "",
       category_id: categories[0]?.id ? String(categories[0].id) : "",
       unit_id: units[0]?.id ? String(units[0].id) : "",
       status: "active",
+      spec_type: "GENERAL",
+      conductor_material: "Copper",
+      cable_size: "",
+      core_count: "1",
+      voltage_grade: "450/750V",
+      current_rating: "",
+      pole_type: "",
+      breaking_capacity: "",
+      tripping_curve: "C",
+      gang_module: "",
+      conduit_diameter: "",
+      wattage: "",
+      color_temperature: "",
+      warranty_months: "0",
+      packaging_unit: "",
+      conversion_ratio: "",
     });
     setError("");
     setModalOpen(true);
   }
 
-  function handleOpenEdit(p: ProductItem) {
-    setEditingProduct(p);
+  function handleOpenEdit(prod: ProductItem) {
+    setEditingProduct(prod);
+    const spec = prod.electrical_spec;
+    const pkg = prod.packaging_conversions && prod.packaging_conversions.length > 0
+      ? prod.packaging_conversions[0]
+      : null;
+
     setFormData({
-      product_name: p.product_name,
-      product_code: p.all_codes.join(", "),
-      cost_price: String(p.cost_price),
-      sell_price: String(p.sell_price),
-      quantity: String(p.quantity),
-      tile_size: p.tile_size || "",
-      sqft_per_box: p.sqft_per_box ? String(p.sqft_per_box) : "",
-      pcs_per_box: p.pcs_per_box ? String(p.pcs_per_box) : "",
-      grade: p.grade || "",
-      surface_finish: p.surface_finish || "",
-      brand_id: String(p.brand_id),
-      category_id: String(p.category_id),
-      unit_id: p.unit_id ? String(p.unit_id) : "",
-      status: p.status,
+      product_name: prod.product_name,
+      product_code: prod.primary_code,
+      cost_price: String(prod.cost_price),
+      sell_price: String(prod.sell_price),
+      quantity: String(prod.quantity),
+      brand_id: String(prod.brand_id),
+      category_id: String(prod.category_id),
+      unit_id: prod.unit_id ? String(prod.unit_id) : "",
+      status: prod.status || "active",
+      spec_type: spec?.spec_type || "GENERAL",
+      conductor_material: spec?.conductor_material || "Copper",
+      cable_size: spec?.cable_size || "",
+      core_count: spec?.core_count ? String(spec.core_count) : "1",
+      voltage_grade: spec?.voltage_grade || "450/750V",
+      current_rating: spec?.current_rating || "",
+      pole_type: spec?.pole_type || "",
+      breaking_capacity: spec?.breaking_capacity || "",
+      tripping_curve: spec?.tripping_curve || "C",
+      gang_module: spec?.gang_module || "",
+      conduit_diameter: spec?.conduit_diameter || "",
+      wattage: spec?.wattage || "",
+      color_temperature: spec?.color_temperature || "",
+      warranty_months: spec?.warranty_months ? String(spec.warranty_months) : "0",
+      packaging_unit: pkg?.packaging_unit || "",
+      conversion_ratio: pkg?.conversion_ratio ? String(pkg.conversion_ratio) : "",
     });
     setError("");
     setModalOpen(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSaveProduct(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitting(true);
     setError("");
+    setSubmitting(true);
 
     try {
-      const parsedCodes = formData.product_code
-        ? formData.product_code.split(",").map((c) => c.trim()).filter(Boolean)
-        : [];
-
-      const selectedCat = categories.find((c) => String(c.id) === String(formData.category_id));
-      const isTile = Boolean(
-        selectedCat?.category_name &&
-        (selectedCat.category_name.toLowerCase().includes("tile") ||
-          selectedCat.category_name.toLowerCase().includes("টাইল"))
-      );
-
+      const selectedUnitObj = units.find((u) => String(u.id) === formData.unit_id);
       const payload = {
         ...formData,
-        product_code: parsedCodes,
-        cost_price: Number(formData.cost_price || 0),
-        sell_price: Number(formData.sell_price || 0),
-        quantity: Number(formData.quantity || 0),
-        brand_id: Number(formData.brand_id),
-        category_id: Number(formData.category_id),
-        unit_id: formData.unit_id ? Number(formData.unit_id) : null,
-        tile_size: isTile ? (formData.tile_size || null) : null,
-        sqft_per_box: isTile ? (formData.sqft_per_box || null) : null,
-        pcs_per_box: isTile ? (formData.pcs_per_box || null) : null,
-        grade: isTile ? (formData.grade || null) : null,
-        surface_finish: isTile ? (formData.surface_finish || null) : null,
+        unit_name: selectedUnitObj?.unit_name || "Piece",
       };
 
       const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
@@ -236,851 +427,656 @@ export default function ProductsPage() {
 
       const data = await res.json();
       if (!res.ok || data.status !== "success") {
-        setError(data.message || "Failed to save product");
-        setSubmitting(false);
-        return;
+        throw new Error(data.message || "Failed to save product");
       }
 
-      setModalOpen(false);
       toast.success(
-        editingProduct ? "Product updated successfully!" : "Product created successfully!"
+        editingProduct
+          ? "Electrical product updated successfully"
+          : "Electrical product created successfully"
       );
-      // Post-Creation Reset Rule: Reset pagination & refresh
-      setCurrentPage(1);
-      loadData();
+
+      setModalOpen(false);
+      await loadData();
+      if (!editingProduct) setCurrentPage(1); // Reset to page 1 on create (Rule 7.2)
     } catch (err: any) {
-      setError(err?.message || "An error occurred");
+      setError(err?.message || "Failed to save product");
     } finally {
       setSubmitting(false);
     }
   }
 
-  async function confirmDelete() {
+  async function handleDeleteConfirm() {
     if (!productToDelete) return;
     setDeleting(true);
+
     try {
-      const res = await fetch(`/api/products/${productToDelete.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/products/${productToDelete.id}`, {
+        method: "DELETE",
+      });
+
       const data = await res.json();
-      if (data.status === "success") {
-        toast.success("Product deleted successfully!");
-        setProductToDelete(null);
-        setCurrentPage(1);
-        loadData();
-      } else {
-        toast.error(data.message || "Failed to delete product");
+      if (!res.ok || data.status !== "success") {
         throw new Error(data.message || "Failed to delete product");
       }
+
+      toast.success(`${productToDelete.product_name} deleted successfully`);
+      setProductToDelete(null);
+      await loadData();
+    } catch (err: any) {
+      toast.error(err?.message || "Cannot delete product with transaction history");
+      setProductToDelete(null);
     } finally {
       setDeleting(false);
     }
   }
 
-  // Filter products for bulk price update modal
-  const bulkMatchingProducts = products.filter((p) => {
-    if (bulkBrandId === "all") return true;
-    return String(p.brand_id) === String(bulkBrandId);
-  });
-
-  // When bulkBrandId changes, select all matching products by default
-  useEffect(() => {
-    if (bulkModalOpen) {
-      if (bulkBrandId === "all") {
-        setBulkSelectedIds(new Set(products.map((p) => p.id)));
-      } else {
-        setBulkSelectedIds(
-          new Set(
-            products.filter((p) => String(p.brand_id) === String(bulkBrandId)).map((p) => p.id)
-          )
-        );
-      }
-    }
-  }, [bulkBrandId, bulkModalOpen, products]);
-
-  const handleBulkUpdate = async (e: React.FormEvent) => {
+  async function handleBulkPriceSubmit(e: React.FormEvent) {
     e.preventDefault();
     const pct = parseFloat(bulkPercentage);
     if (isNaN(pct) || pct === 0) {
       toast.error("Please enter a valid non-zero percentage");
       return;
     }
-    if (bulkSelectedIds.size === 0) {
-      toast.error("Please select at least one product to update");
-      return;
-    }
 
     setBulkSubmitting(true);
     try {
+      const payload: any = {
+        percentage: pct,
+        target_field: bulkTargetField,
+      };
+
+      if (bulkSelectedIds.size > 0) {
+        payload.product_ids = Array.from(bulkSelectedIds);
+      } else if (bulkBrandId !== "all") {
+        payload.brand_id = bulkBrandId;
+      } else {
+        throw new Error("Select specific products or choose a brand to update");
+      }
+
       const res = await fetch("/api/products/bulk-price-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          product_ids: Array.from(bulkSelectedIds),
-          percentage: pct,
-          target_field: bulkTargetField,
-        }),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (data.status === "success") {
-        toast.success(data.message || "Bulk prices updated successfully!");
-        setBulkModalOpen(false);
-        setBulkPercentage("");
-        setBulkSelectedIds(new Set());
-        loadData();
-      } else {
-        toast.error(data.message || "Failed to bulk update prices");
+      if (!res.ok || data.status !== "success") {
+        throw new Error(data.message || "Failed to update prices");
       }
+
+      toast.success(data.message);
+      setBulkModalOpen(false);
+      setBulkSelectedIds(new Set());
+      setBulkPercentage("");
+      await loadData();
     } catch (err: any) {
-      toast.error(err?.message || "Communication error");
+      toast.error(err?.message || "Error updating prices");
     } finally {
       setBulkSubmitting(false);
     }
-  };
+  }
 
-  const selectedCatObj = categories.find((c) => String(c.id) === String(selectedCategory));
-  const isTilesSelected = Boolean(
-    selectedCatObj?.category_name &&
-    (selectedCatObj.category_name.toLowerCase().includes("tile") ||
-      selectedCatObj.category_name.toLowerCase().includes("টাইল"))
-  );
+  function toggleSelectProduct(id: number) {
+    setBulkSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
-  const categoryOptions = [
-    { value: "all", label: "All Categories" },
-    ...categories.map((c) => ({
-      value: String(c.id),
-      label: c.category_name || `Category #${c.id}`,
-    })),
-  ];
+  function toggleSelectAllOnPage() {
+    const pageIds = paginatedProducts.map((p) => p.id);
+    const allSelected = pageIds.every((id) => bulkSelectedIds.has(id));
 
-  const brandOptions = [
-    { value: "all", label: "All Brands" },
-    ...brands.map((b) => ({
-      value: String(b.id),
-      label: b.name || `Brand #${b.id}`,
-    })),
-  ];
-
-  // Tile-specific filter options: gathered from DB products + standard constants
-  const dbTileSizes = new Set(
-    products
-      .filter((p) => Boolean(p.tile_size && p.tile_size.trim()))
-      .map((p) => p.tile_size!.trim())
-  );
-  const sortedTileSizes = [
-    ...Array.from(dbTileSizes),
-    ...POPULAR_TILE_SIZES.map((s) => s.value).filter((s) => !dbTileSizes.has(s)),
-  ];
-  const tileSizeOptions = [
-    { value: "all", label: "All Sizes" },
-    ...sortedTileSizes.map((s) => ({ value: s, label: s })),
-  ];
-
-  const dbGrades = new Set(
-    products
-      .filter((p) => Boolean(p.grade && p.grade.trim()))
-      .map((p) => p.grade!.trim())
-  );
-  const sortedGrades = [
-    ...Array.from(dbGrades),
-    ...TILE_GRADES.map((g) => g.value).filter((g) => !dbGrades.has(g)),
-  ];
-  const gradeOptions = [
-    { value: "all", label: "All Grades" },
-    ...sortedGrades.map((g) => ({ value: g, label: g })),
-  ];
-
-  const dbFinishes = new Set(
-    products
-      .filter((p) => Boolean(p.surface_finish && p.surface_finish.trim()))
-      .map((p) => p.surface_finish!.trim())
-  );
-  const sortedFinishes = [
-    ...Array.from(dbFinishes),
-    ...SURFACE_FINISHES.filter((f) => !dbFinishes.has(f)),
-  ];
-  const finishOptions = [
-    { value: "all", label: "All Finishes" },
-    ...sortedFinishes.map((f) => ({ value: f, label: f })),
-  ];
-
-  const stockStatusOptions = [
-    { value: "all", label: "All Stock Status" },
-    { value: "in_stock", label: "In Stock (> 0)" },
-    { value: "low_stock", label: "Low Stock (≤ 5)" },
-    { value: "out_of_stock", label: "Out of Stock (0)" },
-  ];
-
-  const unitOptions = [
-    { value: "all", label: "All Units" },
-    ...units.map((u) => ({
-      value: String(u.id),
-      label: u.unit_name || `Unit #${u.id}`,
-    })),
-  ];
-
-  const hasActiveFilters =
-    search.trim() !== "" ||
-    selectedCategory !== "all" ||
-    (isTilesSelected ? (
-      selectedTileSize !== "all" ||
-      selectedGrade !== "all" ||
-      selectedSurfaceFinish !== "all"
-    ) : (
-      selectedBrand !== "all"
-    )) ||
-    selectedStockStatus !== "all" ||
-    selectedUnit !== "all";
-
-  const handleCategoryChange = (catId: string) => {
-    setSelectedCategory(catId);
-    setSelectedBrand("all");
-    setSelectedTileSize("all");
-    setSelectedGrade("all");
-    setSelectedSurfaceFinish("all");
-    setCurrentPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setSearch("");
-    setSelectedCategory("all");
-    setSelectedBrand("all");
-    setSelectedStockStatus("all");
-    setSelectedUnit("all");
-    setSelectedTileSize("all");
-    setSelectedGrade("all");
-    setSelectedSurfaceFinish("all");
-    setCurrentPage(1);
-  };
-
-  const filteredProducts = products.filter((p) => {
-    // 1. Text Search
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      const matchSearch =
-        p.product_name.toLowerCase().includes(q) ||
-        p.display_codes.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.brand.toLowerCase().includes(q) ||
-        (p.tile_size && p.tile_size.toLowerCase().includes(q)) ||
-        (p.grade && p.grade.toLowerCase().includes(q)) ||
-        (p.surface_finish && p.surface_finish.toLowerCase().includes(q));
-      if (!matchSearch) return false;
-    }
-
-    // 2. Category Filter
-    if (selectedCategory !== "all") {
-      if (String(p.category_id) !== String(selectedCategory)) {
-        return false;
+    setBulkSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
       }
-    }
+      return next;
+    });
+  }
 
-    // 3. Conditional Tile / Non-Tile Filters
-    if (isTilesSelected) {
-      // Tile Size
-      if (selectedTileSize !== "all") {
-        if (!p.tile_size || p.tile_size.toLowerCase() !== selectedTileSize.toLowerCase()) {
-          return false;
-        }
-      }
+  // Helper: Electrical Specification Badge
+  function renderSpecBadge(spec?: ElectricalSpec | null) {
+    if (!spec) return null;
 
-      // Grade
-      if (selectedGrade !== "all") {
-        if (!p.grade || p.grade.toLowerCase() !== selectedGrade.toLowerCase()) {
-          return false;
-        }
-      }
+    const items: string[] = [];
+    if (spec.cable_size) items.push(spec.cable_size);
+    if (spec.core_count && spec.core_count > 1) items.push(`${spec.core_count}-Core`);
+    if (spec.current_rating) items.push(spec.current_rating);
+    if (spec.pole_type) items.push(spec.pole_type);
+    if (spec.breaking_capacity) items.push(spec.breaking_capacity);
+    if (spec.gang_module) items.push(spec.gang_module);
+    if (spec.wattage) items.push(spec.wattage);
+    if (spec.conduit_diameter) items.push(spec.conduit_diameter);
 
-      // Surface Finish
-      if (selectedSurfaceFinish !== "all") {
-        if (!p.surface_finish || p.surface_finish.toLowerCase() !== selectedSurfaceFinish.toLowerCase()) {
-          return false;
-        }
-      }
-    } else {
-      // Non-tiles: Brand Filter
-      if (selectedBrand !== "all") {
-        if (String(p.brand_id) !== String(selectedBrand)) {
-          return false;
-        }
-      }
-    }
+    if (items.length === 0) return null;
 
-    // 4. Stock Status Filter (applies to both)
-    if (selectedStockStatus !== "all") {
-      const qty = Number(p.quantity || 0);
-      if (selectedStockStatus === "in_stock" && qty <= 0) return false;
-      if (selectedStockStatus === "low_stock" && (qty <= 0 || qty > 5)) return false;
-      if (selectedStockStatus === "out_of_stock" && qty > 0) return false;
-    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#1E65A0] dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900 truncate">
+        <Zap className="w-2.5 h-2.5 shrink-0 text-amber-500" />
+        <span className="truncate">{items.join(" • ")}</span>
+      </span>
+    );
+  }
 
-    // 5. Unit Filter (applies to both)
-    if (selectedUnit !== "all") {
-      if (String(p.unit_id) !== String(selectedUnit)) {
-        return false;
-      }
-    }
+  // Export CSV Helper
+  function exportCSV() {
+    const headers = [
+      "ID",
+      "Product Name",
+      "Barcode",
+      "Category",
+      "Brand",
+      "Spec Type",
+      "Cable Size / Rating",
+      "Cost Price",
+      "Sell Price",
+      "Stock Qty",
+      "Unit",
+      "Warranty (Months)",
+    ];
 
-    return true;
-  });
+    const rows = filteredProducts.map((p) => [
+      p.id,
+      `"${p.product_name.replace(/"/g, '""')}"`,
+      `"${p.primary_code}"`,
+      `"${p.category}"`,
+      `"${p.brand}"`,
+      p.electrical_spec?.spec_type || "GENERAL",
+      `"${p.electrical_spec?.cable_size || p.electrical_spec?.current_rating || p.electrical_spec?.wattage || ""}"`,
+      p.cost_price,
+      p.sell_price,
+      p.quantity,
+      p.unit,
+      p.electrical_spec?.warranty_months || 0,
+    ]);
 
-  const startIndex = (currentPage - 1) * pageSize;
-  const displayedProducts = filteredProducts.slice(startIndex, startIndex + pageSize);
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `protikkha_electric_products_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <div className="space-y-4">
-      {/* Print-Only Styles and Dedicated Report Template */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10px !important;
-          }
-          body {
-            background: #ffffff !important;
-            color: #000000 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          aside,
-          header,
-          nav,
-          footer,
-          .no-print {
-            display: none !important;
-          }
-          .print-only {
-            display: block !important;
-          }
-          .print-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            font-size: 10px !important;
-          }
-          .print-table th,
-          .print-table td {
-            border: 1px solid #94a3b8 !important;
-            padding: 4px 6px !important;
-          }
-          .print-table tr {
-            page-break-inside: avoid !important;
-          }
-        }
-        @media screen {
-          .print-only {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      {/* Top Header & Export Controls (Rule 5.1 & 5.2) */}
-      <div className="no-print flex flex-col md:flex-row md:items-center justify-between gap-3 mb-2">
+      {/* 1. Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-slate-800 shadow-xs shrink-0">
-            <Package className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0 shadow-2xs">
+            <Package className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white tracking-tight leading-none m-0 p-0">
-              Product Inventory List
+            <h1 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+              Products Catalog
             </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Manage electrical wires, cables, circuit breakers, switches, and lighting inventory
+            </p>
           </div>
         </div>
 
-        {/* Action Controls & Export Buttons (Rule 5.2) */}
-        <div className="flex items-center gap-2 self-start md:self-auto">
-          {/* Print Button */}
-          <button
-            onClick={() => window.print()}
-            title="Print Product List"
-            className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center shadow-xs transition-colors cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-          </button>
-
+        {/* Top Actions: Add, Bulk Update, CSV, Print */}
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setBulkModalOpen(true)}
-            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-rose-300 dark:border-blue-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-            title="Bulk percentage price update by brand"
+            className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-[#1E65A0] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
           >
-            <Percent className="w-3.5 h-3.5" />
-            <span>Bulk Price</span>
+            <Percent className="w-3.5 h-3.5 text-amber-500" />
+            <span>Bulk Price Update</span>
           </button>
 
-          {/* Add Product Button */}
           <button
-            onClick={handleOpenCreate}
-            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+            onClick={exportCSV}
+            title="Export CSV"
+            className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          </button>
+
+          <button
+            onClick={() => window.print()}
+            title="Print Catalog"
+            className="w-[38px] h-[38px] rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+          >
+            <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:scale-[1.02]"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Product</span>
+            <span>Add New Product</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Controls & Filter Bar in its own Card */}
-      <div className="no-print bg-white dark:bg-slate-900 rounded-2xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-xs p-3 sm:p-4 flex flex-col xl:flex-row items-center justify-between gap-3">
-        {/* Left Side: Search Bar + Category, Brand, Stock Status & Unit Filters */}
-          <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 md:gap-2.5 w-full xl:w-auto flex-1">
-            {/* Search Bar - 2 cols on mobile */}
-            <div className="col-span-2 md:w-64 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 transition-all shadow-xs">
-              <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                placeholder="Search product, barcode..."
-                className="w-full bg-transparent border-none outline-none text-xs text-slate-800 dark:text-white placeholder:text-slate-400"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setCurrentPage(1);
-                  }}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* 1. Category Filter */}
-            <div className="w-full md:w-[150px]">
-              <CustomSelect
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                options={categoryOptions}
-                placeholder="All Categories"
-                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-              />
-            </div>
-
-            {/* Conditional Filters: If Tiles category selected -> Size, Grade, Finish; Otherwise -> Brand */}
-            {isTilesSelected ? (
-              <>
-                {/* Tile Size Filter */}
-                <div className="w-full md:w-[135px]">
-                  <CustomSelect
-                    value={selectedTileSize}
-                    onChange={(val) => {
-                      setSelectedTileSize(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={tileSizeOptions}
-                    placeholder="All Sizes"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-
-                {/* Tile Grade Filter */}
-                <div className="w-full md:w-[130px]">
-                  <CustomSelect
-                    value={selectedGrade}
-                    onChange={(val) => {
-                      setSelectedGrade(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={gradeOptions}
-                    placeholder="All Grades"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-
-                {/* Tile Surface Finish Filter */}
-                <div className="w-full md:w-[140px]">
-                  <CustomSelect
-                    value={selectedSurfaceFinish}
-                    onChange={(val) => {
-                      setSelectedSurfaceFinish(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={finishOptions}
-                    placeholder="All Finishes"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-              </>
-            ) : (
-              /* Brand Filter (shown when NOT Tiles category) */
-              <div className="w-full md:w-[150px]">
-                <CustomSelect
-                  value={selectedBrand}
-                  onChange={(val) => {
-                    setSelectedBrand(String(val));
-                    setCurrentPage(1);
-                  }}
-                  options={brandOptions}
-                  placeholder="All Brands"
-                  className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                />
-              </div>
-            )}
-
-            {/* Stock Status Filter */}
-            <div className="w-full md:w-[155px]">
-              <CustomSelect
-                value={selectedStockStatus}
-                onChange={(val) => {
-                  setSelectedStockStatus(String(val));
-                  setCurrentPage(1);
-                }}
-                options={stockStatusOptions}
-                placeholder="All Stock Status"
-                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-              />
-            </div>
-
-            {/* Unit Filter */}
-            <div className="w-full md:w-[120px]">
-              <CustomSelect
-                value={selectedUnit}
-                onChange={(val) => {
-                  setSelectedUnit(String(val));
-                  setCurrentPage(1);
-                }}
-                options={unitOptions}
-                placeholder="All Units"
-                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-              />
-            </div>
-
-            {/* Reset Filter Button */}
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                title="Reset All Filters"
-                className="h-[38px] px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs col-span-2 md:col-span-1"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset</span>
-              </button>
-            )}
+      {/* 2. Search & Filter Bar */}
+      <div className="p-3.5 rounded-2xl bg-white dark:bg-[#0f172a] border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-xs space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          {/* Keyword Search */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search code, name, size..."
+              className="w-full h-[38px] pl-9 pr-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0] focus:ring-2 focus:ring-[#1E65A0]/20 transition-all"
+            />
           </div>
 
-          {/* Right Side: Show Entries Selector (Rule 5.3) */}
-          <div className="flex items-center gap-2.5 self-start xl:self-auto shrink-0 w-full md:w-auto">
-            <div className="w-[125px]">
-              <CustomSelect
-                value={String(pageSize)}
-                onChange={(val) => {
-                  setPageSize(Number(val));
-                  setCurrentPage(1);
-                }}
-                options={[
-                  { value: "20", label: "Show: 20" },
-                  { value: "50", label: "Show: 50" },
-                  { value: "100", label: "Show: 100" },
-                  { value: "200", label: "Show: 200" },
-                  { value: "500", label: "Show: 500" },
-                  { value: "1000", label: "Show: 1000" },
-                  { value: "1500", label: "Show: 1500" },
-                  { value: "2000", label: "Show: 2000" },
-                ]}
-                matchTriggerWidth={true}
-                minPopoverWidth={125}
-                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-              />
-            </div>
+          {/* Category Filter */}
+          <CustomSelect
+            options={[
+              { value: "all", label: "All Categories" },
+              ...categories.map((c) => ({
+                value: String(c.id),
+                label: c.category_name || "Category",
+              })),
+            ]}
+            value={selectedCategory}
+            onChange={(val) => {
+              setSelectedCategory(String(val));
+              setCurrentPage(1);
+            }}
+            placeholder="Filter Category"
+          />
+
+          {/* Brand Filter */}
+          <CustomSelect
+            options={[
+              { value: "all", label: "All Brands" },
+              ...brands.map((b) => ({
+                value: String(b.id),
+                label: b.name || "Brand",
+              })),
+            ]}
+            value={selectedBrand}
+            onChange={(val) => {
+              setSelectedBrand(String(val));
+              setCurrentPage(1);
+            }}
+            placeholder="Filter Brand"
+          />
+
+          {/* Spec Type Filter */}
+          <CustomSelect
+            options={SPEC_TYPE_OPTIONS}
+            value={selectedSpecType}
+            onChange={(val) => {
+              setSelectedSpecType(String(val));
+              setCurrentPage(1);
+            }}
+            placeholder="Spec Type"
+          />
+
+          {/* Stock Status Filter */}
+          <CustomSelect
+            options={[
+              { value: "all", label: "All Stock Levels" },
+              { value: "in_stock", label: "In Stock (> 0)" },
+              { value: "low_stock", label: "Low Stock (≤ 10)" },
+              { value: "out_of_stock", label: "Out of Stock (0)" },
+            ]}
+            value={selectedStockStatus}
+            onChange={(val) => {
+              setSelectedStockStatus(String(val));
+              setCurrentPage(1);
+            }}
+            placeholder="Stock Status"
+          />
+        </div>
+
+        {/* Filter Summary */}
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/60">
+          <div className="flex items-center gap-2">
+            <span>
+              Showing <strong className="text-slate-800 dark:text-white">{filteredProducts.length}</strong> electrical products
+            </span>
+            {bulkSelectedIds.size > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E65A0] dark:text-blue-300 font-bold">
+                {bulkSelectedIds.size} selected
+              </span>
+            )}
           </div>
         </div>
-
-      {/* 3. Main Table Card (Extracted below filter box, Rule 5.1) */}
-      <div className="no-print card bg-white dark:bg-slate-900 rounded-2xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-        {/* Desktop View Table (hidden on mobile, visible on desktop >= 768px, Rule 5.4) */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
-                <th className="p-[10px] text-center w-[45px] rounded-tl-xl">SL</th>
-                <th className="p-[10px]">Product Name</th>
-                <th className="p-[10px]">Barcodes</th>
-                <th className="p-[10px]">Category</th>
-                <th className="p-[10px]">Brand</th>
-                <th className="p-[10px] text-right">Cost Price</th>
-                <th className="p-[10px] text-right">Sell Price</th>
-                <th className="p-[10px] text-center">Stock</th>
-                <th className="p-[10px] text-center">Status</th>
-                <th className="p-[10px] text-center w-[85px] rounded-tr-xl">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400 font-medium">
-                    <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-rose-600" />
-                    Loading products...
-                  </td>
-                </tr>
-              ) : displayedProducts.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-slate-400 font-medium">
-                    No products found. Click "Add Product" to create your first item.
-                  </td>
-                </tr>
-              ) : (
-                displayedProducts.map((p, idx) => (
-                  <tr
-                    key={p.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
-                  >
-                    <td className="p-[10px] text-center font-bold text-slate-500">
-                      {startIndex + idx + 1}
-                    </td>
-                    <td className="p-[10px]">
-                      <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <span>{p.product_name}</span>
-                      </div>
-                      {(p.tile_size || p.grade || p.sqft_per_box || p.surface_finish) && (
-                        <div className="flex flex-wrap items-center gap-1 mt-1">
-                          {p.tile_size && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/50">
-                              📐 {p.tile_size}
-                            </span>
-                          )}
-                          {p.sqft_per_box && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                              📦 {p.sqft_per_box} Sft/Box {p.pcs_per_box ? `(${p.pcs_per_box} pcs)` : ""}
-                            </span>
-                          )}
-                          {p.grade && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                              ★ {p.grade}
-                            </span>
-                          )}
-                          {p.surface_finish && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300">
-                              ✨ {p.surface_finish}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-[10px] font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                      <div className="flex flex-wrap gap-1">
-                        {p.all_codes.slice(0, 2).map((c, i) => (
-                          <span
-                            key={i}
-                            className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                          >
-                            {c}
-                          </span>
-                        ))}
-                        {p.all_codes.length > 2 && (
-                          <span className="text-slate-400 text-[10px]">+{p.all_codes.length - 2}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-[10px] text-slate-700 dark:text-slate-300 font-medium">
-                      {p.category}
-                    </td>
-                    <td className="p-[10px] text-slate-700 dark:text-slate-300">
-                      {p.brand}
-                    </td>
-                    <td className="p-[10px] text-right font-medium text-slate-600 dark:text-slate-300">
-                      {formatBdCurrency(p.cost_price)}
-                    </td>
-                    <td className="p-[10px] text-right font-bold text-rose-700 dark:text-rose-400">
-                      {formatBdCurrency(p.sell_price)}
-                    </td>
-                    <td className="p-[10px] text-center font-bold">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] ${p.quantity <= 0
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-bold"
-                            : p.quantity <= 5
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 font-bold"
-                              : "bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
-                          }`}
-                      >
-                        {p.tile_size || p.pcs_per_box ? formatBoxAndPcs(p.quantity, p.pcs_per_box) : `${p.quantity} ${p.unit}`}
-                      </span>
-                    </td>
-                    <td className="p-[10px] text-center">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${p.status?.toLowerCase() === "inactive"
-                            ? "bg-rose-500 text-white"
-                            : "bg-slate-400 text-white"
-                          }`}
-                      >
-                        {p.status}
-                      </span>
-                    </td>
-
-                    <td className="p-[10px] text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => setViewingProduct(p)}
-                          title="Quick View Details"
-                          className="w-7 h-7 rounded-lg border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleOpenEdit(p)}
-                          title="Edit"
-                          className="w-7 h-7 rounded-lg border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-purple-600 hover:bg-purple-50 flex items-center justify-center transition-colors cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setProductToDelete(p)}
-                          title="Delete"
-                          className="w-7 h-7 rounded-lg border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile View Card List (< 768px, Rule 5.5) */}
-        <div className="block md:hidden p-3 space-y-3">
-          {loading ? (
-            <div className="p-8 text-center text-slate-400 text-xs">Loading products...</div>
-          ) : displayedProducts.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 text-xs">No products found.</div>
-          ) : (
-            displayedProducts.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] p-3.5 bg-white dark:bg-slate-800/60 shadow-xs"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1.5">
-                    <span>{p.product_name}</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-rose-50 text-rose-700">
-                    Stock: {p.tile_size || p.pcs_per_box ? formatBoxAndPcs(p.quantity, p.pcs_per_box) : `${p.quantity} ${p.unit}`}
-                  </span>
-                </div>
-
-                <p className="text-[11px] text-slate-500 mb-1">
-                  {p.category} &bull; {p.brand} &bull; Code: {p.primary_code}
-                </p>
-
-                {(p.tile_size || p.grade || p.sqft_per_box) && (
-                  <div className="flex flex-wrap items-center gap-1 mb-2">
-                    {p.tile_size && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                        📐 {p.tile_size}
-                      </span>
-                    )}
-                    {p.sqft_per_box && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        📦 {p.sqft_per_box} Sft/Box
-                      </span>
-                    )}
-                    {p.grade && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                        ★ {p.grade}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* 2-Column Financial Grid (Strict Rule 8.5) */}
-                <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 dark:border-slate-700/60 pt-2.5 mt-2">
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/80">
-                    <span className="text-slate-400 text-[11px]">Cost:</span>
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
-                      {formatBdCurrency(p.cost_price)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/80">
-                    <span className="text-slate-400 text-[11px]">Sell:</span>
-                    <span className="font-bold text-rose-700">
-                      {formatBdCurrency(p.sell_price)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-2 mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-                  <button
-                    onClick={() => setViewingProduct(p)}
-                    className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center gap-1 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span>View</span>
-                  </button>
-                  <button
-                    onClick={() => handleOpenEdit(p)}
-                    className="px-3 py-1 rounded-lg border border-purple-200 text-purple-600 text-xs font-semibold"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => setProductToDelete(p)}
-                    className="px-3 py-1 rounded-lg border border-rose-200 text-rose-600 text-xs font-semibold"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Pagination Controls */}
-        <Pagination
-          currentPage={currentPage}
-          totalItems={filteredProducts.length}
-          pageSize={pageSize}
-          onPageChange={setCurrentPage}
-          onPageSizeChange={(newSize) => {
-            setPageSize(newSize);
-            setCurrentPage(1);
-          }}
-          pageSizeOptions={[20, 50, 100, 200, 500, 1000, 1500, 2000]}
-        />
       </div>
 
-      {/* Add / Edit Product Modal (Strict Rule 6.1 - 6.4) */}
-      {modalOpen && (() => {
-        const selectedCategory = categories.find((c) => String(c.id) === String(formData.category_id));
-        const isTilesCategory = Boolean(
-          selectedCategory?.category_name &&
-          (selectedCategory.category_name.toLowerCase().includes("tile") ||
-            selectedCategory.category_name.toLowerCase().includes("টাইল"))
-        );
+      {/* 3. Products Table & Mobile List */}
+      <div className="bg-white dark:bg-[#0f172a] rounded-2xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-[#1E65A0]" />
+            <p className="text-xs text-slate-500 font-medium">Loading electrical catalog...</p>
+          </div>
+        ) : paginatedProducts.length === 0 ? (
+          <div className="py-20 text-center space-y-2">
+            <Boxes className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto stroke-1" />
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+              No electrical products found
+            </p>
+            <p className="text-xs text-slate-400">
+              Try adjusting your search criteria or add a new electrical product.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+                  <tr>
+                    <th className="py-3 px-3.5 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={
+                          paginatedProducts.length > 0 &&
+                          paginatedProducts.every((p) => bulkSelectedIds.has(p.id))
+                        }
+                        onChange={toggleSelectAllOnPage}
+                        className="rounded border-white/30 text-[#1E65A0] focus:ring-0 cursor-pointer"
+                      />
+                    </th>
+                    <th className="py-3 px-3.5">Code / Barcode</th>
+                    <th className="py-3 px-3.5 min-w-[220px]">Product & Electrical Spec</th>
+                    <th className="py-3 px-3.5">Category & Brand</th>
+                    <th className="py-3 px-3.5">Packaging</th>
+                    <th className="py-3 px-3.5 text-right">Cost Price</th>
+                    <th className="py-3 px-3.5 text-right">Sell Price</th>
+                    <th className="py-3 px-3.5 text-center">Stock</th>
+                    <th className="py-3 px-3.5 text-center">Warranty</th>
+                    <th className="py-3 px-3.5 text-center w-24">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {paginatedProducts.map((p) => {
+                    const isSelected = bulkSelectedIds.has(p.id);
+                    const pkg = p.packaging_conversions && p.packaging_conversions.length > 0
+                      ? p.packaging_conversions[0]
+                      : null;
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
-            {/* Unified Container: border-radius: 16px, max-height 92vh, max-w-4xl for spacious view */}
-            <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-              {/* Sticky Header: Cool Crimson / Ruby Red Gradient, Circular Red Close #dc2626 */}
-              <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
-                <h3 className="text-base font-bold text-white tracking-tight m-0">
-                  {editingProduct ? "Edit Product Details" : "Add New Product Item"}
+                    return (
+                      <tr
+                        key={p.id}
+                        className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${
+                          isSelected ? "bg-blue-50/70 dark:bg-blue-950/40" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-3.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelectProduct(p.id)}
+                            className="rounded border-slate-300 dark:border-slate-600 text-[#1E65A0] focus:ring-0 cursor-pointer"
+                          />
+                        </td>
+
+                        {/* Barcode badge */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                            {p.primary_code}
+                          </span>
+                        </td>
+
+                        {/* Product Name & Spec Badge */}
+                        <td className="py-3 px-3.5">
+                          <div className="space-y-1">
+                            <p className="font-bold text-slate-900 dark:text-white leading-tight">
+                              {p.product_name}
+                            </p>
+                            {renderSpecBadge(p.electrical_spec)}
+                          </div>
+                        </td>
+
+                        {/* Category & Brand */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <p className="font-medium text-slate-800 dark:text-slate-200">{p.category}</p>
+                          <p className="text-[10px] text-slate-400 font-semibold">{p.brand}</p>
+                        </td>
+
+                        {/* Packaging Conversion */}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          {pkg ? (
+                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                              1 {pkg.packaging_unit} = {pkg.conversion_ratio} {pkg.base_unit}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">1 {p.unit}</span>
+                          )}
+                        </td>
+
+                        {/* Cost Price */}
+                        <td className="py-3 px-3.5 text-right font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          {formatBdCurrency(p.cost_price)}
+                        </td>
+
+                        {/* Sell Price */}
+                        <td className="py-3 px-3.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                          {formatBdCurrency(p.sell_price)}
+                        </td>
+
+                        {/* Stock */}
+                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                          <span
+                            className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
+                              p.quantity <= 0
+                                ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900"
+                                : p.quantity <= 10
+                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
+                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                            }`}
+                          >
+                            {p.quantity} {p.unit}
+                          </span>
+                        </td>
+
+                        {/* Warranty */}
+                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                          {(p.electrical_spec?.warranty_months ?? 0) > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900">
+                              <ShieldCheck className="w-3 h-3 text-amber-500" />
+                              {p.electrical_spec?.warranty_months}M
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-slate-400">None</span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => setViewingProduct(p)}
+                              title="View Details"
+                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEdit(p)}
+                              title="Edit Product"
+                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setProductToDelete(p)}
+                              title="Delete Product"
+                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-rose-500 text-slate-600 dark:text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (2-Column Financial Grid per Rule 8.3) */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {paginatedProducts.map((p) => {
+                const pkg = p.packaging_conversions && p.packaging_conversions.length > 0
+                  ? p.packaging_conversions[0]
+                  : null;
+
+                return (
+                  <div key={p.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="font-mono font-bold text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                            {p.primary_code}
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            {p.brand}
+                          </span>
+                        </div>
+                        <p className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                          {p.product_name}
+                        </p>
+                      </div>
+
+                      <span
+                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${
+                          p.quantity <= 0
+                            ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
+                            : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
+                        }`}
+                      >
+                        {p.quantity} {p.unit}
+                      </span>
+                    </div>
+
+                    {renderSpecBadge(p.electrical_spec)}
+
+                    {/* 2-Column Financial Grid */}
+                    <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase">Cost Price</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {formatBdCurrency(p.cost_price)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase">Sell Price</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {formatBdCurrency(p.sell_price)}
+                        </span>
+                      </div>
+                      {pkg && (
+                        <div className="col-span-2 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[11px] text-slate-500">
+                          Conversion: 1 {pkg.packaging_unit} = {pkg.conversion_ratio} {pkg.base_unit}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => setViewingProduct(p)}
+                        className="px-2.5 py-1 rounded-lg border border-[#cbd5e1] dark:border-[#334155] text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenEdit(p)}
+                        className="px-2.5 py-1 rounded-lg border border-[#cbd5e1] dark:border-[#334155] text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        onClick={() => setProductToDelete(p)}
+                        className="px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900 text-rose-600 text-xs font-semibold flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Standard Pagination Component */}
+        {filteredProducts.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredProducts.length}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+          />
+        )}
+      </div>
+
+      {/* ================================================================ */}
+      {/* 4. Unified Add / Edit Product Modal (Rule 9)                     */}
+      {/* ================================================================ */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-[#0f172a] border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Sticky Header: Deep Navy Blue & Electric Blue gradient per Rule 9.2 */}
+            <div className="px-5 py-3.5 bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-amber-300" />
+                <h3 className="font-bold text-sm sm:text-base text-white">
+                  {editingProduct ? "Edit Electrical Product" : "Add New Electrical Product"}
                 </h3>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="w-[28px] h-[28px] rounded-full bg-[#dc2626] hover:bg-red-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
               </div>
 
-              {/* Form wrapping scrollable body and fixed footer cleanly */}
-              <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                {/* Scrollable Body: scrollbar stops cleanly above footer */}
-                <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4">
-                  {error && (
-                    <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-[#0B3D91] dark:text-blue-300 text-xs font-semibold">
-                      {error}
-                    </div>
-                  )}
+              {/* 28px x 28px circular red close button per Rule 3 & 9 */}
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs shrink-0"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
 
-                  {/* Product Name */}
-                  <div>
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveProduct} className="flex-1 overflow-y-auto p-5 space-y-4">
+              {error && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+                  {error}
+                </div>
+              )}
+
+              {/* Base Product Information */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-[#0B3D91] dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5" />
+                  1. General Information
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Product Name *
                     </label>
@@ -1089,801 +1085,457 @@ export default function ProductsPage() {
                       required
                       value={formData.product_name}
                       onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
-                      placeholder="e.g. Fresh Ceramics 60x60 Floor Tiles"
-                      className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
+                      placeholder="e.g. BRB 2.5 RM BYA Cable / Schneider 16A SP MCB"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0] focus:ring-2 focus:ring-[#1E65A0]/20"
                     />
                   </div>
 
-                  {/* Category & Brand Dropdowns */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Category *
-                      </label>
-                      <CustomSelect
-                        options={categories.map((c) => ({ value: c.id, label: c.category_name || "" }))}
-                        value={formData.category_id}
-                        onChange={(val) => {
-                          const newCatId = String(val);
-                          const catObj = categories.find((c) => String(c.id) === newCatId);
-                          const isTile = Boolean(
-                            catObj?.category_name &&
-                            (catObj.category_name.toLowerCase().includes("tile") ||
-                              catObj.category_name.toLowerCase().includes("টাইল"))
-                          );
-
-                          let newUnitId = formData.unit_id;
-                          if (isTile && !newUnitId) {
-                            const boxUnit = units.find((u) => u.unit_name?.toLowerCase() === "box");
-                            if (boxUnit) newUnitId = String(boxUnit.id);
-                          }
-
-                          setFormData({
-                            ...formData,
-                            category_id: newCatId,
-                            unit_id: newUnitId,
-                          });
-                        }}
-                        placeholder="Select Category"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Brand *
-                      </label>
-                      <CustomSelect
-                        options={brands.map((b) => ({ value: b.id, label: b.name || "" }))}
-                        value={formData.brand_id}
-                        onChange={(val) => setFormData({ ...formData, brand_id: String(val) })}
-                        placeholder="Select Brand"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Prices & Stock */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Cost Price (৳) *
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        required
-                        value={formData.cost_price}
-                        onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
-                        placeholder="0.00"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Selling Price (৳)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={formData.sell_price}
-                        onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
-                        placeholder="0.00"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Initial Stock Qty
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                        placeholder="0"
-                        className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Unit & Barcode */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Unit of Measurement
-                      </label>
-                      <CustomSelect
-                        options={units.map((u) => ({ value: u.id, label: u.unit_name || "" }))}
-                        value={formData.unit_id}
-                        onChange={(val) => setFormData({ ...formData, unit_id: String(val) })}
-                        placeholder="Select Unit"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Product Code / Barcodes
-                      </label>
-                      <div className="relative">
-                        <Barcode className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                        <input
-                          type="text"
-                          value={formData.product_code}
-                          onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
-                          placeholder="e.g. PRD-0001, 8934521093"
-                          className="w-full h-[42px] pl-9 pr-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                        />
-                      </div>
-                      <p className="text-[10px] text-slate-400 mt-0.5">
-                        Separate multiple barcodes with commas. Leave blank to auto-generate.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Tiles Specifications & Packaging Section - STRICTLY VISIBLE ONLY FOR TILES */}
-                  {isTilesCategory && (
-                    <div className="border border-rose-200 dark:border-rose-950/70 rounded-2xl p-4 bg-gradient-to-br from-blue-50/40 via-white to-slate-50/50 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-900/60 space-y-3.5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-slate-800">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center">
-                            <Layers className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight">
-                              Tiles Specifications & Packaging Calculator
-                            </h4>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                              For Tiles items: Size, Box to Sq.Ft conversion, Grade & Surface Finish
-                            </p>
-                          </div>
-                        </div>
-                        {formData.tile_size && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
-                            Tiles Mode Active
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Popular Size Pills */}
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                          Tile Dimensions / Size (Quick Pick)
-                        </label>
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          {POPULAR_TILE_SIZES.map((size) => (
-                            <button
-                              key={size.value}
-                              type="button"
-                              onClick={() => {
-                                setFormData({
-                                  ...formData,
-                                  tile_size: size.value,
-                                  sqft_per_box: size.defaultSqftPerBox ? String(size.defaultSqftPerBox) : formData.sqft_per_box,
-                                  pcs_per_box: size.defaultPcsPerBox ? String(size.defaultPcsPerBox) : formData.pcs_per_box,
-                                });
-                              }}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${formData.tile_size === size.value
-                                  ? "bg-rose-600 text-white border-blue-700 shadow-xs"
-                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-rose-400"
-                                }`}
-                            >
-                              {size.label}
-                            </button>
-                          ))}
-                        </div>
-
-                        <input
-                          type="text"
-                          value={formData.tile_size}
-                          onChange={(e) => {
-                            const newSize = e.target.value;
-                            const pcs = parseFloat(formData.pcs_per_box || "0");
-                            const autoSqft = autoCalculateSqftPerBox(newSize, pcs);
-                            setFormData({
-                              ...formData,
-                              tile_size: newSize,
-                              ...(autoSqft !== null ? { sqft_per_box: String(autoSqft) } : {}),
-                            });
-                          }}
-                          placeholder="Or enter custom size (e.g. 8/12, 12x24, 10.5/24)"
-                          className="w-full h-[38px] px-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-medium"
-                        />
-                      </div>
-
-                      {/* Box Packaging & Conversion Fields */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Sq.Ft per Box (বক্সে মোট স্কয়ার ফিট)
-                          </label>
-                          <input
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            value={formData.sqft_per_box}
-                            onChange={(e) => setFormData({ ...formData, sqft_per_box: e.target.value })}
-                            placeholder="e.g. 16.66 or 16.0"
-                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-rose-700 dark:text-rose-400 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                          />
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Required for live POS Box ⇄ Sq.Ft billing conversion.
-                          </p>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Pieces per Box (বক্সে মোট পিস)
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={formData.pcs_per_box}
-                            onChange={(e) => {
-                              const newPcs = e.target.value;
-                              const pcsNum = parseFloat(newPcs || "0");
-                              const autoSqft = autoCalculateSqftPerBox(formData.tile_size, pcsNum);
-                              setFormData({
-                                ...formData,
-                                pcs_per_box: newPcs,
-                                ...(autoSqft !== null ? { sqft_per_box: String(autoSqft) } : {}),
-                              });
-                            }}
-                            placeholder="e.g. 25, 11, 10, 8, 4"
-                            className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                          />
-                          <p className="text-[10px] text-slate-400 mt-0.5">
-                            Useful for loose piece calculations.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Grade & Surface Finish */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Tiles Grade / Quality
-                          </label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {TILE_GRADES.map((g) => (
-                              <button
-                                key={g.value}
-                                type="button"
-                                onClick={() => setFormData({ ...formData, grade: formData.grade === g.value ? "" : g.value })}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${formData.grade === g.value
-                                    ? "bg-emerald-600 text-white border-emerald-700 shadow-xs"
-                                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-emerald-400"
-                                  }`}
-                              >
-                                {g.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                            Surface Finish
-                          </label>
-                          <CustomSelect
-                            options={SURFACE_FINISHES.map((f) => ({ value: f, label: f }))}
-                            value={formData.surface_finish}
-                            onChange={(val) => setFormData({ ...formData, surface_finish: String(val) })}
-                            placeholder="Select Surface Finish (Optional)"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Live Packaging Badge */}
-                      {formData.sqft_per_box && (
-                        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
-                          <span>📦 1 Box = {formData.sqft_per_box} Sq.Ft {formData.pcs_per_box ? `(${formData.pcs_per_box} Pcs)` : ""}</span>
-                          {formData.sell_price && Number(formData.sqft_per_box) > 0 && (
-                            <span className="text-[11px] font-black">
-                              Rate: ৳{(Number(formData.sell_price) / Number(formData.sqft_per_box)).toFixed(2)} / Sq.Ft
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Modal Footer (Rule 6.4) - Fixed at bottom outside the scroll area, zero content bleed! */}
-                <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 z-10 shadow-xs">
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="px-5 py-2.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-70 shadow-sm"
-                  >
-                    {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                    <span>{editingProduct ? "Update Product" : "Save Product"}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* 2. Quick View Product Details Modal */}
-      {viewingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-150">
-            {/* Sticky Header: Ruby Red / Crimson Gradient */}
-            <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between shrink-0 shadow-xs">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
-                  <Package className="w-4 h-4 text-white" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white tracking-tight m-0 truncate">
-                    Product Details
-                  </h3>
-                  <p className="text-[10px] text-rose-100/80 leading-none mt-0.5 truncate">
-                    ID: #{viewingProduct.id} &bull; Code: {viewingProduct.primary_code || "N/A"}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setViewingProduct(null)}
-                className="w-7 h-7 rounded-full bg-[#dc2626] hover:bg-red-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition-colors shrink-0"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-4">
-              {/* Product Title & Badges */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-sm font-black text-slate-800 dark:text-white leading-tight">
-                      {viewingProduct.product_name || viewingProduct.name}
-                    </h4>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">
-                        {viewingProduct.category || "General"}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">
-                        {viewingProduct.brand || "N/A"}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/60">
-                        Unit: {viewingProduct.unit || "Pcs"}
-                      </span>
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${viewingProduct.status?.toLowerCase() === "inactive"
-                        ? "bg-rose-500 text-white"
-                        : "bg-emerald-600 text-white"
-                      }`}
-                  >
-                    {viewingProduct.status || "Active"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Barcodes */}
-              {viewingProduct.all_codes && viewingProduct.all_codes.length > 0 && (
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                    Barcode(s)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {viewingProduct.all_codes.map((code, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-mono font-bold border border-slate-200 dark:border-slate-700"
-                      >
-                        <Barcode className="w-3.5 h-3.5 text-slate-400" />
-                        {code}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Financial & Stock 3-Card Grid */}
-              <div className="grid grid-cols-3 gap-2.5">
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Cost Price
-                  </span>
-                  <span className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5 block">
-                    {formatBdCurrency(viewingProduct.cost_price)}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 text-center">
-                  <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider block">
-                    Sell Price
-                  </span>
-                  <span className="text-xs sm:text-sm font-black text-rose-700 dark:text-rose-300 mt-0.5 block">
-                    {formatBdCurrency(viewingProduct.sell_price)}
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-center">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Current Stock
-                  </span>
-                  <span
-                    className={`text-xs sm:text-sm font-black mt-0.5 block ${viewingProduct.quantity <= 0
-                        ? "text-rose-600"
-                        : viewingProduct.quantity <= 5
-                          ? "text-amber-600"
-                          : "text-emerald-600"
-                      }`}
-                  >
-                    {viewingProduct.tile_size || viewingProduct.pcs_per_box ? formatBoxAndPcs(viewingProduct.quantity, viewingProduct.pcs_per_box) : `${viewingProduct.quantity} ${viewingProduct.unit}`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Tiles Specific Information (if applicable) */}
-              {(viewingProduct.tile_size || viewingProduct.sqft_per_box || viewingProduct.grade || viewingProduct.surface_finish) && (
-                <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-gradient-to-br from-rose-50/30 via-white to-slate-50/50 dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-900 space-y-2.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800 dark:text-rose-300 border-b border-blue-100 dark:border-slate-800 pb-1.5">
-                    <Layers className="w-4 h-4 text-rose-600" />
-                    <span>Tiles Packaging & Specification</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    {viewingProduct.tile_size && (
-                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                        <span className="text-slate-400">Tile Size:</span>
-                        <span className="font-bold text-slate-800 dark:text-white">
-                          📐 {viewingProduct.tile_size}
-                        </span>
-                      </div>
-                    )}
-                    {viewingProduct.sqft_per_box && (
-                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                        <span className="text-slate-400">Sq.Ft / Box:</span>
-                        <span className="font-bold text-slate-800 dark:text-white">
-                          📦 {viewingProduct.sqft_per_box} Sft
-                        </span>
-                      </div>
-                    )}
-                    {viewingProduct.pcs_per_box && (
-                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                        <span className="text-slate-400">Pieces / Box:</span>
-                        <span className="font-bold text-slate-800 dark:text-white">
-                          {viewingProduct.pcs_per_box} Pcs
-                        </span>
-                      </div>
-                    )}
-                    {viewingProduct.grade && (
-                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                        <span className="text-slate-400">Grade:</span>
-                        <span className="font-bold text-amber-600">
-                          ★ {viewingProduct.grade}
-                        </span>
-                      </div>
-                    )}
-                    {viewingProduct.surface_finish && (
-                      <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800 col-span-2">
-                        <span className="text-slate-400">Surface Finish:</span>
-                        <span className="font-bold text-purple-600">
-                          ✨ {viewingProduct.surface_finish}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {viewingProduct.sqft_per_box && viewingProduct.sell_price && Number(viewingProduct.sqft_per_box) > 0 && (
-                    <div className="pt-1 text-[11px] font-bold text-rose-700 dark:text-rose-400 flex justify-between">
-                      <span>Rate per Sq.Ft:</span>
-                      <span>৳{(Number(viewingProduct.sell_price) / Number(viewingProduct.sqft_per_box)).toFixed(2)} / Sft</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Sticky Footer */}
-            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setViewingProduct(null)}
-                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const toEdit = viewingProduct;
-                  setViewingProduct(null);
-                  handleOpenEdit(toEdit);
-                }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
-              >
-                <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit Product</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Custom Delete Confirmation Modal */}
-      {/* Custom Delete Confirmation Modal */}
-      <DeleteConfirmModal
-        isOpen={Boolean(productToDelete)}
-        onClose={() => setProductToDelete(null)}
-        onConfirm={confirmDelete}
-        title="Confirm Product Deletion"
-        recordIdentifier={
-          productToDelete
-            ? `Product: ${productToDelete.product_name || productToDelete.name} (${productToDelete.primary_code})`
-            : null
-        }
-        warningMessage="Are you sure you want to delete this product? This action cannot be undone."
-        isLoading={deleting}
-      />
-
-      {/* Bulk Percentage Price Update Modal */}
-      {bulkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
-          <div className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
-              <div className="flex items-center gap-2 text-white">
-                <Percent className="w-5 h-5 text-rose-200" />
-                <h3 className="text-base font-bold text-white tracking-tight m-0">
-                  Bulk Percentage Price Update (% বাল্ক প্রাইস পরিবর্তন)
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setBulkModalOpen(false)}
-                className="w-7 h-7 rounded-full bg-[#dc2626] hover:bg-red-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleBulkUpdate} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4">
-                {/* Brand & Target Field Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Select Brand (ব্র্যান্ড নির্বাচন করুন)
+                      Barcode / Product Code
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.product_code}
+                      onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
+                      placeholder="Leave blank to auto-generate (PE-00001)"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-mono text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Brand *
                     </label>
                     <CustomSelect
-                      value={bulkBrandId}
-                      onChange={(val) => setBulkBrandId(String(val))}
-                      options={[
-                        { value: "all", label: "All Brands (সকল ব্র্যান্ড)" },
-                        ...brands.map((b) => ({ value: String(b.id), label: b.name || "" })),
-                      ]}
+                      options={brands.map((b) => ({
+                        value: String(b.id),
+                        label: b.name || "Brand",
+                      }))}
+                      value={formData.brand_id}
+                      onChange={(val) => setFormData({ ...formData, brand_id: String(val) })}
                       placeholder="Select Brand"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Target Price (কোন মূল্য আপডেট করবেন)
+                      Category *
                     </label>
-                    <div className="grid grid-cols-3 gap-1.5 h-[42px] p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                      <button
-                        type="button"
-                        onClick={() => setBulkTargetField("sell_price")}
-                        className={`text-xs font-bold rounded-lg transition-all ${bulkTargetField === "sell_price"
-                            ? "bg-rose-700 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-                          }`}
-                      >
-                        Sell Price
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBulkTargetField("cost_price")}
-                        className={`text-xs font-bold rounded-lg transition-all ${bulkTargetField === "cost_price"
-                            ? "bg-rose-700 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-                          }`}
-                      >
-                        Cost Price
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBulkTargetField("both")}
-                        className={`text-xs font-bold rounded-lg transition-all ${bulkTargetField === "both"
-                            ? "bg-rose-700 text-white shadow-xs"
-                            : "text-slate-600 dark:text-slate-300 hover:text-slate-900"
-                          }`}
-                      >
-                        Both Prices
-                      </button>
-                    </div>
+                    <CustomSelect
+                      options={categories.map((c) => ({
+                        value: String(c.id),
+                        label: c.category_name || "Category",
+                      }))}
+                      value={formData.category_id}
+                      onChange={(val) => setFormData({ ...formData, category_id: String(val) })}
+                      placeholder="Select Category"
+                    />
                   </div>
-                </div>
 
-                {/* Percentage Input & Quick Buttons */}
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-2.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Percentage Adjustment (% হারে বৃদ্ধি বা হ্রাস)
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Base Retail Unit *
                     </label>
-                    <span className="text-[11px] text-slate-500">
-                      Ex: <code className="text-rose-600 font-bold font-mono">5</code> (+5% বাড়বে) অথবা <code className="text-rose-600 font-bold font-mono">-5</code> (-5% কমবে)
-                    </span>
+                    <CustomSelect
+                      options={units.map((u) => ({
+                        value: String(u.id),
+                        label: u.unit_name || "Unit",
+                      }))}
+                      value={formData.unit_id}
+                      onChange={(val) => setFormData({ ...formData, unit_id: String(val) })}
+                      placeholder="Select Unit (Meter / Pcs)"
+                    />
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        required
-                        value={bulkPercentage}
-                        onChange={(e) => setBulkPercentage(e.target.value)}
-                        placeholder="e.g. 5 or -5"
-                        className="w-full h-[42px] px-3.5 pr-8 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {[5, 10, 15, -5, -10].map((quick) => (
-                        <button
-                          key={quick}
-                          type="button"
-                          onClick={() => setBulkPercentage(String(quick))}
-                          className="px-2.5 h-[42px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-rose-500 hover:text-rose-600 transition-colors cursor-pointer"
-                        >
-                          {quick > 0 ? `+${quick}%` : `${quick}%`}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Product Selection List with Live Price Preview */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="bulkSelectAll"
-                        checked={bulkMatchingProducts.length > 0 && bulkSelectedIds.size === bulkMatchingProducts.length}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setBulkSelectedIds(new Set(bulkMatchingProducts.map((p) => p.id)));
-                          } else {
-                            setBulkSelectedIds(new Set());
-                          }
-                        }}
-                        className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
-                      />
-                      <label htmlFor="bulkSelectAll" className="text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer">
-                        Select All Matching ({bulkSelectedIds.size} / {bulkMatchingProducts.length} Selected)
-                      </label>
-                    </div>
-                    <span className="text-[11px] text-slate-500">
-                      Showing matching products for brand
-                    </span>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Cost Price (৳) *
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      value={formData.cost_price}
+                      onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
                   </div>
 
-                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden max-h-[260px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                    {bulkMatchingProducts.length === 0 ? (
-                      <div className="p-6 text-center text-slate-400 text-xs font-medium">
-                        No products found for this brand filter.
-                      </div>
-                    ) : (
-                      bulkMatchingProducts.map((p) => {
-                        const isChecked = bulkSelectedIds.has(p.id);
-                        const pct = parseFloat(bulkPercentage) || 0;
-                        const factor = 1 + pct / 100;
-                        const newSell = Math.round(p.sell_price * factor * 100) / 100;
-                        const newCost = Math.round(p.cost_price * factor * 100) / 100;
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Sell Price (৳) *
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      value={formData.sell_price}
+                      onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
+                      placeholder="0.00"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
+                  </div>
 
-                        return (
-                          <div
-                            key={p.id}
-                            onClick={() => {
-                              const next = new Set(bulkSelectedIds);
-                              if (next.has(p.id)) next.delete(p.id);
-                              else next.add(p.id);
-                              setBulkSelectedIds(next);
-                            }}
-                            className={`p-2.5 flex items-center justify-between gap-3 cursor-pointer transition-colors ${isChecked
-                                ? "bg-rose-50/40 dark:bg-rose-950/20"
-                                : "hover:bg-slate-50 dark:hover:bg-slate-800/40 opacity-60"
-                              }`}
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => { }} // handled by parent div
-                                className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <div className="font-bold text-slate-800 dark:text-white truncate">
-                                  {p.product_name}
-                                </div>
-                                <div className="text-[10px] text-slate-400">
-                                  {p.brand} &bull; Code: {p.primary_code}
-                                </div>
-                              </div>
-                            </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Stock Quantity
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      placeholder="0"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
+                  </div>
 
-                            {/* Price Comparison Preview */}
-                            <div className="flex items-center gap-3 shrink-0 text-right">
-                              {(bulkTargetField === "sell_price" || bulkTargetField === "both") && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 block">Sell Price</span>
-                                  <span className="font-bold text-slate-700 dark:text-slate-300">
-                                    {formatBdCurrency(p.sell_price)}
-                                  </span>
-                                  {pct !== 0 && (
-                                    <span className="text-rose-600 font-extrabold ml-1">
-                                      &rarr; {formatBdCurrency(newSell)}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                              {(bulkTargetField === "cost_price" || bulkTargetField === "both") && (
-                                <div>
-                                  <span className="text-[10px] text-slate-400 block">Cost Price</span>
-                                  <span className="font-bold text-slate-700 dark:text-slate-300">
-                                    {formatBdCurrency(p.cost_price)}
-                                  </span>
-                                  {pct !== 0 && (
-                                    <span className="text-rose-600 font-extrabold ml-1">
-                                      &rarr; {formatBdCurrency(newCost)}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Warranty Period (Months)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.warranty_months}
+                      onChange={(e) => setFormData({ ...formData, warranty_months: e.target.value })}
+                      placeholder="0 (No Warranty)"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Sticky Footer */}
-              <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-6 py-3.5 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+              {/* Electrical Specifications */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#0B3D91] dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    2. Electrical Specifications
+                  </h4>
+                  <span className="text-[10px] text-slate-400">Select product spec type</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Electrical Specification Category
+                    </label>
+                    <CustomSelect
+                      options={SPEC_TYPE_OPTIONS.filter((o) => o.value !== "all")}
+                      value={formData.spec_type}
+                      onChange={(val) => setFormData({ ...formData, spec_type: String(val) })}
+                      placeholder="Select Specification Category"
+                    />
+                  </div>
+
+                  {/* Dynamic Fields for CABLE */}
+                  {formData.spec_type === "CABLE" && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Cable Size (RM / Gauge)
+                        </label>
+                        <input
+                          type="text"
+                          list="cable-sizes"
+                          value={formData.cable_size}
+                          onChange={(e) => setFormData({ ...formData, cable_size: e.target.value })}
+                          placeholder="e.g. 1.5 RM BYA, 2.5 RM"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                        <datalist id="cable-sizes">
+                          {CABLE_SIZES.map((s) => (
+                            <option key={s} value={s} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Conductor Material
+                        </label>
+                        <CustomSelect
+                          value={formData.conductor_material}
+                          onChange={(val) => setFormData({ ...formData, conductor_material: val })}
+                          options={[
+                            { value: "Copper", label: "Copper (CU)" },
+                            { value: "Aluminium", label: "Aluminium (AL)" },
+                          ]}
+                          placeholder="Select Material"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Core Count
+                        </label>
+                        <CustomSelect
+                          value={formData.core_count}
+                          onChange={(val) => setFormData({ ...formData, core_count: val })}
+                          options={[
+                            { value: "1", label: "1 Core (Single Core)" },
+                            { value: "2", label: "2 Core" },
+                            { value: "3", label: "3 Core" },
+                            { value: "4", label: "4 Core" },
+                          ]}
+                          placeholder="Select Cores"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Voltage Grade
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.voltage_grade}
+                          onChange={(e) => setFormData({ ...formData, voltage_grade: e.target.value })}
+                          placeholder="e.g. 450/750V"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Dynamic Fields for BREAKER */}
+                  {formData.spec_type === "BREAKER" && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Current Rating (Amps)
+                        </label>
+                        <input
+                          type="text"
+                          list="breaker-currents"
+                          value={formData.current_rating}
+                          onChange={(e) => setFormData({ ...formData, current_rating: e.target.value })}
+                          placeholder="e.g. 16A, 32A, 63A"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                        <datalist id="breaker-currents">
+                          {BREAKER_CURRENTS.map((c) => (
+                            <option key={c} value={c} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Pole Configuration
+                        </label>
+                        <CustomSelect
+                          value={formData.pole_type}
+                          onChange={(val) => setFormData({ ...formData, pole_type: val })}
+                          options={[
+                            { value: "", label: "Select Pole Type" },
+                            ...BREAKER_POLES.map((p) => ({ value: p, label: p })),
+                          ]}
+                          placeholder="Select Pole Type"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Breaking Capacity (kA)
+                        </label>
+                        <CustomSelect
+                          value={formData.breaking_capacity}
+                          onChange={(val) => setFormData({ ...formData, breaking_capacity: val })}
+                          options={[
+                            { value: "", label: "Select kA Rating" },
+                            ...BREAKING_CAPACITIES.map((k) => ({ value: k, label: k })),
+                          ]}
+                          placeholder="Select kA Rating"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Tripping Curve
+                        </label>
+                        <CustomSelect
+                          value={formData.tripping_curve}
+                          onChange={(val) => setFormData({ ...formData, tripping_curve: val })}
+                          options={[
+                            { value: "B", label: "B Curve" },
+                            { value: "C", label: "C Curve (Standard)" },
+                            { value: "D", label: "D Curve (Industrial/Motor)" },
+                          ]}
+                          placeholder="Select Tripping Curve"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Dynamic Fields for SWITCH */}
+                  {formData.spec_type === "SWITCH" && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Gang Module / Type
+                        </label>
+                        <CustomSelect
+                          value={formData.gang_module}
+                          onChange={(val) => setFormData({ ...formData, gang_module: val })}
+                          options={[
+                            { value: "", label: "Select Module Type" },
+                            ...SWITCH_GANGS.map((g) => ({ value: g, label: g })),
+                          ]}
+                          placeholder="Select Module Type"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Current Rating
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.current_rating}
+                          onChange={(e) => setFormData({ ...formData, current_rating: e.target.value })}
+                          placeholder="e.g. 10A, 13A, 16A"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Dynamic Fields for LIGHTING */}
+                  {formData.spec_type === "LIGHTING" && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Wattage (Watts)
+                        </label>
+                        <input
+                          type="text"
+                          list="light-watts"
+                          value={formData.wattage}
+                          onChange={(e) => setFormData({ ...formData, wattage: e.target.value })}
+                          placeholder="e.g. 9W, 12W, 18W"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                        <datalist id="light-watts">
+                          {LIGHT_WATTAGES.map((w) => (
+                            <option key={w} value={w} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                          Color Temperature
+                        </label>
+                        <CustomSelect
+                          value={formData.color_temperature}
+                          onChange={(val) => setFormData({ ...formData, color_temperature: val })}
+                          options={[
+                            { value: "", label: "Select Color Temp" },
+                            ...COLOR_TEMPS.map((t) => ({ value: t, label: t })),
+                          ]}
+                          placeholder="Select Color Temp"
+                          className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Dynamic Fields for CONDUIT */}
+                  {formData.spec_type === "CONDUIT" && (
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Conduit Diameter (mm / inch)
+                      </label>
+                      <CustomSelect
+                        value={formData.conduit_diameter}
+                        onChange={(val) => setFormData({ ...formData, conduit_diameter: val })}
+                        options={[
+                          { value: "", label: "Select Diameter" },
+                          ...CONDUIT_SIZES.map((d) => ({ value: d, label: d })),
+                        ]}
+                        placeholder="Select Diameter"
+                        className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Packaging Conversion */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#0B3D91] dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Boxes className="w-3.5 h-3.5 text-amber-500" />
+                    3. Packaging Unit Conversion (Optional)
+                  </h4>
+                  <span className="text-[10px] text-slate-400">e.g. 1 Reel = 100 Meters</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Bulk Packaging Unit
+                    </label>
+                    <CustomSelect
+                      value={formData.packaging_unit}
+                      onChange={(val) => setFormData({ ...formData, packaging_unit: val })}
+                      options={[
+                        { value: "", label: "None / Single Unit" },
+                        ...PACKAGING_UNITS.map((p) => ({ value: p, label: p })),
+                      ]}
+                      placeholder="None / Single Unit"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Conversion Ratio (Units per Package)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="1"
+                      value={formData.conversion_ratio}
+                      onChange={(e) => setFormData({ ...formData, conversion_ratio: e.target.value })}
+                      placeholder="e.g. 100 for 100 Meters per Reel"
+                      className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {formData.packaging_unit && formData.conversion_ratio && (
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-900">
+                    Rule: 1 {formData.packaging_unit} will contain {formData.conversion_ratio} base units in stock and sales receipts.
+                  </p>
+                )}
+              </div>
+
+              {/* Sticky Footer: Cancel (Red) & Save (Brand Gradient) per Rule 9.4 */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setBulkModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
                 >
-                  Cancel (বাতিল)
+                  Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={bulkSubmitting || bulkSelectedIds.size === 0 || !bulkPercentage}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                  disabled={submitting}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-70"
                 >
-                  {bulkSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating Prices...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Percent className="w-4 h-4" />
-                      <span>Update {bulkSelectedIds.size} Products Price</span>
-                    </>
-                  )}
+                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingProduct ? "Update Product" : "Save Product"}</span>
                 </button>
               </div>
             </form>
@@ -1891,60 +1543,309 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* 5. Dedicated Print-Only Report Template */}
-      <div className="print-only p-2 text-black bg-white">
-        <div className="border-b-2 border-slate-900 pb-2 mb-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-xl font-black tracking-tight text-[#0B3D91] m-0">PROTIKKHA ELECTRIC</h1>
-              <p className="text-xs text-slate-600 font-medium m-0">
-                Electrical Retail &amp; Wholesale POS &amp; Inventory Management
-              </p>
-              <h2 className="text-sm font-bold text-slate-800 mt-1 uppercase tracking-wider">
-                Product Inventory Price &amp; Stock List
-              </h2>
+      {/* ================================================================ */}
+      {/* 5. View Product Details Modal                                    */}
+      {/* ================================================================ */}
+      {viewingProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#0f172a] border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-300" />
+                <h3 className="font-bold text-sm text-white">Electrical Product Specifications</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingProduct(null)}
+                className="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
             </div>
-            <div className="text-right text-xs text-slate-600">
-              <p>Printed: {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
-              <p>Total Products: <strong className="text-slate-900">{filteredProducts.length}</strong></p>
+
+            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    {viewingProduct.primary_code}
+                  </span>
+                  <span className="text-xs font-bold text-[#1E65A0] dark:text-blue-400">
+                    {viewingProduct.brand}
+                  </span>
+                </div>
+                <h4 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  {viewingProduct.product_name}
+                </h4>
+                <p className="text-xs text-slate-500">Category: {viewingProduct.category}</p>
+              </div>
+
+              {/* Price & Stock Card */}
+              <div className="grid grid-cols-3 gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase">Cost Price</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {formatBdCurrency(viewingProduct.cost_price)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase">Sell Price</span>
+                  <span className="font-bold text-[#0B3D91] dark:text-blue-300">
+                    {formatBdCurrency(viewingProduct.sell_price)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block uppercase">Stock</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {viewingProduct.quantity} {viewingProduct.unit}
+                  </span>
+                </div>
+              </div>
+
+              {/* Electrical Specs Details */}
+              {viewingProduct.electrical_spec ? (
+                <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-2 text-xs">
+                  <h5 className="font-bold text-[#0B3D91] dark:text-blue-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    Technical Details
+                  </h5>
+
+                  <div className="grid grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+                    <div>
+                      <span className="text-[10px] text-slate-400 block">Spec Type:</span>
+                      <span className="font-semibold">{viewingProduct.electrical_spec.spec_type}</span>
+                    </div>
+                    {viewingProduct.electrical_spec.cable_size && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Cable Size:</span>
+                        <span className="font-bold">{viewingProduct.electrical_spec.cable_size}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.conductor_material && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Conductor:</span>
+                        <span className="font-semibold">{viewingProduct.electrical_spec.conductor_material}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.voltage_grade && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Voltage:</span>
+                        <span className="font-semibold">{viewingProduct.electrical_spec.voltage_grade}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.current_rating && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Ampere:</span>
+                        <span className="font-bold text-blue-600 dark:text-blue-400">{viewingProduct.electrical_spec.current_rating}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.pole_type && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Pole:</span>
+                        <span className="font-semibold">{viewingProduct.electrical_spec.pole_type}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.breaking_capacity && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Capacity:</span>
+                        <span className="font-semibold">{viewingProduct.electrical_spec.breaking_capacity}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.wattage && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Wattage:</span>
+                        <span className="font-bold">{viewingProduct.electrical_spec.wattage}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.gang_module && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Gang / Module:</span>
+                        <span className="font-semibold">{viewingProduct.electrical_spec.gang_module}</span>
+                      </div>
+                    )}
+                    {viewingProduct.electrical_spec.warranty_months !== undefined && (
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Warranty:</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">
+                          {(viewingProduct.electrical_spec.warranty_months ?? 0) > 0
+                            ? `${viewingProduct.electrical_spec.warranty_months} Months`
+                            : "No Warranty"}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-400 italic">No specific electrical specs configured.</p>
+              )}
+
+              {/* Packaging Conversion */}
+              {viewingProduct.packaging_conversions && viewingProduct.packaging_conversions.length > 0 && (
+                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                    Packaging Conversion
+                  </span>
+                  {viewingProduct.packaging_conversions.map((pkg) => (
+                    <p key={pkg.id} className="font-bold text-slate-800 dark:text-slate-200">
+                      1 {pkg.packaging_unit} = {pkg.conversion_ratio} {pkg.base_unit}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setViewingProduct(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        <table className="print-table w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="bg-slate-100 text-black font-bold border-b-2 border-slate-900">
-              <th className="p-1.5 text-center w-8">SL</th>
-              <th className="p-1.5">Product Name</th>
-              <th className="p-1.5">Code / Barcode</th>
-              <th className="p-1.5">Category</th>
-              <th className="p-1.5">Size / Brand</th>
-              <th className="p-1.5 text-center">Stock</th>
-              <th className="p-1.5 text-right">Cost Price</th>
-              <th className="p-1.5 text-right">Sell Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.map((p, idx) => (
-              <tr key={p.id} className="border-b border-slate-300">
-                <td className="p-1.5 text-center font-bold">{idx + 1}</td>
-                <td className="p-1.5 font-bold">{p.product_name}</td>
-                <td className="p-1.5 font-mono text-[10px]">{p.display_codes}</td>
-                <td className="p-1.5">{p.category}</td>
-                <td className="p-1.5">{p.tile_size || p.brand || "-"}</td>
-                <td className="p-1.5 text-center font-bold">
-                  {p.tile_size || p.pcs_per_box
-                    ? formatBoxAndPcs(p.quantity, p.pcs_per_box, p.tile_size)
-                    : `${p.quantity} pcs`}
-                </td>
-                <td className="p-1.5 text-right">{formatBdCurrency(p.cost_price)}</td>
-                <td className="p-1.5 text-right font-bold">{formatBdCurrency(p.sell_price)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* ================================================================ */}
+      {/* 6. Bulk Price Update Modal                                       */}
+      {/* ================================================================ */}
+      {bulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0f172a] border-[1.5px] border-[#cbd5e1] dark:border-[#334155] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-5 py-3.5 bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Percent className="w-4 h-4 text-amber-300" />
+                <h3 className="font-bold text-sm text-white">Bulk Price Update (%)</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBulkModalOpen(false)}
+                className="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkPriceSubmit} className="p-5 space-y-4">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Adjust prices by percentage across a whole brand or currently selected products (e.g. enter <strong className="text-slate-800 dark:text-white">5</strong> for +5% increase or <strong className="text-slate-800 dark:text-white">-3</strong> for 3% reduction).
+              </p>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Target Scope
+                </label>
+                {bulkSelectedIds.size > 0 ? (
+                  <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-xs font-bold text-[#1E65A0] dark:text-blue-300 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>Applying to {bulkSelectedIds.size} individually selected products</span>
+                  </div>
+                ) : (
+                  <CustomSelect
+                    options={[
+                      { value: "all", label: "Select a Brand..." },
+                      ...brands.map((b) => ({
+                        value: String(b.id),
+                        label: b.name || "Brand",
+                      })),
+                    ]}
+                    value={bulkBrandId}
+                    onChange={(val) => setBulkBrandId(String(val))}
+                    placeholder="Choose Brand"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Percentage Change (%) *
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  required
+                  value={bulkPercentage}
+                  onChange={(e) => setBulkPercentage(e.target.value)}
+                  placeholder="e.g. 5 for +5% or -5 for -5%"
+                  className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Price to Update
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBulkTargetField("sell_price")}
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                      bulkTargetField === "sell_price"
+                        ? "bg-[#0B3D91] text-white border-[#0B3D91]"
+                        : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    Sell Price
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkTargetField("cost_price")}
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                      bulkTargetField === "cost_price"
+                        ? "bg-[#0B3D91] text-white border-[#0B3D91]"
+                        : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    Cost Price
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkTargetField("both")}
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                      bulkTargetField === "both"
+                        ? "bg-[#0B3D91] text-white border-[#0B3D91]"
+                        : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    Both
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setBulkModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={bulkSubmitting}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs disabled:opacity-70"
+                >
+                  {bulkSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Apply Price Update</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================================ */}
+      {/* 7. Delete Confirmation Modal                                     */}
+      {/* ================================================================ */}
+      <DeleteConfirmModal
+        isOpen={Boolean(productToDelete)}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Electrical Product"
+        itemName={productToDelete?.product_name || "this product"}
+        warningMessage="Are you sure you want to delete this electrical product? This action cannot be undone."
+        loading={deleting}
+      />
     </div>
   );
 }
-

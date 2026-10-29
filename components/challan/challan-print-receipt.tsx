@@ -1,7 +1,6 @@
 "use client";
 
 import { Printer, X, Truck, Calendar, User, MapPin } from "lucide-react";
-import { parseBoxAndPcs } from "@/lib/tiles-calculator";
 
 interface ChallanItem {
   id: number;
@@ -44,22 +43,8 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
     window.print();
   };
 
-  let totalBoxes = 0;
-  let totalPcs = 0;
-  challan.items.forEach((it) => {
-    const { fullBoxes, pcs } = parseBoxAndPcs(it.quantity, it.pcs_per_box, it.tile_size);
-    totalBoxes += fullBoxes;
-    totalPcs += pcs;
-  });
-
-  const formattedTotalDispatch =
-    totalBoxes > 0 && totalPcs > 0
-      ? `${totalBoxes} Boxes ${totalPcs} Pcs`
-      : totalBoxes > 0
-      ? `${totalBoxes} Boxes`
-      : totalPcs > 0
-      ? `${totalPcs} Pcs`
-      : "0 Box";
+  const totalDispatch = challan.items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
+  const formattedTotalDispatch = `${totalDispatch} Units`;
 
   const formattedDate = challan.challan_date
     ? new Date(challan.challan_date).toLocaleDateString("en-GB", {
@@ -235,24 +220,8 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
                   </thead>
                   <tbody className="divide-y divide-slate-200 text-slate-800">
                     {challan.items.map((item, idx) => {
-                      const isTile = Boolean(
-                        item.tile_size ||
-                        item.pcs_per_box ||
-                        (item.unit && item.unit.toLowerCase().includes("box"))
-                      );
-                      const { fullBoxes, pcs, formatted } = parseBoxAndPcs(
-                        item.quantity,
-                        item.pcs_per_box,
-                        item.tile_size
-                      );
-                      const displayQty = isTile ? formatted : `${item.quantity} Pcs`;
-                      const displayUnit = isTile
-                        ? fullBoxes > 0 && pcs > 0
-                          ? "Box, Pcs"
-                          : fullBoxes > 0
-                          ? "Box"
-                          : "Pcs"
-                        : item.unit || "Pcs";
+                      const displayQty = `${item.quantity}`;
+                      const displayUnit = item.unit || "Pcs";
                       return (
                         <tr key={item.id || idx} className="hover:bg-slate-50/50">
                           <td className="py-1.5 px-2 text-center text-slate-500 font-mono text-[10px]">
@@ -289,7 +258,7 @@ export function ChallanPrintReceipt({ challan, onClose }: ChallanPrintProps) {
 
               {/* Note & Inspection Notice */}
               <div className="p-2 bg-amber-50/80 rounded-lg border border-amber-200 text-[10px] text-amber-900">
-                <span className="font-bold">Notice:</span> Inspect tiles boxes for breakage before delivery handover.
+                <span className="font-bold">Notice:</span> Inspect electrical items, wires, and fixtures before delivery handover.
                 {challan.note && (
                   <p className="mt-0.5 text-slate-800 font-medium">
                     <strong>Note:</strong> {challan.note}

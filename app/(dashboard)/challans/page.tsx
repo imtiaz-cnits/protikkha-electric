@@ -18,7 +18,7 @@ import {
 import { ChallanPrintReceipt, ChallanPrintData } from "@/components/challan/challan-print-receipt";
 import { CustomDatePicker } from "@/components/ui/date-picker";
 import { CustomSelect } from "@/components/ui";
-import { formatBoxAndPcs, formatTileOrItemQty, parseBoxAndPcs } from "@/lib/tiles-calculator";
+import { formatElectricalQty, formatElectricalOrderQty } from "@/lib/electrical-unit-service";
 
 export default function ChallansPage() {
   const [challans, setChallans] = useState<any[]>([]);
@@ -74,34 +74,12 @@ export default function ChallansPage() {
 
   const formatChallanQty = (c: any): string => {
     if (!c.items || c.items.length === 0) {
-      return formatBoxAndPcs(c.total_quantity);
+      return `${c.total_quantity || 0} Units`;
     }
     if (c.items.length === 1) {
-      return formatTileOrItemQty(c.items[0].quantity, c.items[0]);
+      return formatElectricalQty(c.items[0].quantity, c.items[0]);
     }
-    let totalBoxes = 0;
-    let totalPcs = 0;
-    let allNonTiles = true;
-    for (const it of c.items) {
-      const isTile = Boolean(it.tile_size || it.pcs_per_box || (it.unit && it.unit.toLowerCase().includes("box")));
-      if (isTile) {
-        allNonTiles = false;
-        const { fullBoxes, pcs } = parseBoxAndPcs(it.quantity, it.pcs_per_box, it.tile_size);
-        totalBoxes += fullBoxes;
-        totalPcs += pcs;
-      }
-    }
-    if (allNonTiles) {
-      return `${c.total_quantity} Pcs`;
-    }
-    if (totalBoxes > 0 && totalPcs > 0) {
-      return `${totalBoxes} Boxes ${totalPcs} Pcs`;
-    } else if (totalBoxes > 0) {
-      return `${totalBoxes} Box${totalBoxes > 1 ? "es" : ""}`;
-    } else if (totalPcs > 0) {
-      return `${totalPcs} Pcs`;
-    }
-    return "0 Box";
+    return formatElectricalOrderQty(c.items, c.total_quantity);
   };
 
   return (
@@ -109,7 +87,7 @@ export default function ChallansPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0">
             <Truck className="w-5 h-5" />
           </div>
           <div>
@@ -117,7 +95,7 @@ export default function ChallansPage() {
               Delivery Challans
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Tiles delivery documents, logistics register, and warehouse dispatches
+              Electrical delivery documents, logistics register, and warehouse dispatches
             </p>
           </div>
         </div>
@@ -200,7 +178,7 @@ export default function ChallansPage() {
               No Delivery Challans Found
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-              Challans are generated from Tiles invoices in the POS or Invoices menu when goods are dispatched from the warehouse.
+              Challans are generated from invoices in the POS or Invoices menu when goods are dispatched from the warehouse.
             </p>
           </div>
         ) : (
@@ -217,7 +195,7 @@ export default function ChallansPage() {
                     <th className="py-3 px-4">Customer</th>
                     <th className="py-3 px-4">Destination</th>
                     <th className="py-3 px-4">Vehicle / Driver</th>
-                    <th className="py-3 px-4 text-center">Items (Boxes)</th>
+                    <th className="py-3 px-4 text-center">Dispatched Qty</th>
                     <th className="py-3 px-4 text-center">Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>

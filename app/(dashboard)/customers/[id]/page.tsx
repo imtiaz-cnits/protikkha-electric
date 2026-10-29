@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomDatePicker } from "@/components/ui/date-picker";
+import { CustomSelect } from "@/components/ui/custom-select";
 import { useToast } from "@/components/ui/toast";
 
 interface OrderItem {
@@ -678,17 +679,19 @@ export default function CustomerProfilePage({
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Payment Method
                   </label>
-                  <select
+                  <CustomSelect
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={(val) => setPaymentMethod(val)}
+                    options={[
+                      { value: "Cash", label: "Cash" },
+                      { value: "Bank", label: "Bank Transfer" },
+                      { value: "bKash", label: "bKash" },
+                      { value: "Nagad", label: "Nagad" },
+                      { value: "Rocket", label: "Rocket" },
+                    ]}
+                    placeholder="Select Method"
                     className="w-full h-[42px] px-3 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800/90 text-xs font-medium text-slate-800 dark:text-white outline-none focus:border-[#1E65A0] cursor-pointer"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank Transfer</option>
-                    <option value="bKash">bKash</option>
-                    <option value="Nagad">Nagad</option>
-                    <option value="Rocket">Rocket</option>
-                  </select>
+                  />
                 </div>
 
                 <div>

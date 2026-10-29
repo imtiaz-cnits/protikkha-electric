@@ -97,6 +97,7 @@ model customers {
   orders                   orders[]
   product_returns          product_returns[]
   party_ledger_entries     party_ledger_entries[]
+  warranty_records         warranty_records[]
 
   @@index([district_id], map: "customers_district_id_foreign")
   @@index([location_id], map: "customers_location_id_foreign")
@@ -283,6 +284,8 @@ model orders {
   customers                customers?              @relation(fields: [customer_id], references: [id], onDelete: Restrict, map: "orders_customer_id_foreign")
   users                    users                   @relation(fields: [user_id], references: [id], map: "orders_user_id_foreign")
   product_returns          product_returns[]
+  warranty_records         warranty_records[]
+  project_quotations       project_quotations[]
 
   @@index([customer_id], map: "orders_customer_id_foreign")
   @@index([user_id], map: "orders_user_id_foreign")
@@ -366,10 +369,14 @@ model products {
   feed_products          feed_products?
   internal_feed_issues   internal_feed_issues[]
   egg_collection_grades  egg_collection_grades[]
+  quotation_items        quotation_items[]
   source_regradings      egg_regradings[]         @relation("source_regrading")
   destination_regradings egg_regradings[]         @relation("destination_regrading")
   fish_batches           fish_batches[]
   fish_harvests          fish_harvests[]
+  electrical_specifications electrical_specifications?
+  packaging_conversions     packaging_conversions[]
+  warranty_records          warranty_records[]
 
   @@index([brand_id], map: "products_brand_id_foreign")
   @@index([category_id], map: "products_category_id_foreign")
@@ -650,6 +657,7 @@ model users {
   fish_mortalities                  fish_mortalities[]
   fish_samplings                    fish_samplings[]
   fish_harvests                     fish_harvests[]
+  project_quotations                project_quotations[]
 }
 
 model challan_items {
@@ -1150,3 +1158,129 @@ model fish_harvests {
   @@index([date])
   @@index([user_id])
 }
+
+
+// ==============================================================================
+// PROTIKKHA ELECTRIC: ELECTRICAL SPECIFICATIONS & PACKAGING CONVERSIONS
+// ==============================================================================
+
+model electrical_specifications {
+  id                 BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id         BigInt   @unique @db.UnsignedBigInt
+  spec_type          String   @default("GENERAL") @db.VarChar(50) // CABLE, BREAKER, SWITCH, LIGHTING, CONDUIT, ACCESSORY, GENERAL
+  conductor_material String?  @db.VarChar(50) // Copper, Aluminium
+  cable_size         String?  @db.VarChar(50) // e.g. 1.5 rm, 2.5 rm, 4.0 rm, 6.0 rm
+  core_count         Int?     @default(1)     // 1, 2, 3, 4
+  voltage_grade      String?  @db.VarChar(50) // 450/750V, 600/1000V
+  current_rating     String?  @db.VarChar(50) // 6A, 10A, 16A, 20A, 32A, 63A, 100A
+  pole_type          String?  @db.VarChar(50) // 1P, 2P, 3P, 4P, 1P+N, 3P+N
+  breaking_capacity  String?  @db.VarChar(50) // 3kA, 6kA, 10kA
+  tripping_curve     String?  @db.VarChar(20) // B, C, D
+  gang_module        String?  @db.VarChar(50) // 1-Gang, 2-Gang, 3-Gang, 4-Gang
+  conduit_diameter   String?  @db.VarChar(50) // 16mm, 20mm, 25mm, 32mm, 0.75", 1.0"
+  wattage            String?  @db.VarChar(50) // 5W, 9W, 12W, 18W, 24W, 50W
+  color_temperature  String?  @db.VarChar(50) // Warm White 3000K, Neutral 4000K, Daylight 6500K
+  warranty_months    Int?     @default(0)
+  created_at         DateTime @default(now()) @db.Timestamp(0)
+  updated_at         DateTime @default(now()) @db.Timestamp(0)
+
+  products           products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@index([spec_type])
+  @@index([cable_size])
+  @@index([current_rating])
+}
+
+model packaging_conversions {
+  id               BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id       BigInt   @db.UnsignedBigInt
+  packaging_unit   String   @db.VarChar(50) // Reel, Coil, Box, Pack, Bundle, Carton
+  base_unit        String   @db.VarChar(50) // Meter, Piece, Foot
+  conversion_ratio Decimal  @db.Decimal(12, 4) // e.g. 1 Reel = 100.0000 Meters
+  is_default       Boolean  @default(false)
+  created_at       DateTime @default(now()) @db.Timestamp(0)
+  updated_at       DateTime @default(now()) @db.Timestamp(0)
+
+  products         products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, packaging_unit])
+  @@index([product_id])
+}
+
+model warranty_records {
+  id              BigInt     @id @default(autoincrement()) @db.UnsignedBigInt
+  product_id      BigInt     @db.UnsignedBigInt
+  serial_number   String     @unique @db.VarChar(100)
+  order_id        BigInt?    @db.UnsignedBigInt
+  customer_id     BigInt?    @db.UnsignedBigInt
+  purchase_date   DateTime?  @db.Date
+  warranty_months Int        @default(12)
+  expiry_date     DateTime   @db.Date
+  status          String     @default("ACTIVE") @db.VarChar(50) // ACTIVE, EXPIRED, CLAIMED, REPLACED
+  notes           String?    @db.Text
+  created_at      DateTime   @default(now()) @db.Timestamp(0)
+  updated_at      DateTime   @default(now()) @db.Timestamp(0)
+
+  products        products   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  orders          orders?    @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  customers       customers? @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+
+  @@index([product_id])
+  @@index([order_id])
+  @@index([customer_id])
+  @@index([status])
+  @@index([expiry_date])
+}
+
+model project_quotations {
+  id                 BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  quotation_no       String            @unique @db.VarChar(100)
+  project_name       String            @db.VarChar(255)
+  client_name        String            @db.VarChar(255)
+  client_phone       String?           @db.VarChar(50)
+  client_address     String?           @db.Text
+  contractor_name    String?           @db.VarChar(255)
+  contractor_phone   String?           @db.VarChar(50)
+  electrician_id     BigInt?           @db.UnsignedBigInt
+  commission_percent Decimal           @default(0.00) @db.Decimal(5, 2)
+  commission_amount  Decimal           @default(0.00) @db.Decimal(12, 2)
+  subtotal           Decimal           @default(0.00) @db.Decimal(15, 2)
+  discount_amount    Decimal           @default(0.00) @db.Decimal(15, 2)
+  estimated_total    Decimal           @default(0.00) @db.Decimal(15, 2)
+  status             String            @default("DRAFT") @db.VarChar(50) // DRAFT, SENT, APPROVED, CONVERTED_TO_ORDER, REJECTED
+  validity_days      Int               @default(15)
+  expiry_date        DateTime?         @db.Date
+  order_id           BigInt?           @db.UnsignedBigInt
+  note               String?           @db.Text
+  user_id            BigInt            @db.UnsignedBigInt
+  created_at         DateTime          @default(now()) @db.Timestamp(0)
+  updated_at         DateTime          @default(now()) @db.Timestamp(0)
+
+  quotation_items    quotation_items[]
+  users              users             @relation(fields: [user_id], references: [id])
+  orders             orders?           @relation(fields: [order_id], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([user_id])
+  @@index([order_id])
+}
+
+model quotation_items {
+  id                 BigInt             @id @default(autoincrement()) @db.UnsignedBigInt
+  quotation_id       BigInt             @db.UnsignedBigInt
+  product_id         BigInt             @db.UnsignedBigInt
+  item_name          String             @db.VarChar(255)
+  packaging_unit     String?            @db.VarChar(50) // Reel, Box, Bundle, Meter
+  quantity           Decimal            @db.Decimal(12, 2)
+  unit_price         Decimal            @db.Decimal(12, 2)
+  total_price        Decimal            @db.Decimal(15, 2)
+  spec_notes         String?            @db.VarChar(255) // e.g. 2.5 rm red, 16A SP, 2-Gang
+  created_at         DateTime           @default(now()) @db.Timestamp(0)
+
+  project_quotations project_quotations @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  products           products           @relation(fields: [product_id], references: [id])
+
+  @@index([quotation_id])
+  @@index([product_id])
+}
+

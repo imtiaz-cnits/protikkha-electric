@@ -5,17 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { formatTileOrItemQty } from "@/lib/tiles-calculator";
+import { formatElectricalQty } from "@/lib/electrical-unit-service";
 
 interface InvoiceDetail {
   id: number;
   product_name: string;
+  spec_type?: string | null;
+  cable_size?: string | null;
+  current_rating?: string | null;
+  voltage_grade?: string | null;
+  wattage?: string | null;
+  gang_module?: string | null;
   tile_size?: string | null;
-  sqft_per_box?: string | null;
-  pcs_per_box?: string | null;
-  grade?: string | null;
   category?: string | null;
   unit?: string | null;
+  packaging_unit?: string | null;
+  conversion_ratio?: number | null;
   quantity: number;
   selling_price: number;
   line_total: number;
@@ -204,9 +209,9 @@ export default function InvoiceBillPage({
             {/* Brand Logo & Name */}
             <div className="flex items-start gap-2.5">
               <img
-                src="/fav.png"
+                src="/logo.png"
                 alt="Protikkha Electric"
-                className="w-11 h-11 rounded-lg object-contain shadow-xs shrink-0"
+                className="h-10 w-auto max-w-[170px] object-contain shrink-0"
               />
               <div className="flex flex-col">
                 <h1 className="text-xl sm:text-2xl print:text-2xl font-black tracking-wide text-[#0B3D91] m-0 leading-tight">
@@ -306,17 +311,21 @@ export default function InvoiceBillPage({
                     </td>
                     <td className="border border-black py-1 px-3 font-semibold">
                       {item.product_name}
-                      {item.tile_size && (
-                        <span className="text-[10px] text-slate-600 block">
-                          Size: {item.tile_size} | Grade: {item.grade || "Standard"}
-                        </span>
+                      {(item.cable_size || item.current_rating || item.voltage_grade || item.wattage || item.gang_module) && (
+                        <div className="flex flex-wrap gap-1 text-[10px] text-slate-700 mt-0.5">
+                          {item.cable_size && <span>Size: {item.cable_size}</span>}
+                          {item.voltage_grade && <span>| {item.voltage_grade}</span>}
+                          {item.current_rating && <span>| {item.current_rating}</span>}
+                          {item.wattage && <span>| {item.wattage}</span>}
+                          {item.gang_module && <span>| {item.gang_module}</span>}
+                        </div>
                       )}
                     </td>
                     <td className="border border-black py-1 px-2 text-right font-mono">
                       {item.selling_price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="border border-black py-1 px-2 text-center font-bold whitespace-nowrap">
-                      {formatTileOrItemQty(item.quantity, item)}
+                      {formatElectricalQty(item.quantity, item)}
                     </td>
                     <td className="border border-black py-1 px-3 text-right font-mono font-bold">
                       {item.line_total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

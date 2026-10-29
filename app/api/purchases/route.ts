@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ function generatePurchaseNumber(): string {
   return `PUR-${dateStr}-${randomSuffix}`;
 }
 
-// GET: All Purchases (Latest first, Rule 4.1)
+// GET: All Purchases (Latest first, Rule 7.1)
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -43,12 +44,9 @@ export async function GET(req: NextRequest) {
               select: {
                 id: true,
                 product_name: true,
-                tile_size: true,
-                sqft_per_box: true,
-                pcs_per_box: true,
-                grade: true,
-                surface_finish: true,
                 units: true,
+                electrical_specifications: true,
+                packaging_conversions: true,
               },
             },
           },
@@ -83,20 +81,28 @@ export async function GET(req: NextRequest) {
             }
           : null,
         total_items: itemsCount,
-        details: p.purchase_order_details.map((d) => ({
-          id: Number(d.id),
-          product_id: Number(d.product_id),
-          product_name: d.products?.product_name || "N/A",
-          tile_size: d.products?.tile_size || null,
-          sqft_per_box: d.products?.sqft_per_box ? parseFloat(d.products.sqft_per_box) : null,
-          pcs_per_box: d.products?.pcs_per_box ? parseInt(d.products.pcs_per_box) : null,
-          grade: d.products?.grade || null,
-          surface_finish: d.products?.surface_finish || null,
-          quantity: parseFloat(d.quantity || "0"),
-          cost_price: parseFloat(d.cost_price || "0"),
-          subtotal: parseFloat(d.subtotal || "0"),
-          unit: d.products?.units?.unit_name || "Pcs",
-        })),
+        details: p.purchase_order_details.map((d) => {
+          const spec = d.products?.electrical_specifications;
+          return {
+            id: Number(d.id),
+            product_id: Number(d.product_id),
+            product_name: d.products?.product_name || "N/A",
+            quantity: parseFloat(d.quantity || "0"),
+            cost_price: parseFloat(d.cost_price || "0"),
+            subtotal: parseFloat(d.subtotal || "0"),
+            unit: d.products?.units?.unit_name || "Pcs",
+            electrical_spec: spec
+              ? {
+                  spec_type: spec.spec_type,
+                  cable_size: spec.cable_size,
+                  voltage_grade: spec.voltage_grade,
+                  current_rating: spec.current_rating,
+                  wattage: spec.wattage,
+                  gang_module: spec.gang_module,
+                }
+              : null,
+          };
+        }),
         payments: p.purchase_payment_details.map((pm) => ({
           id: Number(pm.id),
           paid_amount: Number(pm.paid_amount || 0),
@@ -130,12 +136,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST: Create Purchase Inward (Atomic Transaction & Stock Increment)
+// POST: Create Purchase Inward (Atomic Transaction & Electrical Stock Increment)
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser(req);
     const fallbackUser = await prisma.users.findFirst({ select: { id: true } });
-    const userId = user?.id || (fallbackUser ? Number(fallbackUser.id) : 7);
+    const userId = user?.id || (fallbackUser ? Number(fallbackUser.id) : 1);
 
     const body = await req.json();
     const {
@@ -148,7 +154,7 @@ export async function POST(req: NextRequest) {
       due_amount,
       payment_method,
       transaction_id,
-      items, // Array of { product_id, quantity, cost_price, subtotal }
+      items, // Array of { product_id, quantity, package_unit?, conversion_ratio?, base_quantity?, cost_price, subtotal }
     } = body;
 
     if (!supplier_id) {
@@ -174,7 +180,7 @@ export async function POST(req: NextRequest) {
     const dueNum = parseFloat(String(due_amount || "0"));
 
     const productIds = items
-      .map((item: any) => item && item.product_id ? Number(item.product_id) : null)
+      .map((item: any) => (item && item.product_id ? Number(item.product_id) : null))
       .filter((id): id is number => id !== null);
 
     const result = await prisma.$transaction(async (tx) => {
@@ -221,13 +227,22 @@ export async function POST(req: NextRequest) {
         const prodId = BigInt(item.product_id);
         const qtyNum = parseFloat(String(item.quantity || "0"));
         const costNum = parseFloat(String(item.cost_price || "0"));
-        const lineTotal = costNum * qtyNum;
+
+        // If purchased in bulk packaging (e.g. 5 Reels with ratio 100 -> 500 Meters)
+        let effectiveQty = qtyNum;
+        if (item.base_quantity && parseFloat(String(item.base_quantity)) > 0) {
+          effectiveQty = parseFloat(String(item.base_quantity));
+        } else if (item.conversion_ratio && parseFloat(String(item.conversion_ratio)) > 1) {
+          effectiveQty = qtyNum * parseFloat(String(item.conversion_ratio));
+        }
+
+        const lineTotal = item.subtotal ? parseFloat(String(item.subtotal)) : costNum * qtyNum;
 
         await tx.purchase_order_details.create({
           data: {
             purchase_id: newPurchase.id,
             product_id: prodId,
-            quantity: String(qtyNum),
+            quantity: String(effectiveQty),
             cost_price: String(costNum),
             subtotal: String(lineTotal),
             user_id: BigInt(userId),
@@ -242,7 +257,7 @@ export async function POST(req: NextRequest) {
 
         if (currentProd) {
           const currentStock = parseFloat(currentProd.quantity || "0");
-          const newStock = currentStock + qtyNum;
+          const newStock = currentStock + effectiveQty;
 
           await tx.products.update({
             where: { id: prodId },
@@ -267,12 +282,29 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 5. Update Supplier Balance if Due
+      // 5. Update Supplier Balance if Due & Record Ledger
       if (dueNum > 0) {
         await tx.suppliers.update({
           where: { id: suppId },
           data: {
             purchase_payable_amount: String(totalPayable),
+          },
+        });
+
+        await tx.party_ledger_entries.create({
+          data: {
+            party_type: "SUPPLIER",
+            supplier_id: suppId,
+            transaction_type: "PURCHASE",
+            reference_type: "PURCHASE",
+            reference_id: newPurchase.id,
+            reference_no: newPurchase.purchase_id,
+            debit: new Prisma.Decimal(0),
+            credit: new Prisma.Decimal(dueNum.toFixed(2)),
+            balance: new Prisma.Decimal(totalPayable.toFixed(2)),
+            date: purDate,
+            note: `Purchase Bill ${newPurchase.purchase_id} Due Payable`,
+            user_id: BigInt(userId),
           },
         });
       }
@@ -282,7 +314,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       status: "success",
-      message: "Purchase inward recorded and stock updated successfully!",
+      message: "Electrical purchase inward recorded and stock updated successfully!",
       id: Number(result.id),
       purchase_id: result.purchase_id,
     });

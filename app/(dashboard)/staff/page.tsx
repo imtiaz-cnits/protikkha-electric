@@ -18,6 +18,9 @@ import {
   DollarSign,
   UserCheck,
   Calendar,
+  BarChart3,
+  TrendingUp,
+  Award,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomDatePicker } from "@/components/ui/date-picker";
@@ -50,6 +53,12 @@ export default function StaffPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+
+  // Active Tab & Performance State
+  const [activeTab, setActiveTab] = useState<"directory" | "performance">("directory");
+  const [performanceList, setPerformanceList] = useState<any[]>([]);
+  const [performanceSummary, setPerformanceSummary] = useState<any>(null);
+  const [perfLoading, setPerfLoading] = useState(false);
 
   // Staff Add/Edit Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -112,9 +121,28 @@ export default function StaffPage() {
     }
   };
 
+  const loadPerformance = async () => {
+    try {
+      setPerfLoading(true);
+      const res = await fetch("/api/staff/performance");
+      const data = await res.json();
+      if (data.status === "success") {
+        setPerformanceList(data.data || []);
+        setPerformanceSummary(data.summary || null);
+      }
+    } catch (err) {
+      console.error("Failed to load staff performance", err);
+    } finally {
+      setPerfLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
-  }, [search]);
+    if (activeTab === "performance") {
+      loadPerformance();
+    }
+  }, [search, activeTab]);
 
   // Handle Staff Modal
   const handleOpenAdd = () => {
@@ -313,7 +341,177 @@ export default function StaffPage() {
         </button>
       </div>
 
-      {/* 2. Three KPI Cards */}
+      {/* Tab Switcher */}
+      <div className="flex items-center gap-2 bg-white dark:bg-[#0f172a] p-1.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
+        <button
+          type="button"
+          onClick={() => setActiveTab("directory")}
+          className={`h-[38px] px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === "directory"
+              ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Workforce Directory & Payroll</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("performance");
+            loadPerformance();
+          }}
+          className={`h-[38px] px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === "performance"
+              ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Sales & Staff Performance</span>
+        </button>
+      </div>
+
+      {activeTab === "performance" ? (
+        <div className="space-y-4">
+          {/* Performance KPI Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
+                <span>Orders Handled</span>
+                <BarChart3 className="w-4 h-4 text-[#1E65A0]" />
+              </div>
+              <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
+                {performanceSummary?.totalOrdersHandled || 0}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Total retail & B2B invoices</div>
+            </div>
+
+            <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
+                <span>Sales Volume</span>
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-xl font-black text-emerald-600 mt-1">
+                {formatBdCurrency(performanceSummary?.totalCompanySalesVolume || 0)}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Gross revenue processed</div>
+            </div>
+
+            <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
+                <span>Cash Collected</span>
+                <DollarSign className="w-4 h-4 text-[#0B3D91] dark:text-blue-400" />
+              </div>
+              <div className="text-xl font-black text-[#0B3D91] dark:text-blue-400 mt-1">
+                {formatBdCurrency(performanceSummary?.totalCompanyCashCollected || 0)}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Realized cash in counter</div>
+            </div>
+
+            <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
+                <span>Net Surplus</span>
+                <Award className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="text-xl font-black text-amber-600 dark:text-amber-400 mt-1">
+                {formatBdCurrency(performanceSummary?.netBusinessSurplus || 0)}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">Collections minus payroll</div>
+            </div>
+          </div>
+
+          {/* Performance Table */}
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="font-bold text-xs text-slate-800 dark:text-white flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-amber-500" />
+                Staff Performance Leaderboard & Financial Attribution
+              </h3>
+              <span className="text-xs text-slate-400">
+                Sorted by sales volume
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
+                    <th className="py-3 px-4 w-12 text-center">Rank</th>
+                    <th className="py-3 px-4">Staff Member & Contact</th>
+                    <th className="py-3 px-4 text-center">Role</th>
+                    <th className="py-3 px-4 text-center">Invoices</th>
+                    <th className="py-3 px-4 text-right">Sales Volume (৳)</th>
+                    <th className="py-3 px-4 text-right">Cash Collected (৳)</th>
+                    <th className="py-3 px-4 text-right">Salary Paid (৳)</th>
+                    <th className="py-3 px-4 text-right">Net Contribution (৳)</th>
+                    <th className="py-3 px-4 text-right">Avg Order (৳)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {perfLoading ? (
+                    <tr>
+                      <td colSpan={9} className="py-10 text-center text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1E65A0]" />
+                        <span>Calculating staff performance analytics...</span>
+                      </td>
+                    </tr>
+                  ) : performanceList.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-10 text-center text-slate-400 font-bold">
+                        No performance records found.
+                      </td>
+                    </tr>
+                  ) : (
+                    performanceList.map((p, idx) => (
+                      <tr
+                        key={p.staffId}
+                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-center font-bold text-slate-600 dark:text-slate-300">
+                          {idx === 0 ? "🥇 1" : idx === 1 ? "🥈 2" : idx === 2 ? "🥉 3" : idx + 1}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900 dark:text-white">
+                            {p.staffName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono">
+                            {p.mobile}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-[#1E65A0] dark:bg-blue-950/60 dark:text-blue-300">
+                            {p.role}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-300">
+                          {p.ordersHandled}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">
+                          {formatBdCurrency(p.totalSalesVolume)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatBdCurrency(p.cashCollected)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-rose-500">
+                          {formatBdCurrency(p.salaryPaid)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-black text-amber-600 dark:text-amber-400">
+                          {formatBdCurrency(p.netBusinessCash)}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-500">
+                          {formatBdCurrency(p.averageOrderValue)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* 2. Three KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
         <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
@@ -585,6 +783,8 @@ export default function StaffPage() {
           />
         </div>
       </div>
+      </>
+      )}
 
       {/* 6. ADD / EDIT STAFF MODAL (Strict Rule 6.1 - 6.4) */}
       {isModalOpen && (

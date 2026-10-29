@@ -24,7 +24,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
-import { Pagination, DeleteConfirmModal } from "@/components/ui";
+import { Pagination, DeleteConfirmModal, CustomSelect } from "@/components/ui";
 
 interface UserItem {
   id: number;
@@ -91,6 +91,24 @@ const ROLE_PRESETS: Record<string, typeof DEFAULT_PERMISSIONS> = {
     customers: true,
     expenses: true,
     reports: true,
+    users: false,
+  },
+  storekeeper: {
+    pos: false,
+    products: true,
+    purchases: true,
+    customers: false,
+    expenses: false,
+    reports: false,
+    users: false,
+  },
+  technician: {
+    pos: false,
+    products: true,
+    purchases: false,
+    customers: true,
+    expenses: false,
+    reports: false,
     users: false,
   },
   staff: {
@@ -834,7 +852,7 @@ export default function UsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-2xl bg-white dark:bg-[#0f172a] rounded-[16px] shadow-2xl overflow-hidden border border-[#cbd5e1] dark:border-[#334155] max-h-[90vh] flex flex-col">
             {/* Sticky Header */}
-            <div className="bg-[#15803d] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
+            <div className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-white" />
                 <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">
@@ -924,32 +942,38 @@ export default function UsersPage() {
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     System Role <span className="text-red-500">*</span>
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.role}
-                    onChange={(e) => handleRoleChange(e.target.value)}
+                    onChange={(val) => handleRoleChange(val)}
+                    options={[
+                      { value: "admin", label: "👑 Admin / Super Admin" },
+                      { value: "manager", label: "💼 Store Manager" },
+                      { value: "cashier", label: "🧾 Cashier / POS Operator" },
+                      { value: "storekeeper", label: "📦 Storekeeper / Inventory" },
+                      { value: "technician", label: "⚡ Electrician / Tech Lead" },
+                      { value: "accountant", label: "📊 Accountant" },
+                      { value: "staff", label: "👤 Staff" },
+                      { value: "users", label: "👤 General User" },
+                    ]}
+                    placeholder="Select Role"
                     className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                  >
-                    <option value="admin">👑 Admin / Super Admin</option>
-                    <option value="manager">💼 Store Manager</option>
-                    <option value="cashier">🧾 Cashier / POS Operator</option>
-                    <option value="accountant">📊 Accountant</option>
-                    <option value="staff">👤 Staff</option>
-                    <option value="users">👤 General User</option>
-                  </select>
+                  />
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
                     Account Status <span className="text-red-500">*</span>
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(val) => setFormData({ ...formData, status: val })}
+                    options={[
+                      { value: "approved", label: "Approved / Active" },
+                      { value: "pending", label: "Pending Approval" },
+                    ]}
+                    placeholder="Select Status"
                     className="w-full h-[42px] px-3 text-xs bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl text-slate-900 dark:text-slate-100 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                  >
-                    <option value="approved">Approved / Active</option>
-                    <option value="pending">Pending Approval</option>
-                  </select>
+                  />
                 </div>
 
                 <div className="sm:col-span-2 space-y-1">

@@ -9,13 +9,25 @@ export interface CartItem {
   quantity: number;
   stock: number;
   unit: string;
-  // Tiles properties (optional)
+  category?: string | null;
+  brand?: string | null;
+  // Electrical properties
+  spec_type?: string | null;
+  cable_size?: string | null;
+  voltage_grade?: string | null;
+  current_rating?: string | null;
+  wattage?: string | null;
+  gang_module?: string | null;
+  packaging_unit?: string | null;
+  conversion_ratio?: number | null;
+  base_quantity?: number | null;
+  is_cut_length?: boolean;
+  // Legacy compatibility fields
   tile_size?: string | null;
   sqft_per_box?: number | null;
   pcs_per_box?: number | null;
   grade?: string | null;
   surface_finish?: string | null;
-  category?: string | null;
   selling_mode?: "box" | "sqft";
   custom_sqft?: number | null;
 }
@@ -44,6 +56,16 @@ interface PosState {
   // Actions
   addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   updateQty: (productId: number, qty: number) => void;
+  updateElectricalItem: (
+    productId: number,
+    data: {
+      quantity: number;
+      selling_price?: number;
+      packaging_unit?: string | null;
+      conversion_ratio?: number | null;
+      is_cut_length?: boolean;
+    }
+  ) => void;
   updateTileCalculation: (productId: number, data: { quantity: number; selling_mode?: "box" | "sqft"; custom_sqft?: number | null; price?: number }) => void;
   removeItem: (productId: number) => void;
   clearCart: () => void;
@@ -108,6 +130,28 @@ export const usePosStore = create<PosState>((set, get) => ({
       cart: cart.map((item) => {
         if (item.product_id === productId) {
           return { ...item, quantity: qty };
+        }
+        return item;
+      }),
+    });
+  },
+
+  updateElectricalItem: (productId, data) => {
+    const { cart } = get();
+    set({
+      cart: cart.map((item) => {
+        if (item.product_id === productId) {
+          const ratio = data.conversion_ratio ?? item.conversion_ratio ?? 1;
+          const baseQty = ratio > 1 ? data.quantity * ratio : data.quantity;
+          return {
+            ...item,
+            quantity: data.quantity,
+            selling_price: data.selling_price !== undefined ? data.selling_price : item.selling_price,
+            packaging_unit: data.packaging_unit !== undefined ? data.packaging_unit : item.packaging_unit,
+            conversion_ratio: ratio,
+            base_quantity: baseQty,
+            is_cut_length: data.is_cut_length !== undefined ? data.is_cut_length : item.is_cut_length,
+          };
         }
         return item;
       }),

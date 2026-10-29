@@ -12,20 +12,15 @@ import {
   Edit2,
   X,
   Loader2,
-  Layers,
-  Sparkles,
   Printer,
   RotateCcw,
+  Zap,
+  Tag,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Pagination } from "@/components/ui";
-import {
-  POPULAR_TILE_SIZES,
-  TILE_GRADES,
-  SURFACE_FINISHES,
-  formatBoxAndPcs,
-} from "@/lib/tiles-calculator";
+import { formatElectricalQty } from "@/lib/electrical-unit-service";
 
 interface InventoryItem {
   id: number;
@@ -34,16 +29,22 @@ interface InventoryItem {
   category: string;
   brand: string;
   unit: string;
-  tile_size?: string | null;
-  sqft_per_box?: number | null;
-  pcs_per_box?: number | null;
-  grade?: string | null;
-  surface_finish?: string | null;
   quantity: number;
+  reserved_quantity?: number;
+  available_quantity?: number;
   cost_price: number;
   sell_price: number;
   total_cost_value: number;
   total_retail_value: number;
+  spec_type?: string | null;
+  cable_size?: string | null;
+  current_rating?: string | null;
+  voltage_grade?: string | null;
+  wattage?: string | null;
+  gang_module?: string | null;
+  packaging_unit?: string | null;
+  conversion_ratio?: number | null;
+  packaging_summary?: string | null;
   stock_status: "In Stock" | "Low Stock" | "Out of Stock";
 }
 
@@ -63,6 +64,16 @@ interface OptionItem {
   category_name?: string;
 }
 
+const SPEC_TYPE_OPTIONS = [
+  { value: "all", label: "All Spec Types" },
+  { value: "CABLE", label: "⚡ Wires & Cables" },
+  { value: "BREAKER", label: "⚡ Circuit Breakers" },
+  { value: "SWITCH", label: "🔌 Switches & Sockets" },
+  { value: "LIGHTING", label: "💡 LED & Lighting" },
+  { value: "CONDUIT", label: "📐 Conduits & Pipes" },
+  { value: "GENERAL", label: "📦 General Accessories" },
+];
+
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -75,9 +86,7 @@ export default function InventoryPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "low" | "out">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
-  const [selectedTileSize, setSelectedTileSize] = useState<string>("all");
-  const [selectedGrade, setSelectedGrade] = useState<string>("all");
-  const [selectedSurfaceFinish, setSelectedSurfaceFinish] = useState<string>("all");
+  const [selectedSpecType, setSelectedSpecType] = useState<string>("all");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -93,8 +102,11 @@ export default function InventoryPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const params = new URLSearchParams();
+      if (selectedSpecType !== "all") params.set("spec_type", selectedSpecType);
+
       const [invRes, catRes, brandRes] = await Promise.all([
-        fetch("/api/inventory"),
+        fetch(`/api/inventory?${params.toString()}`),
         fetch("/api/categories"),
         fetch("/api/brands"),
       ]);
@@ -119,7 +131,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedSpecType]);
 
   const handleOpenAdjust = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -160,14 +172,6 @@ export default function InventoryPage() {
     }
   };
 
-  // Check if selected category is Tiles
-  const selectedCatObj = categories.find((c) => String(c.id) === String(selectedCategory));
-  const isTilesSelected = Boolean(
-    selectedCatObj?.category_name &&
-    (selectedCatObj.category_name.toLowerCase().includes("tile") ||
-      selectedCatObj.category_name.toLowerCase().includes("টাইল"))
-  );
-
   const categoryOptions = [
     { value: "all", label: "All Categories" },
     ...categories.map((c) => ({
@@ -184,26 +188,8 @@ export default function InventoryPage() {
     })),
   ];
 
-  const tileSizeOptions = [
-    { value: "all", label: "All Sizes" },
-    ...POPULAR_TILE_SIZES.map((s) => ({ value: s.value, label: s.label })),
-  ];
-
-  const gradeOptions = [
-    { value: "all", label: "All Grades" },
-    ...TILE_GRADES.map((g) => ({ value: g.value, label: g.label })),
-  ];
-
-  const finishOptions = [
-    { value: "all", label: "All Finishes" },
-    ...SURFACE_FINISHES.map((f) => ({ value: f, label: f })),
-  ];
-
   const handleCategoryChange = (val: string | number) => {
     setSelectedCategory(String(val));
-    setSelectedTileSize("all");
-    setSelectedGrade("all");
-    setSelectedSurfaceFinish("all");
     setSelectedBrand("all");
     setCurrentPage(1);
   };
@@ -211,8 +197,15 @@ export default function InventoryPage() {
   // Filter Items
   const filteredItems = items.filter((item) => {
     // Status filter
-    if (statusFilter === "low" && !(item.quantity > 0 && item.quantity <= 5)) return false;
+    if (statusFilter === "low" && !(item.quantity > 0 && item.quantity <= 10)) return false;
     if (statusFilter === "out" && item.quantity > 0) return false;
+
+    // Spec type filter
+    if (selectedSpecType !== "all") {
+      if ((item.spec_type || "GENERAL").toUpperCase() !== selectedSpecType.toUpperCase()) {
+        return false;
+      }
+    }
 
     // Search filter
     if (search) {
@@ -221,7 +214,10 @@ export default function InventoryPage() {
         item.name.toLowerCase().includes(q) ||
         (item.primary_code && item.primary_code.toLowerCase().includes(q)) ||
         (item.category && item.category.toLowerCase().includes(q)) ||
-        (item.brand && item.brand.toLowerCase().includes(q));
+        (item.brand && item.brand.toLowerCase().includes(q)) ||
+        (item.cable_size && item.cable_size.toLowerCase().includes(q)) ||
+        (item.current_rating && item.current_rating.toLowerCase().includes(q)) ||
+        (item.wattage && item.wattage.toLowerCase().includes(q));
       if (!match) return false;
     }
 
@@ -233,17 +229,11 @@ export default function InventoryPage() {
       }
     }
 
-    // Tiles specific sub-filters OR Brand filter
-    if (isTilesSelected) {
-      if (selectedTileSize !== "all" && item.tile_size !== selectedTileSize) return false;
-      if (selectedGrade !== "all" && item.grade !== selectedGrade) return false;
-      if (selectedSurfaceFinish !== "all" && item.surface_finish !== selectedSurfaceFinish) return false;
-    } else {
-      if (selectedBrand !== "all") {
-        const br = brands.find((b) => String(b.id) === String(selectedBrand));
-        if (br && item.brand.toLowerCase() !== (br.name || "").toLowerCase()) {
-          return false;
-        }
+    // Brand filter
+    if (selectedBrand !== "all") {
+      const br = brands.find((b) => String(b.id) === String(selectedBrand));
+      if (br && item.brand.toLowerCase() !== (br.name || "").toLowerCase()) {
+        return false;
       }
     }
 
@@ -255,18 +245,14 @@ export default function InventoryPage() {
     statusFilter !== "all" ||
     selectedCategory !== "all" ||
     selectedBrand !== "all" ||
-    selectedTileSize !== "all" ||
-    selectedGrade !== "all" ||
-    selectedSurfaceFinish !== "all";
+    selectedSpecType !== "all";
 
   const handleResetFilters = () => {
     setSearch("");
     setStatusFilter("all");
     setSelectedCategory("all");
     setSelectedBrand("all");
-    setSelectedTileSize("all");
-    setSelectedGrade("all");
-    setSelectedSurfaceFinish("all");
+    setSelectedSpecType("all");
     setCurrentPage(1);
   };
 
@@ -322,15 +308,15 @@ export default function InventoryPage() {
       {/* 1. Header & Actions (Screen View) */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-rose-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0">
             <Package className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-base sm:text-lg font-bold text-slate-800 dark:text-white m-0 leading-tight">
-              Stock & Inventory Engine
+              Stock &amp; Inventory Engine
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 m-0">
-              Live stock levels, inventory valuation, margin potential, and adjustments
+              Live stock levels, electrical packaging units, inventory valuation, and adjustments
             </p>
           </div>
         </div>
@@ -345,10 +331,11 @@ export default function InventoryPage() {
                   setStatusFilter(statusFilter === "low" ? "all" : "low");
                   setCurrentPage(1);
                 }}
-                className={`h-[36px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${statusFilter === "low"
+                className={`h-[36px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                  statusFilter === "low"
                     ? "bg-amber-500 text-white border-amber-600 shadow-xs"
                     : "bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/40 hover:bg-amber-100"
-                  }`}
+                }`}
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Low Stock:</span>
@@ -361,10 +348,11 @@ export default function InventoryPage() {
                   setStatusFilter(statusFilter === "out" ? "all" : "out");
                   setCurrentPage(1);
                 }}
-                className={`h-[36px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${statusFilter === "out"
-                    ? "bg-rose-600 text-white border-blue-700 shadow-xs"
+                className={`h-[36px] px-3 rounded-xl border flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer ${
+                  statusFilter === "out"
+                    ? "bg-rose-600 text-white border-red-700 shadow-xs"
                     : "bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-900/40 hover:bg-rose-100"
-                  }`}
+                }`}
               >
                 <span>Out of Stock:</span>
                 <span className="font-black">{summary.out_of_stock_count}</span>
@@ -379,7 +367,7 @@ export default function InventoryPage() {
             className="h-[36px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
             title="Print Stock Overview"
           >
-            <Printer className="w-4 h-4 text-rose-600" />
+            <Printer className="w-4 h-4 text-[#1E65A0]" />
             <span>Print Overview</span>
           </button>
         </div>
@@ -395,7 +383,8 @@ export default function InventoryPage() {
               <Boxes className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
-              {summary.total_stock_units} <span className="text-xs font-normal">Pcs/Box</span>
+              {summary.total_stock_units.toLocaleString()}{" "}
+              <span className="text-xs font-normal">Base Units</span>
             </div>
             <div className="text-[11px] text-slate-400 mt-0.5">
               Across {summary.total_products} unique SKUs
@@ -438,10 +427,7 @@ export default function InventoryPage() {
             <div className="text-[11px] text-emerald-600 font-bold mt-0.5">
               +
               {summary.total_cost_valuation > 0
-                ? (
-                  (summary.potential_profit / summary.total_cost_valuation) *
-                  100
-                ).toFixed(1)
+                ? ((summary.potential_profit / summary.total_cost_valuation) * 100).toFixed(1)
                 : 0}
               % Markup
             </div>
@@ -452,10 +438,10 @@ export default function InventoryPage() {
       {/* 3. Controls & Dynamic Filter Bar (Screen View) */}
       <div className="no-print bg-white dark:bg-[#0f172a] p-3 sm:p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] space-y-3">
         <div className="flex flex-col xl:flex-row items-center justify-between gap-3">
-          {/* Filters Grid: 2 per row on mobile (grid-cols-2), flex on desktop */}
+          {/* Filters Grid */}
           <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2 md:gap-2.5 w-full xl:w-auto flex-1">
-            {/* Search Bar - 2 cols on mobile */}
-            <div className="col-span-2 md:w-64 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 transition-all shadow-xs">
+            {/* Search Bar */}
+            <div className="col-span-2 md:w-64 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] focus-within:ring-2 focus-within:ring-blue-600/20 transition-all shadow-xs">
               <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0" />
               <input
                 type="text"
@@ -464,7 +450,7 @@ export default function InventoryPage() {
                   setSearch(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Search stock, barcode..."
+                placeholder="Search stock, spec, barcode..."
                 className="w-full bg-transparent border-none outline-none text-xs text-slate-800 dark:text-white placeholder:text-slate-400"
               />
               {search && (
@@ -481,6 +467,20 @@ export default function InventoryPage() {
               )}
             </div>
 
+            {/* Spec Type Filter */}
+            <div className="w-full md:w-[170px]">
+              <CustomSelect
+                value={selectedSpecType}
+                onChange={(val) => {
+                  setSelectedSpecType(String(val));
+                  setCurrentPage(1);
+                }}
+                options={SPEC_TYPE_OPTIONS}
+                placeholder="All Spec Types"
+                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
+              />
+            </div>
+
             {/* Category Filter */}
             <div className="w-full md:w-[150px]">
               <CustomSelect
@@ -492,66 +492,19 @@ export default function InventoryPage() {
               />
             </div>
 
-            {/* Conditional Filters: If Tiles category -> Size, Grade, Finish; Otherwise -> Brand */}
-            {isTilesSelected ? (
-              <>
-                {/* Tile Size Filter */}
-                <div className="w-full md:w-[135px]">
-                  <CustomSelect
-                    value={selectedTileSize}
-                    onChange={(val) => {
-                      setSelectedTileSize(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={tileSizeOptions}
-                    placeholder="All Sizes"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-
-                {/* Tile Grade Filter */}
-                <div className="w-full md:w-[130px]">
-                  <CustomSelect
-                    value={selectedGrade}
-                    onChange={(val) => {
-                      setSelectedGrade(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={gradeOptions}
-                    placeholder="All Grades"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-
-                {/* Tile Surface Finish Filter */}
-                <div className="w-full md:w-[140px]">
-                  <CustomSelect
-                    value={selectedSurfaceFinish}
-                    onChange={(val) => {
-                      setSelectedSurfaceFinish(String(val));
-                      setCurrentPage(1);
-                    }}
-                    options={finishOptions}
-                    placeholder="All Finishes"
-                    className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                  />
-                </div>
-              </>
-            ) : (
-              /* Brand Filter (shown when NOT Tiles category) */
-              <div className="w-full md:w-[150px]">
-                <CustomSelect
-                  value={selectedBrand}
-                  onChange={(val) => {
-                    setSelectedBrand(String(val));
-                    setCurrentPage(1);
-                  }}
-                  options={brandOptions}
-                  placeholder="All Brands"
-                  className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
-                />
-              </div>
-            )}
+            {/* Brand Filter */}
+            <div className="w-full md:w-[150px]">
+              <CustomSelect
+                value={selectedBrand}
+                onChange={(val) => {
+                  setSelectedBrand(String(val));
+                  setCurrentPage(1);
+                }}
+                options={brandOptions}
+                placeholder="All Brands"
+                className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
+              />
+            </div>
 
             {/* Reset Filter Button */}
             {hasActiveFilters && (
@@ -559,7 +512,7 @@ export default function InventoryPage() {
                 type="button"
                 onClick={handleResetFilters}
                 title="Reset All Filters"
-                className="h-[38px] px-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs col-span-2 md:col-span-1"
+                className="h-[38px] px-3 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/40 text-[#1E65A0] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs col-span-2 md:col-span-1"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset</span>
@@ -599,10 +552,10 @@ export default function InventoryPage() {
             <thead>
               <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
                 <th className="py-3 px-3 text-center w-[50px]">SL</th>
-                <th className="py-3 px-4">Product Name / Variant</th>
+                <th className="py-3 px-4">Product Name &amp; Electrical Specs</th>
                 <th className="py-3 px-3">Barcode</th>
-                <th className="py-3 px-3">Category & Brand</th>
-                <th className="py-3 px-3 text-center">Stock Level</th>
+                <th className="py-3 px-3">Category &amp; Brand</th>
+                <th className="py-3 px-3 text-center">Stock Level (Packaging)</th>
                 <th className="py-3 px-3 text-right">Cost (৳)</th>
                 <th className="py-3 px-3 text-right">Sell (৳)</th>
                 <th className="py-3 px-3 text-right">Total Cost Value</th>
@@ -613,7 +566,7 @@ export default function InventoryPage() {
               {loading ? (
                 <tr>
                   <td colSpan={9} className="py-10 text-center text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1E65A0]" />
                     <span>Loading inventory status...</span>
                   </td>
                 </tr>
@@ -636,26 +589,35 @@ export default function InventoryPage() {
                       <div className="font-bold text-slate-800 dark:text-slate-100 text-xs">
                         {item.name}
                       </div>
-                      {(item.tile_size || item.sqft_per_box || item.grade || item.surface_finish) && (
+                      {(item.cable_size ||
+                        item.current_rating ||
+                        item.voltage_grade ||
+                        item.wattage ||
+                        item.gang_module) && (
                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                          {item.tile_size && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
-                              📐 {item.tile_size}
+                          {item.cable_size && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                              ⚡ {item.cable_size}
                             </span>
                           )}
-                          {item.sqft_per_box && (
+                          {item.current_rating && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                              ⚡ {item.current_rating}
+                            </span>
+                          )}
+                          {item.wattage && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                              💡 {item.wattage}
+                            </span>
+                          )}
+                          {item.gang_module && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                              🔌 {item.gang_module}
+                            </span>
+                          )}
+                          {item.voltage_grade && (
                             <span className="text-[9px] font-medium text-slate-500">
-                              📦 {item.sqft_per_box} Sft/Box {item.pcs_per_box ? `(${item.pcs_per_box} pcs)` : ""}
-                            </span>
-                          )}
-                          {item.grade && (
-                            <span className="text-[9px] font-bold text-emerald-600">
-                              ★ {item.grade}
-                            </span>
-                          )}
-                          {item.surface_finish && (
-                            <span className="text-[9px] font-bold text-purple-600">
-                              ✨ {item.surface_finish}
+                              {item.voltage_grade}
                             </span>
                           )}
                         </div>
@@ -671,18 +633,24 @@ export default function InventoryPage() {
                       <div className="text-[10px] text-slate-400">{item.brand}</div>
                     </td>
                     <td className="py-3 px-3 text-center">
-                      <span
-                        className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${item.quantity <= 0
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
-                            : item.quantity <= 5
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                      <div className="space-y-0.5">
+                        <span
+                          className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
+                            item.quantity <= 0
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
+                              : item.quantity <= 10
+                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
                           }`}
-                      >
-                        {item.tile_size || item.pcs_per_box
-                          ? formatBoxAndPcs(item.quantity, item.pcs_per_box)
-                          : `${item.quantity} ${item.unit}`}
-                      </span>
+                        >
+                          {item.packaging_summary || `${item.quantity} ${item.unit}`}
+                        </span>
+                        {item.conversion_ratio && item.conversion_ratio > 1 && (
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            ({item.quantity} {item.unit})
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-3 text-right font-medium text-slate-600 dark:text-slate-300">
                       {item.cost_price.toFixed(2)}
@@ -700,7 +668,7 @@ export default function InventoryPage() {
                         className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1 mx-auto transition-colors cursor-pointer"
                         title="Adjust Stock Quantity"
                       >
-                        <Edit2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <Edit2 className="w-3.5 h-3.5 text-[#1E65A0]" />
                         <span>Adjust</span>
                       </button>
                     </td>
@@ -745,29 +713,38 @@ export default function InventoryPage() {
                   </p>
                 </div>
                 <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-black ${item.quantity <= 0
+                  className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                    item.quantity <= 0
                       ? "bg-rose-100 text-rose-700"
-                      : item.quantity <= 5
+                      : item.quantity <= 10
                         ? "bg-amber-100 text-amber-700"
                         : "bg-emerald-100 text-emerald-700"
-                    }`}
+                  }`}
                 >
-                  {item.tile_size || item.pcs_per_box
-                    ? formatBoxAndPcs(item.quantity, item.pcs_per_box)
-                    : `${item.quantity} ${item.unit}`}
+                  {item.packaging_summary || `${item.quantity} ${item.unit}`}
                 </span>
               </div>
 
-              {(item.tile_size || item.grade || item.surface_finish) && (
+              {(item.cable_size || item.current_rating || item.wattage || item.gang_module) && (
                 <div className="flex flex-wrap items-center gap-1">
-                  {item.tile_size && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700">
-                      📐 {item.tile_size}
+                  {item.cable_size && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">
+                      ⚡ {item.cable_size}
                     </span>
                   )}
-                  {item.grade && (
+                  {item.current_rating && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                      ⚡ {item.current_rating}
+                    </span>
+                  )}
+                  {item.wattage && (
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                      ★ {item.grade}
+                      💡 {item.wattage}
+                    </span>
+                  )}
+                  {item.gang_module && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
+                      🔌 {item.gang_module}
                     </span>
                   )}
                 </div>
@@ -791,7 +768,7 @@ export default function InventoryPage() {
               <button
                 type="button"
                 onClick={() => handleOpenAdjust(item)}
-                className="w-full h-[32px] rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                className="w-full h-[32px] rounded-lg bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center justify-center gap-1 transition-colors cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5" />
                 <span>Adjust Stock Qty</span>
@@ -824,7 +801,7 @@ export default function InventoryPage() {
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="w-5 h-5 text-white" />
                 <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">
-                  Adjust Stock Quantity
+                  Adjust Electrical Stock Quantity
                 </h3>
               </div>
               <button
@@ -842,12 +819,15 @@ export default function InventoryPage() {
                 <div className="font-bold text-slate-800 dark:text-white text-xs">
                   {selectedItem.name}
                 </div>
-                <div className="flex justify-between text-slate-500">
+                {(selectedItem.cable_size || selectedItem.current_rating || selectedItem.wattage) && (
+                  <div className="text-[11px] text-slate-500">
+                    Spec: {selectedItem.cable_size || selectedItem.current_rating || selectedItem.wattage}
+                  </div>
+                )}
+                <div className="flex justify-between text-slate-500 pt-1 border-t border-slate-200 dark:border-slate-800">
                   <span>Current Registered Stock:</span>
                   <strong className="font-bold text-emerald-600">
-                    {selectedItem.tile_size || selectedItem.pcs_per_box
-                      ? formatBoxAndPcs(selectedItem.quantity, selectedItem.pcs_per_box)
-                      : `${selectedItem.quantity} ${selectedItem.unit}`}
+                    {selectedItem.packaging_summary || `${selectedItem.quantity} ${selectedItem.unit}`}
                   </strong>
                 </div>
               </div>
@@ -855,7 +835,7 @@ export default function InventoryPage() {
               {/* New Quantity */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                  New Physical Stock Quantity <span className="text-red-500">*</span>
+                  New Physical Base Quantity ({selectedItem.unit}) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -878,10 +858,11 @@ export default function InventoryPage() {
                   onChange={(val) => setAdjustReason(String(val))}
                   options={[
                     { value: "Physical Recount", label: "Physical Inventory Recount" },
-                    { value: "Damaged / Broken", label: "Damaged / Broken Goods" },
-                    { value: "Customer Return", label: "Customer Return / Cancellation" },
-                    { value: "Supplier Replacement", label: "Supplier Replacement" },
-                    { value: "Showroom Display / Sample", label: "Showroom Display / Sample" },
+                    { value: "Scrap / Offcut Loss (Cable Cut-Loss)", label: "Scrap / Offcut Loss (Cable Cut-Loss)" },
+                    { value: "Damaged / Broken Goods", label: "Damaged / Broken / Defective Goods" },
+                    { value: "Customer Return", label: "Customer Return / Restock" },
+                    { value: "Supplier Replacement", label: "Supplier Replacement / Exchange" },
+                    { value: "Showroom Display / Sample", label: "Showroom Display / Demonstration Board" },
                   ]}
                   placeholder="Select Reason"
                 />
@@ -915,19 +896,42 @@ export default function InventoryPage() {
         {/* Report Header */}
         <div className="border-b-2 border-slate-900 pb-2 mb-3">
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-[#0B3D91] m-0">PROTIKKHA ELECTRIC</h1>
-              <p className="text-[11px] text-slate-600 font-medium m-0">
-                Electrical Retail &amp; Wholesale POS &amp; Inventory Management
-              </p>
-              <h2 className="text-xs font-bold text-slate-800 mt-1 uppercase tracking-wider">
-                Stock Inventory & Valuation Report
-              </h2>
+            <div className="flex items-start gap-2.5">
+              <img
+                src="/logo.png"
+                alt="Protikkha Electric"
+                className="h-9 w-auto max-w-[150px] object-contain shrink-0"
+              />
+              <div>
+                <h1 className="text-lg font-black tracking-tight text-[#0B3D91] m-0 leading-tight">
+                  PROTIKKHA ELECTRIC
+                </h1>
+                <p className="text-[11px] text-slate-600 font-medium m-0">
+                  Electrical Retail &amp; Wholesale POS &amp; Inventory Management
+                </p>
+                <h2 className="text-xs font-bold text-slate-800 mt-1 uppercase tracking-wider">
+                  Stock Inventory &amp; Valuation Report
+                </h2>
+              </div>
             </div>
             <div className="text-right text-[10px] text-slate-600">
-              <p>Printed: {new Date().toLocaleDateString("en-GB")} {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</p>
-              <p>Filter Status: <strong className="text-slate-900">{statusFilter === "all" ? "All Items" : statusFilter === "low" ? "Low Stock" : "Out of Stock"}</strong></p>
-              <p>SKUs Listed: <strong className="text-slate-900">{filteredItems.length}</strong></p>
+              <p>
+                Printed: {new Date().toLocaleDateString("en-GB")}{" "}
+                {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              </p>
+              <p>
+                Filter:{" "}
+                <strong className="text-slate-900">
+                  {statusFilter === "all"
+                    ? "All Stock"
+                    : statusFilter === "low"
+                      ? "Low Stock"
+                      : "Out of Stock"}
+                </strong>
+              </p>
+              <p>
+                SKUs Listed: <strong className="text-slate-900">{filteredItems.length}</strong>
+              </p>
             </div>
           </div>
 
@@ -956,7 +960,7 @@ export default function InventoryPage() {
                   Math.max(
                     0,
                     filteredItems.reduce((acc, i) => acc + i.total_retail_value, 0) -
-                    filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0)
+                      filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0)
                   )
                 )}
               </strong>
@@ -969,7 +973,7 @@ export default function InventoryPage() {
           <thead>
             <tr className="bg-slate-200 text-slate-900 font-bold text-left">
               <th className="text-center w-8">SL</th>
-              <th>Product Name & Specification</th>
+              <th>Product Name &amp; Specification</th>
               <th>Barcode</th>
               <th>Category</th>
               <th>Brand</th>
@@ -985,12 +989,18 @@ export default function InventoryPage() {
                 <td className="text-center font-bold">{idx + 1}</td>
                 <td>
                   <div className="font-bold">{item.name}</div>
-                  {(item.tile_size || item.grade || item.surface_finish) && (
+                  {(item.cable_size ||
+                    item.current_rating ||
+                    item.voltage_grade ||
+                    item.wattage ||
+                    item.gang_module) && (
                     <div className="text-[9px] text-slate-500">
                       {[
-                        item.tile_size ? `Size: ${item.tile_size}` : null,
-                        item.grade ? `Grade: ${item.grade}` : null,
-                        item.surface_finish ? `Finish: ${item.surface_finish}` : null,
+                        item.cable_size ? `Size: ${item.cable_size}` : null,
+                        item.current_rating ? `Rating: ${item.current_rating}` : null,
+                        item.wattage ? `Wattage: ${item.wattage}` : null,
+                        item.gang_module ? `Module: ${item.gang_module}` : null,
+                        item.voltage_grade ? `Voltage: ${item.voltage_grade}` : null,
                       ]
                         .filter(Boolean)
                         .join(" • ")}
@@ -1001,9 +1011,7 @@ export default function InventoryPage() {
                 <td>{item.category}</td>
                 <td>{item.brand}</td>
                 <td className="text-center font-bold">
-                  {item.tile_size || item.pcs_per_box
-                    ? formatBoxAndPcs(item.quantity, item.pcs_per_box)
-                    : `${item.quantity} ${item.unit}`}
+                  {item.packaging_summary || `${item.quantity} ${item.unit}`}
                 </td>
                 <td className="text-right">{item.cost_price.toFixed(2)}</td>
                 <td className="text-right">{item.sell_price.toFixed(2)}</td>
@@ -1013,7 +1021,9 @@ export default function InventoryPage() {
           </tbody>
           <tfoot>
             <tr className="bg-slate-100 font-bold border-t-2 border-slate-900">
-              <td colSpan={5} className="text-right py-1.5 px-2">Total Inventory Valuation:</td>
+              <td colSpan={5} className="text-right py-1.5 px-2">
+                Total Inventory Valuation:
+              </td>
               <td className="text-center py-1.5 px-2">
                 {filteredItems.reduce((acc, i) => acc + i.quantity, 0)} Units
               </td>

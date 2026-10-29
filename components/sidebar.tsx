@@ -22,11 +22,11 @@ import {
   X,
   AlertTriangle,
   User,
-  Ban,
-  Egg,
-  Fish,
-  Wheat,
-  Feather,
+  Zap,
+  ShieldCheck,
+  Scale,
+  FileText,
+  ShieldAlert,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
 
@@ -58,57 +58,16 @@ export const NAV_ITEMS: NavItem[] = [
     icon: ShoppingCart,
   },
   {
-    id: "poultry",
-    label: "Poultry Management",
-    icon: Feather,
-    children: [
-      { label: "Poultry Flocks", href: "/poultry", icon: Feather },
-      { label: "Flock Records", href: "/poultry/records", icon: FileSpreadsheet },
-      { label: "Batch Costing", href: "/poultry/costing", icon: Wallet },
-    ],
-  },
-  {
-    id: "eggs",
-    label: "Egg Production",
-    icon: Egg,
-    children: [
-      { label: "Daily Egg Collection", href: "/eggs", icon: Egg },
-      { label: "Egg Grading", href: "/eggs/grading", icon: Layers },
-      { label: "Egg Stock & Reports", href: "/eggs/reports", icon: Boxes },
-    ],
-  },
-  {
-    id: "fish",
-    label: "Fish Farming",
-    icon: Fish,
-    children: [
-      { label: "Fish Ponds & Batches", href: "/fish", icon: Fish },
-      { label: "Sampling & Biomass", href: "/fish/sampling", icon: FileSpreadsheet },
-      { label: "Harvest & Sales", href: "/fish/harvest", icon: Boxes },
-    ],
-  },
-  {
-    id: "feed",
-    label: "Feed Trading & Issues",
-    icon: Wheat,
-    children: [
-      { label: "Feed Inventory", href: "/feed", icon: Wheat },
-      { label: "Internal Issues", href: "/feed/internal-issue", icon: Boxes },
-      { label: "Feed Sales", href: "/feed/sales", icon: ShoppingCart },
-      { label: "Feed Purchases", href: "/feed/purchases", icon: Truck },
-    ],
-  },
-  {
     id: "inventory",
-    label: "Inventory",
+    label: "Products & Stock",
     icon: Package,
     children: [
       { label: "Stock Overview", href: "/inventory", icon: Boxes },
-      { label: "Product List", href: "/products", icon: Package },
+      { label: "Products Catalog", href: "/products", icon: Package },
       { label: "Categories", href: "/categories", icon: Layers },
       { label: "Brands", href: "/brands", icon: Tag },
-      { label: "Units", href: "/units", icon: Boxes },
-      { label: "Barcode Print", href: "/barcode-print", icon: Barcode },
+      { label: "Units & Packaging", href: "/units", icon: Boxes },
+      { label: "Barcode Labels", href: "/barcode-print", icon: Barcode },
     ],
   },
   {
@@ -117,8 +76,10 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Receipt,
     children: [
       { label: "Invoices List", href: "/invoices", icon: Receipt },
-      { label: "Challan List", href: "/challans", icon: FileSpreadsheet },
-      { label: "Sales Return", href: "/returns", icon: RotateCcw },
+      { label: "Delivery Challans", href: "/challans", icon: FileSpreadsheet },
+      { label: "Project Quotations", href: "/quotations", icon: FileText },
+      { label: "Sales Returns", href: "/returns", icon: RotateCcw },
+      { label: "Warranty & Claims", href: "/warranty", icon: ShieldCheck },
     ],
   },
   {
@@ -126,8 +87,8 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Purchases",
     icon: Truck,
     children: [
-      { label: "Purchase List", href: "/purchases", icon: ShoppingCart },
-      { label: "Purchase Return", href: "/purchase-returns", icon: RotateCcw },
+      { label: "Purchase Bills", href: "/purchases", icon: ShoppingCart },
+      { label: "Purchase Returns", href: "/purchase-returns", icon: RotateCcw },
       { label: "Suppliers", href: "/suppliers", icon: Users },
       { label: "Supplier Due Pay", href: "/supplier-dues", icon: Wallet },
     ],
@@ -153,13 +114,15 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "reports",
-    label: "Reports",
+    label: "Reports & Ledger",
     icon: FileSpreadsheet,
     children: [
       { label: "Sales Report", href: "/reports/sales", icon: FileSpreadsheet },
       { label: "Daily Ledger", href: "/reports/daily-ledger", icon: FileSpreadsheet },
+      { label: "General Ledger & COA", href: "/reports/general-ledger", icon: Scale },
       { label: "Income & Expense", href: "/reports/income-expense", icon: Wallet },
-      { label: "Stock-Out Report", href: "/reports/stock-out", icon: AlertTriangle },
+      { label: "Low Stock Alert", href: "/reports/stock-out", icon: AlertTriangle },
+      { label: "Audit Trails & Security", href: "/reports/audit-logs", icon: ShieldAlert },
     ],
   },
   {
@@ -346,10 +309,10 @@ export function Sidebar({
                 />
                 <div className="flex flex-col min-w-0">
                   <span className="text-[12px] font-black tracking-wider text-white leading-tight uppercase truncate">
-                    ARAFAT POULTRY
+                    PROTIKKHA
                   </span>
                   <span className="text-[10px] text-amber-300 font-semibold tracking-tight leading-tight truncate">
-                    & Fisheries ERP
+                    ELECTRIC POS & ERP
                   </span>
                 </div>
               </div>

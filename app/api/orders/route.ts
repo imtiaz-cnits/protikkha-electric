@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthUser } from "@/lib/auth";
+import { validateDiscountLimit } from "@/lib/rbac";
+import { logAudit } from "@/lib/audit-service";
 import {
   getBangladeshDate,
   getProductCategoryMap,
@@ -41,6 +44,20 @@ export async function POST(req: NextRequest) {
       payment_status,
       products, // Array of { product_id, quantity, price, selling_price }
     } = body;
+
+    // RBAC: Validate discount percentage limit against user role
+    const discountVal = parseFloat(String(discount_amount || "0"));
+    const subTotalVal = parseFloat(String(sub_total || "0"));
+    if (discountVal > 0 && subTotalVal > 0 && user?.role) {
+      const discountPct = (discountVal / subTotalVal) * 100;
+      const discountCheck = validateDiscountLimit(user.role, discountPct);
+      if (!discountCheck.allowed) {
+        return NextResponse.json(
+          { status: "fail", message: discountCheck.reason },
+          { status: 403 }
+        );
+      }
+    }
 
     if (!customer_id) {
       return NextResponse.json(
@@ -107,15 +124,20 @@ export async function POST(req: NextRequest) {
             );
           }
         } else {
-          // Non-Tiles: check direct physical stock
+          // Non-Tiles: check direct physical stock with electrical packaging conversion ratio
           const [currentProd]: any = await tx.$queryRawUnsafe(
-            "SELECT quantity FROM products WHERE id = ?",
+            "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
             BigInt(item.product_id)
           );
           const physicalStock = parseFloat(currentProd?.quantity || "0");
-          if (reqQty > physicalStock) {
+          const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
+          const requiredBaseQty = item.base_quantity != null
+            ? parseFloat(String(item.base_quantity))
+            : reqQty * ratio;
+
+          if (requiredBaseQty > physicalStock) {
             throw new Error(
-              `Insufficient stock for "${prodName}". In Stock: ${physicalStock}, Requested: ${reqQty}`
+              `Insufficient stock for "${prodName}". In Stock: ${physicalStock}, Requested: ${requiredBaseQty}`
             );
           }
         }
@@ -146,7 +168,6 @@ export async function POST(req: NextRequest) {
         const catInfo = categoryMap.get(String(item.product_id));
         const isTiles = !!catInfo?.isTiles;
         const lineState = isTiles ? "PENDING_CHALLAN" : "DEDUCTED_AT_INVOICE";
-        const decrementQty = parseFloat(String(item.quantity || "0"));
 
         await tx.order_details.create({
           data: {
@@ -163,10 +184,14 @@ export async function POST(req: NextRequest) {
         // Deduct stock immediately ONLY if NOT Tiles
         if (!isTiles) {
           const [currentProd]: any = await tx.$queryRawUnsafe(
-            "SELECT quantity FROM products WHERE id = ?",
+            "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
             BigInt(item.product_id)
           );
           const currentQty = parseFloat(currentProd?.quantity || "0");
+          const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
+          const decrementQty = item.base_quantity != null
+            ? parseFloat(String(item.base_quantity))
+            : parseFloat(String(item.quantity || "0")) * ratio;
           const newStock = Math.max(0, currentQty - decrementQty);
 
           await tx.products.update({
@@ -199,9 +224,27 @@ export async function POST(req: NextRequest) {
         if (customer) {
           const prevDue = parseFloat(customer.previous_due_amount || "0");
           const addedDue = parseFloat(String(due_amount || "0"));
+          const newDue = prevDue + addedDue;
           await tx.customers.update({
             where: { id: BigInt(customer_id) },
-            data: { previous_due_amount: String(prevDue + addedDue) },
+            data: { previous_due_amount: String(newDue) },
+          });
+
+          await tx.party_ledger_entries.create({
+            data: {
+              party_type: "CUSTOMER",
+              customer_id: BigInt(customer_id),
+              transaction_type: "INVOICE",
+              reference_type: "ORDER",
+              reference_id: newOrder.id,
+              reference_no: newOrder.order_no,
+              debit: new Prisma.Decimal(addedDue.toFixed(2)),
+              credit: new Prisma.Decimal(0),
+              balance: new Prisma.Decimal(newDue.toFixed(2)),
+              date: invDate,
+              note: `Invoice ${newOrder.order_no} Due Amount`,
+              user_id: BigInt(userId),
+            },
           });
         }
       }
@@ -212,6 +255,36 @@ export async function POST(req: NextRequest) {
         challan_status: initialChallanStatus,
       };
     });
+
+    // Record immutable audit log
+    await logAudit({
+      userId,
+      action: "CREATE",
+      entityType: "ORDER",
+      entityId: String(result.id),
+      newValues: {
+        order_no: result.order_no,
+        customer_id,
+        sub_total,
+        paid_amount,
+        due_amount,
+        discount_amount,
+      },
+    });
+
+    if (discountVal > 0) {
+      await logAudit({
+        userId,
+        action: "APPROVE",
+        entityType: "DISCOUNT_OVERRIDE",
+        entityId: String(result.id),
+        newValues: {
+          order_no: result.order_no,
+          discount_amount: discountVal,
+          discount_percent: subTotalVal > 0 ? (discountVal / subTotalVal) * 100 : 0,
+        },
+      });
+    }
 
     return NextResponse.json({
       status: "success",

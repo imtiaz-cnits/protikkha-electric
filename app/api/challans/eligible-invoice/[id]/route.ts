@@ -38,15 +38,6 @@ export async function GET(
       return NextResponse.json({ status: "fail", message: "Invoice not found" }, { status: 404 });
     }
 
-    // Check line items
-    const tilesLines = order.order_details.filter((line) =>
-      isTilesCategoryName(line.products?.categories?.category_name)
-    );
-
-    const pendingTilesLines = tilesLines.filter(
-      (line) => line.stock_lifecycle_state === "PENDING_CHALLAN"
-    );
-
     const existingChallan = order.challans;
 
     let isEligible = false;
@@ -57,17 +48,23 @@ export async function GET(
       reason = `Challan already issued (${existingChallan.challan_no})`;
     } else if (order.challan_status === "DELIVERED") {
       isEligible = false;
-      reason = "Invoice delivery already completed (Legacy or Fulfilled)";
-    } else if (tilesLines.length === 0) {
+      reason = "Invoice delivery already completed";
+    } else if (order.order_details.length === 0) {
       isEligible = false;
-      reason = "No Tiles items in this invoice (Challan not required)";
-    } else if (pendingTilesLines.length > 0) {
+      reason = "Invoice contains no items";
+    } else {
       isEligible = true;
       reason = "Ready to generate delivery Challan";
-    } else {
-      isEligible = false;
-      reason = "All lines already fulfilled or deducted";
     }
+
+    const dispatchItems = order.order_details.map((line) => ({
+      order_detail_id: Number(line.id),
+      product_id: Number(line.product_id),
+      product_name: line.products?.product_name || "N/A",
+      quantity: parseFloat(line.quantity || "0"),
+      unit: line.products?.units?.unit_name || "Pcs",
+      stock_lifecycle_state: line.stock_lifecycle_state,
+    }));
 
     return NextResponse.json({
       status: "success",
@@ -96,19 +93,8 @@ export async function GET(
               status: existingChallan.status,
             }
           : null,
-        tiles_items: pendingTilesLines.map((line) => ({
-          order_detail_id: Number(line.id),
-          product_id: Number(line.product_id),
-          product_name: line.products.product_name,
-          quantity: Number(line.quantity),
-          unit: line.products.units?.unit_name || "Box",
-          tile_size: line.products.tile_size || null,
-          sqft_per_box: line.products.sqft_per_box ? Number(line.products.sqft_per_box) : null,
-          pcs_per_box: line.products.pcs_per_box || null,
-          grade: line.products.grade || null,
-          surface_finish: line.products.surface_finish || null,
-          stock_lifecycle_state: line.stock_lifecycle_state,
-        })),
+        items: dispatchItems,
+        tiles_items: dispatchItems,
       },
     });
   } catch (error: any) {

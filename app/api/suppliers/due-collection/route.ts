@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -62,11 +63,28 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Update supplier's balance
+      // Update supplier's balance & Record Ledger
       await tx.suppliers.update({
         where: { id: suppId },
         data: {
           purchase_payable_amount: String(newDue),
+        },
+      });
+
+      // Record in party_ledger_entries for General Ledger & Audit trail
+      await tx.party_ledger_entries.create({
+        data: {
+          party_type: "SUPPLIER",
+          supplier_id: suppId,
+          transaction_type: "PAYMENT",
+          reference_type: "PURCHASE_PAYMENT",
+          reference_no: transaction_id || (purchase_id ? `PURCH-${purchase_id}` : undefined),
+          debit: new Prisma.Decimal(totalDeduction.toFixed(2)),
+          credit: new Prisma.Decimal(0),
+          balance: new Prisma.Decimal(newDue.toFixed(2)),
+          date: colDate,
+          note: discNum > 0 ? `Paid: ৳${paidNum}, Discount: ৳${discNum}` : `Paid: ৳${paidNum}`,
+          user_id: BigInt(userId),
         },
       });
 

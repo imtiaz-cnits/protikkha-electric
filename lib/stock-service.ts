@@ -11,7 +11,10 @@ export type StockMovementType =
   | "HARVEST_INWARD"
   | "DAMAGE_LOSS"
   | "RETURN_INWARD"
-  | "ADJUSTMENT";
+  | "ADJUSTMENT"
+  | "SCRAP_CABLE_LOSS"
+  | "ADJUSTMENT_ADD"
+  | "ADJUSTMENT_SUBTRACT";
 
 export type StockReferenceType =
   | "ORDER"
@@ -75,7 +78,9 @@ export async function recordStockMovement(
       params.movementType === "SALE_OUTWARD" ||
       params.movementType === "INTERNAL_ISSUE_OUTWARD" ||
       params.movementType === "PURCHASE_RETURN_OUTWARD" ||
-      params.movementType === "DAMAGE_LOSS";
+      params.movementType === "DAMAGE_LOSS" ||
+      params.movementType === "SCRAP_CABLE_LOSS" ||
+      params.movementType === "ADJUSTMENT_SUBTRACT";
 
     let newStock: number;
     if (isOutward) {
@@ -185,3 +190,89 @@ export async function getProductStockOverview(productId: bigint | number) {
     })),
   };
 }
+
+/**
+ * Adjust stock level directly to a target quantity (physical count or scrap adjustment)
+ * Atomically computes delta, logs movement type, and records in stock_movements
+ */
+export async function adjustProductStock(
+  productId: bigint | number,
+  targetQuantity: number,
+  reason: string,
+  userId: bigint | number,
+  tx?: Prisma.TransactionClient
+) {
+  const execute = async (client: Prisma.TransactionClient) => {
+    const prodId = BigInt(productId);
+    const target = Math.max(0, Number(targetQuantity) || 0);
+
+    const [currentProd]: any = await client.$queryRawUnsafe(
+      "SELECT id, product_name, quantity, cost_price FROM products WHERE id = ? FOR UPDATE",
+      prodId
+    );
+
+    if (!currentProd) {
+      throw new Error(`Product with ID ${prodId} not found`);
+    }
+
+    const currentStock = parseFloat(String(currentProd.quantity || "0"));
+    const delta = parseFloat((target - currentStock).toFixed(3));
+
+    if (delta === 0) {
+      return {
+        previousStock: currentStock,
+        newStock: currentStock,
+        delta: 0,
+        productName: currentProd.product_name,
+      };
+    }
+
+    const isLoss = delta < 0;
+    const absQty = Math.abs(delta);
+    const costPrice = parseFloat(String(currentProd.cost_price || "0"));
+    const totalVal = parseFloat((absQty * costPrice).toFixed(2));
+
+    const movementType: StockMovementType = isLoss
+      ? reason.toLowerCase().includes("scrap") || reason.toLowerCase().includes("cut")
+        ? "SCRAP_CABLE_LOSS"
+        : "DAMAGE_LOSS"
+      : "ADJUSTMENT";
+
+    await client.products.update({
+      where: { id: prodId },
+      data: { quantity: String(target) },
+    });
+
+    const timestamp = Date.now();
+    const movement = await client.stock_movements.create({
+      data: {
+        product_id: prodId,
+        movement_type: movementType,
+        quantity: new Prisma.Decimal(absQty.toFixed(3)),
+        unit_price: new Prisma.Decimal(costPrice.toFixed(2)),
+        total_value: new Prisma.Decimal(totalVal.toFixed(2)),
+        reference_type: "ADJUSTMENT",
+        reference_no: `ADJ-${timestamp}`,
+        stock_after: new Prisma.Decimal(target.toFixed(3)),
+        date: new Date(),
+        note: reason || "Manual Physical Count Adjustment",
+        user_id: BigInt(userId),
+      },
+    });
+
+    return {
+      movement,
+      previousStock: currentStock,
+      newStock: target,
+      delta,
+      productName: currentProd.product_name,
+    };
+  };
+
+  if (tx) {
+    return execute(tx);
+  } else {
+    return prisma.$transaction(async (newTx) => execute(newTx));
+  }
+}
+

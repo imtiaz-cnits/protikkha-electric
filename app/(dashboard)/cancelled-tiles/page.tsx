@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatBdCurrency } from "@/lib/utils";
-import { formatBoxAndPcs } from "@/lib/tiles-calculator";
+import { formatBoxAndPcs } from "@/lib/electrical-unit-service";
 import { Pagination } from "@/components/ui/pagination";
 import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 

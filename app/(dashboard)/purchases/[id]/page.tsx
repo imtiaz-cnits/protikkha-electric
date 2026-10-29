@@ -4,7 +4,6 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
-import { formatTileOrItemQty } from "@/lib/tiles-calculator";
 
 interface PurchaseDetail {
   id: number;
@@ -296,17 +295,12 @@ export default function PurchaseBillPage({
                     </td>
                     <td className="border border-black py-1 px-3 font-semibold">
                       {item.product_name}
-                      {item.tile_size && (
-                        <span className="text-[10px] text-slate-600 block">
-                          Size: {item.tile_size} | Grade: {item.grade || "Standard"}
-                        </span>
-                      )}
                     </td>
                     <td className="border border-black py-1 px-2 text-right font-mono">
                       {item.cost_price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="border border-black py-1 px-2 text-center font-bold whitespace-nowrap">
-                      {formatTileOrItemQty(item.quantity, item)}
+                      {item.quantity} {item.unit || "Pcs"}
                     </td>
                     <td className="border border-black py-1 px-3 text-right font-mono font-bold">
                       {item.subtotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

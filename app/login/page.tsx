@@ -17,8 +17,8 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("01700000000");
+  const [password, setPassword] = useState("123456");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -62,8 +62,8 @@ export default function LoginPage() {
   }
 
   function fillDemo() {
-    setEmail("admin@gmail.com");
-    setPassword("admin123");
+    setEmail("01700000000");
+    setPassword("123456");
     setError("");
   }
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
         {/* Top Logo */}
         <div className="relative z-10 flex items-center gap-3">
           <img
-            src="/fav.png"
+            src="/auth-page-logo.png"
             alt="Protikkha Electric"
             className="h-20 w-auto max-w-[220px] object-contain drop-shadow-lg"
           />
@@ -235,10 +235,10 @@ export default function LoginPage() {
             <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold text-[#0B3D91] dark:text-blue-300 uppercase tracking-wide">
-                  Quick Demo Access
+                  Quick Demo Access (Super Admin)
                 </p>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                  admin@gmail.com / admin123
+                  01700000000 / 123456
                 </p>
               </div>
               <button

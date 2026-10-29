@@ -5,10 +5,11 @@ import {
   X,
   Loader2,
   Barcode,
-  Layers,
+  Zap,
   PlusCircle,
+  Tag,
+  Boxes,
 } from "lucide-react";
-import { POPULAR_TILE_SIZES, TILE_GRADES, SURFACE_FINISHES, autoCalculateSqftPerBox } from "@/lib/tiles-calculator";
 import { CustomSelect } from "@/components/ui/custom-select";
 
 interface QuickProductModalProps {
@@ -19,6 +20,15 @@ interface QuickProductModalProps {
   units: Array<{ id: number; unit_name: string }>;
   onProductCreated: (product: any) => void;
 }
+
+const SPEC_TYPES = [
+  { id: "CABLE", label: "Wires & Cables (তার/ক্যাবল)" },
+  { id: "BREAKER", label: "Circuit Breakers (সার্কিট ব্রেকার)" },
+  { id: "SWITCH", label: "Switches & Sockets (সুইচ/সকেট)" },
+  { id: "LIGHTING", label: "LED & Lighting (লাইট/টিউব)" },
+  { id: "CONDUIT", label: "Pipes & Conduits (পাইপ/ফিটিংস)" },
+  { id: "GENERAL", label: "General Accessories (সাধারণ যন্ত্রাংশ)" },
+];
 
 export function QuickProductModal({
   isOpen,
@@ -34,11 +44,12 @@ export function QuickProductModal({
     cost_price: "",
     sell_price: "",
     quantity: "10",
-    tile_size: "",
-    sqft_per_box: "",
-    pcs_per_box: "",
-    grade: "",
-    surface_finish: "",
+    spec_type: "CABLE",
+    cable_size: "",
+    current_rating: "",
+    voltage_grade: "450/750V",
+    gang_module: "",
+    wattage: "",
     brand_id: "",
     category_id: "",
     unit_id: "",
@@ -47,58 +58,29 @@ export function QuickProductModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize and reset whenever modal opens
   useEffect(() => {
     if (isOpen) {
-      const defaultCat =
-        categories.find(
-          (c) =>
-            c.category_name?.toLowerCase().includes("tile") ||
-            c.category_name?.toLowerCase().includes("টাইল")
-        ) || categories[0];
-
-      const isTile = Boolean(
-        defaultCat?.category_name &&
-          (defaultCat.category_name.toLowerCase().includes("tile") ||
-            defaultCat.category_name.toLowerCase().includes("টাইল"))
-      );
-
-      let defaultUnitId = "";
-      if (isTile) {
-        const boxUnit = units.find((u) => u.unit_name?.toLowerCase() === "box");
-        if (boxUnit) defaultUnitId = String(boxUnit.id);
-      }
-      if (!defaultUnitId && units[0]?.id) {
-        defaultUnitId = String(units[0].id);
-      }
-
       setFormData({
         product_name: "",
         product_code: "",
         cost_price: "",
         sell_price: "",
         quantity: "10",
-        tile_size: "",
-        sqft_per_box: "",
-        pcs_per_box: "",
-        grade: "",
-        surface_finish: "",
+        spec_type: "CABLE",
+        cable_size: "",
+        current_rating: "",
+        voltage_grade: "450/750V",
+        gang_module: "",
+        wattage: "",
         brand_id: brands[0]?.id ? String(brands[0].id) : "",
-        category_id: defaultCat?.id ? String(defaultCat.id) : "",
-        unit_id: defaultUnitId,
+        category_id: categories[0]?.id ? String(categories[0].id) : "",
+        unit_id: units[0]?.id ? String(units[0].id) : "",
       });
       setError(null);
     }
   }, [isOpen, categories, brands, units]);
 
   if (!isOpen) return null;
-
-  const selectedCategory = categories.find((c) => String(c.id) === String(formData.category_id));
-  const isTilesCategory = Boolean(
-    selectedCategory?.category_name &&
-      (selectedCategory.category_name.toLowerCase().includes("tile") ||
-        selectedCategory.category_name.toLowerCase().includes("টাইল"))
-  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,11 +110,14 @@ export function QuickProductModal({
         brand_id: Number(formData.brand_id || (brands[0]?.id ? String(brands[0].id) : 1)),
         category_id: Number(formData.category_id || (categories[0]?.id ? String(categories[0].id) : 1)),
         unit_id: formData.unit_id ? Number(formData.unit_id) : null,
-        tile_size: isTilesCategory ? (formData.tile_size || null) : null,
-        sqft_per_box: isTilesCategory && formData.sqft_per_box ? Number(formData.sqft_per_box) : null,
-        pcs_per_box: isTilesCategory && formData.pcs_per_box ? Number(formData.pcs_per_box) : null,
-        grade: isTilesCategory ? (formData.grade || null) : null,
-        surface_finish: isTilesCategory ? (formData.surface_finish || null) : null,
+        electrical_spec: {
+          spec_type: formData.spec_type,
+          cable_size: formData.spec_type === "CABLE" ? formData.cable_size : null,
+          current_rating: formData.spec_type === "BREAKER" ? formData.current_rating : null,
+          voltage_grade: formData.spec_type === "CABLE" ? formData.voltage_grade : null,
+          gang_module: formData.spec_type === "SWITCH" ? formData.gang_module : null,
+          wattage: formData.spec_type === "LIGHTING" ? formData.wattage : null,
+        },
       };
 
       const res = await fetch("/api/products", {
@@ -142,380 +127,276 @@ export function QuickProductModal({
       });
 
       const data = await res.json();
-      if (!res.ok || data.status !== "success") {
+      if (res.ok && data.status === "success" && data.data) {
+        onProductCreated(data.data);
+        onClose();
+      } else {
         setError(data.message || "Failed to create product");
-        setLoading(false);
-        return;
       }
-
-      onProductCreated(data.data);
-      onClose();
     } catch (err: any) {
-      setError(err?.message || "An error occurred while saving product");
+      setError(err?.message || "Communication error");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4">
-      {/* Unified Container: max-w-3xl sm:max-w-4xl matching product page */}
-      <div className="w-full max-w-3xl sm:max-w-4xl bg-white dark:bg-slate-900 rounded-[16px] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-150">
-        {/* Sticky Header: Cool Crimson / Ruby Red Gradient, Circular Red Close */}
-        <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-6 py-4 flex items-center justify-between shrink-0 shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <PlusCircle className="w-5 h-5 text-white" />
-            <h3 className="text-base font-bold text-white tracking-tight m-0">
-              Add New Product Item
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-xl bg-white dark:bg-[#0f172a] rounded-[16px] shadow-2xl overflow-hidden border border-[#cbd5e1] dark:border-[#334155] max-h-[90vh] flex flex-col">
+        {/* Sticky Header per Rule 9 */}
+        <div className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0">
+          <div className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-amber-400" />
+            <h3 className="text-sm font-bold tracking-wide uppercase m-0 text-white">
+              Quick Add Electrical Product
             </h3>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-[28px] h-[28px] rounded-full bg-[#dc2626] hover:bg-red-700 text-white flex items-center justify-center shadow-xs cursor-pointer transition-colors"
+            className="w-7 h-7 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center cursor-pointer transition-colors shadow-2xs"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form wrapping scrollable body and fixed footer cleanly */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          {/* Scrollable Body: scrollbar stops cleanly above footer */}
-          <div className="flex-1 min-h-0 overflow-y-auto p-5 sm:p-6 space-y-4">
-            {error && (
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 text-[#0B3D91] dark:text-blue-300 text-xs font-semibold">
-                {error}
-              </div>
-            )}
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+          {error && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 text-xs font-semibold">
+              {error}
+            </div>
+          )}
 
-            {/* Product Name */}
+          {/* Product Name */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              Product Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. BRB 2.5 RM BYA Cable Red or Schneider 16A MCB"
+              value={formData.product_name}
+              onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+              className="w-full h-[42px] px-3 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
+            />
+          </div>
+
+          {/* Barcode & Spec Type */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Product Name *
+                Barcode / Product Code
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Scan or type code..."
+                  value={formData.product_code}
+                  onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
+                  className="w-full h-[42px] pl-8 pr-3 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
+                />
+                <Barcode className="w-4 h-4 text-slate-400 absolute left-2.5 top-3" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Electrical Category Type
+              </label>
+              <CustomSelect
+                value={formData.spec_type}
+                onChange={(val) => setFormData({ ...formData, spec_type: val })}
+                options={SPEC_TYPES.map((s) => ({ value: s.id, label: s.label }))}
+              />
+            </div>
+          </div>
+
+          {/* Dynamic Spec Inputs Based on Spec Type */}
+          {formData.spec_type === "CABLE" && (
+            <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-blue-900 dark:text-blue-200 mb-1">
+                  Cable Size (e.g. 1.5 RM, 2.5 RM)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2.5 RM BYA"
+                  value={formData.cable_size}
+                  onChange={(e) => setFormData({ ...formData, cable_size: e.target.value })}
+                  className="w-full h-[38px] px-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-blue-900 dark:text-blue-200 mb-1">
+                  Voltage Grade
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 450/750V"
+                  value={formData.voltage_grade}
+                  onChange={(e) => setFormData({ ...formData, voltage_grade: e.target.value })}
+                  className="w-full h-[38px] px-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100"
+                />
+              </div>
+            </div>
+          )}
+
+          {formData.spec_type === "BREAKER" && (
+            <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
+              <label className="block text-[11px] font-bold text-amber-900 dark:text-amber-200 mb-1">
+                Current Rating (Ampere)
               </label>
               <input
                 type="text"
-                required
-                value={formData.product_name}
-                onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
-                placeholder="e.g. Fresh Ceramics 60x60 Floor Tiles"
-                className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
+                placeholder="e.g. 16A, 20A, 32A SP/DP"
+                value={formData.current_rating}
+                onChange={(e) => setFormData({ ...formData, current_rating: e.target.value })}
+                className="w-full h-[38px] px-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100"
+              />
+            </div>
+          )}
+
+          {formData.spec_type === "SWITCH" && (
+            <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50">
+              <label className="block text-[11px] font-bold text-purple-900 dark:text-purple-200 mb-1">
+                Gang / Module Type
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 1-Gang Switch, 2-Gang, Socket, Fan Dimmer"
+                value={formData.gang_module}
+                onChange={(e) => setFormData({ ...formData, gang_module: e.target.value })}
+                className="w-full h-[38px] px-3 rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100"
+              />
+            </div>
+          )}
+
+          {formData.spec_type === "LIGHTING" && (
+            <div className="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50">
+              <label className="block text-[11px] font-bold text-emerald-900 dark:text-emerald-200 mb-1">
+                Wattage (Power Rating)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. 9W, 12W, 18W T8"
+                value={formData.wattage}
+                onChange={(e) => setFormData({ ...formData, wattage: e.target.value })}
+                className="w-full h-[38px] px-3 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-100"
+              />
+            </div>
+          )}
+
+          {/* Pricing & Stock */}
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Cost Price (৳)
+              </label>
+              <input
+                type="number"
+                step="any"
+                placeholder="0.00"
+                value={formData.cost_price}
+                onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                className="w-full h-[42px] px-3 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs font-mono font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
               />
             </div>
 
-            {/* Category & Brand Dropdowns */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Category *
-                </label>
-                <CustomSelect
-                  options={categories.map((c) => ({ value: c.id, label: c.category_name }))}
-                  value={formData.category_id}
-                  onChange={(val) => {
-                    const newCatId = String(val);
-                    const catObj = categories.find((c) => String(c.id) === newCatId);
-                    const isTile = Boolean(
-                      catObj?.category_name &&
-                        (catObj.category_name.toLowerCase().includes("tile") ||
-                          catObj.category_name.toLowerCase().includes("টাইল"))
-                    );
-
-                    let newUnitId = formData.unit_id;
-                    if (isTile && !newUnitId) {
-                      const boxUnit = units.find((u) => u.unit_name?.toLowerCase() === "box");
-                      if (boxUnit) newUnitId = String(boxUnit.id);
-                    }
-
-                    setFormData({
-                      ...formData,
-                      category_id: newCatId,
-                      unit_id: newUnitId,
-                    });
-                  }}
-                  placeholder="Select Category"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Brand *
-                </label>
-                <CustomSelect
-                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
-                  value={formData.brand_id}
-                  onChange={(val) => setFormData({ ...formData, brand_id: String(val) })}
-                  placeholder="Select Brand"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Selling Price (৳) <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                step="any"
+                required
+                placeholder="0.00"
+                value={formData.sell_price}
+                onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
+                className="w-full h-[42px] px-3 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs font-mono font-bold text-[#0B3D91] dark:text-blue-300 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
+              />
             </div>
 
-            {/* Prices & Stock */}
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Cost Price (৳)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.cost_price}
-                  onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Selling Price (৳) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={formData.sell_price}
-                  onChange={(e) => setFormData({ ...formData, sell_price: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-bold text-rose-700 dark:text-rose-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Initial Stock Qty
-                </label>
-                <input
-                  type="number"
-                  value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                  placeholder="0"
-                  className="w-full h-[42px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Initial Stock
+              </label>
+              <input
+                type="number"
+                step="any"
+                placeholder="10"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                className="w-full h-[42px] px-3 rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] text-xs font-mono font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1E65A0]"
+              />
             </div>
-
-            {/* Unit & Barcode */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Unit of Measurement
-                </label>
-                <CustomSelect
-                  options={units.map((u) => ({ value: u.id, label: u.unit_name }))}
-                  value={formData.unit_id}
-                  onChange={(val) => setFormData({ ...formData, unit_id: String(val) })}
-                  placeholder="Select Unit"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Product Code / Barcodes
-                </label>
-                <div className="relative">
-                  <Barcode className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    value={formData.product_code}
-                    onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
-                    placeholder="e.g. PRD-0001, 8934521093"
-                    className="w-full h-[42px] pl-9 pr-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-mono"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  Separate multiple barcodes with commas. Leave blank to auto-generate.
-                </p>
-              </div>
-            </div>
-
-            {/* Tiles Specifications & Packaging Section - STRICTLY VISIBLE ONLY FOR TILES */}
-            {isTilesCategory && (
-              <div className="border border-rose-200 dark:border-rose-950/70 rounded-2xl p-4 bg-gradient-to-br from-blue-50/40 via-white to-slate-50/50 dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-900/60 space-y-3.5 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between pb-2 border-b border-blue-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-rose-600 text-white flex items-center justify-center">
-                      <Layers className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight">
-                        Tiles Specifications & Packaging Calculator
-                      </h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        For Tiles items: Size, Box to Sq.Ft conversion, Grade & Surface Finish
-                      </p>
-                    </div>
-                  </div>
-                  {formData.tile_size && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
-                      Tiles Mode Active
-                    </span>
-                  )}
-                </div>
-
-                {/* Popular Size Pills */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Tile Dimensions / Size (Quick Pick)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {POPULAR_TILE_SIZES.map((size) => (
-                      <button
-                        key={size.value}
-                        type="button"
-                        onClick={() => {
-                          setFormData({
-                            ...formData,
-                            tile_size: size.value,
-                            sqft_per_box: size.defaultSqftPerBox ? String(size.defaultSqftPerBox) : formData.sqft_per_box,
-                            pcs_per_box: size.defaultPcsPerBox ? String(size.defaultPcsPerBox) : formData.pcs_per_box,
-                          });
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
-                          formData.tile_size === size.value
-                            ? "bg-rose-600 text-white border-blue-700 shadow-xs"
-                            : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-rose-400"
-                        }`}
-                      >
-                        {size.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <input
-                    type="text"
-                    value={formData.tile_size}
-                    onChange={(e) => {
-                      const newSize = e.target.value;
-                      const pcs = parseFloat(formData.pcs_per_box || "0");
-                      const autoSqft = autoCalculateSqftPerBox(newSize, pcs);
-                      setFormData({
-                        ...formData,
-                        tile_size: newSize,
-                        ...(autoSqft !== null ? { sqft_per_box: String(autoSqft) } : {}),
-                      });
-                    }}
-                    placeholder="Or enter custom size (e.g. 8/12, 12x24, 10.5/24)"
-                    className="w-full h-[38px] px-3 rounded-xl bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0] font-medium"
-                  />
-                </div>
-
-                {/* Box Packaging & Conversion Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Sq.Ft per Box (বক্সে মোট স্কয়ার ফিট)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      value={formData.sqft_per_box}
-                      onChange={(e) => setFormData({ ...formData, sqft_per_box: e.target.value })}
-                      placeholder="e.g. 16.66 or 16.0"
-                      className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-rose-700 dark:text-rose-400 border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Required for live POS Box ⇄ Sq.Ft billing conversion.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Pieces per Box (বক্সে মোট পিস)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.pcs_per_box}
-                      onChange={(e) => {
-                        const newPcs = e.target.value;
-                        const pcsNum = parseFloat(newPcs || "0");
-                        const autoSqft = autoCalculateSqftPerBox(formData.tile_size, pcsNum);
-                        setFormData({
-                          ...formData,
-                          pcs_per_box: newPcs,
-                          ...(autoSqft !== null ? { sqft_per_box: String(autoSqft) } : {}),
-                        });
-                      }}
-                      placeholder="e.g. 25, 11, 10, 8, 4"
-                      className="w-full h-[40px] px-3.5 rounded-xl bg-white dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-white border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus:outline-none focus:border-[#1E65A0]"
-                    />
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Useful for loose piece calculations.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Grade & Surface Finish */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Tiles Grade / Quality
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {TILE_GRADES.map((g) => (
-                        <button
-                          key={g.value}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, grade: formData.grade === g.value ? "" : g.value })}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer border ${
-                            formData.grade === g.value
-                              ? "bg-rose-600 text-white border-blue-700 shadow-xs"
-                              : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[#cbd5e1] dark:border-[#334155] hover:border-rose-400"
-                          }`}
-                        >
-                          {g.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Surface Finish
-                    </label>
-                    <CustomSelect
-                      options={SURFACE_FINISHES.map((f) => ({ value: f, label: f }))}
-                      value={formData.surface_finish}
-                      onChange={(val) => setFormData({ ...formData, surface_finish: String(val) })}
-                      placeholder="Select Surface Finish (Optional)"
-                    />
-                  </div>
-                </div>
-
-                {/* Live Packaging Badge */}
-                {formData.sqft_per_box && (
-                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-300 text-xs font-bold flex items-center justify-between">
-                    <span>📦 1 Box = {formData.sqft_per_box} Sq.Ft {formData.pcs_per_box ? `(${formData.pcs_per_box} Pcs)` : ""}</span>
-                    {formData.sell_price && Number(formData.sqft_per_box) > 0 && (
-                      <span className="text-[11px] font-black">
-                        Rate: ৳{(Number(formData.sell_price) / Number(formData.sqft_per_box)).toFixed(2)} / Sq.Ft
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          {/* Modal Footer (Rule 6.4) - Fixed at bottom outside the scroll area */}
-          <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-3 z-10 shadow-xs">
+          {/* Category, Brand & Unit */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Category
+              </label>
+              <CustomSelect
+                value={formData.category_id}
+                onChange={(val) => setFormData({ ...formData, category_id: val })}
+                options={categories.map((c) => ({ value: String(c.id), label: c.category_name }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Brand
+              </label>
+              <CustomSelect
+                value={formData.brand_id}
+                onChange={(val) => setFormData({ ...formData, brand_id: val })}
+                options={brands.map((b) => ({ value: String(b.id), label: b.name }))}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Base Unit
+              </label>
+              <CustomSelect
+                value={formData.unit_id}
+                onChange={(val) => setFormData({ ...formData, unit_id: val })}
+                options={units.map((u) => ({ value: String(u.id), label: u.unit_name }))}
+              />
+            </div>
+          </div>
+
+          {/* Sticky Footer per Rule 9 */}
+          <div className="pt-3 border-t border-[#cbd5e1] dark:border-[#334155] flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-5 py-2.5 rounded-xl bg-[#dc2626] hover:bg-red-700 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs"
+              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs cursor-pointer transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-70 shadow-sm"
+              className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
             >
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>Save & Ring</span>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>Create &amp; Ring to Cart</span>
+                </>
+              )}
             </button>
           </div>
         </form>

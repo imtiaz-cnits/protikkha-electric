@@ -1,8 +1,15 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import JsBarcode from "jsbarcode";
 import { formatBdCurrency } from "@/lib/utils";
-import { formatTileOrItemQty } from "@/lib/tiles-calculator";
 import { Printer, X, Truck, Phone, MapPin, Calendar, FileText } from "lucide-react";
+
+function formatElectricalQty(qty: number | string, item?: any): string {
+  const num = typeof qty === "number" ? qty : parseFloat(String(qty || "0"));
+  const unit = item?.unit || item?.unit_name || "";
+  return unit ? `${num} ${unit}` : `${num}`;
+}
 
 interface ReceiptProps {
   receiptData: {
@@ -32,12 +39,18 @@ interface ReceiptProps {
       quantity: number;
       price: number;
       total: number;
+      cable_size?: string | null;
+      voltage_grade?: string | null;
+      current_rating?: string | null;
+      wattage?: string | null;
+      gang_module?: string | null;
+      packaging_unit?: string | null;
+      unit?: string | null;
+      category?: string | null;
       tile_size?: string | null;
       sqft_per_box?: number | null;
       pcs_per_box?: number | null;
       grade?: string | null;
-      category?: string | null;
-      unit?: string | null;
     }>;
   };
   onClose: () => void;
@@ -45,6 +58,25 @@ interface ReceiptProps {
 }
 
 export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: ReceiptProps) {
+  const barcodeRef = useRef<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    if (barcodeRef.current && receiptData?.order_no) {
+      try {
+        JsBarcode(barcodeRef.current, receiptData.order_no, {
+          format: "CODE128",
+          width: 1.5,
+          height: 36,
+          displayValue: true,
+          fontSize: 11,
+          margin: 2,
+        });
+      } catch {
+        // Fallback gracefully
+      }
+    }
+  }, [receiptData?.order_no]);
+
   function handlePrint() {
     window.print();
   }
@@ -56,26 +88,9 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
 
   const totalDueWithPrevious = receiptData.due_amount + receiptData.previous_due_amount;
 
-  // Strict check: Only show Challan action if invoice contains Tiles items
-  const hasTiles =
-    receiptData.has_tiles === true
-      ? true
-      : receiptData.has_tiles === false
-      ? false
-      : Boolean(
-          (receiptData.challan_status && receiptData.challan_status !== "NOT_REQUIRED") ||
-          receiptData.details?.some(
-            (d) =>
-              Boolean(d.tile_size) ||
-              Boolean(d.sqft_per_box) ||
-              (d.product_name && d.product_name.toLowerCase().includes("tile")) ||
-              (d.category && d.category.toLowerCase().includes("tile"))
-          )
-        );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
-      {/* Modal Container: Wider modal (max-w-2xl) per user instruction */}
+      {/* Modal Container */}
       <div className="w-full max-w-2xl bg-white text-slate-900 rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col border border-slate-300 print:border-none print:shadow-none print:max-w-none print:m-0 print:p-0">
         {/* Modal Controls Header - Hidden on print */}
         <div className="print:hidden bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] px-5 py-3.5 flex items-center justify-between text-white shrink-0 shadow-sm">
@@ -85,17 +100,17 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
             </div>
             <div>
               <h3 className="text-sm font-bold m-0 leading-tight">Cash Sales Receipt / ইনভয়েস</h3>
-              <p className="text-[11px] text-rose-100/80 leading-none mt-0.5">
+              <p className="text-[11px] text-blue-100 leading-none mt-0.5">
                 Invoice No: {receiptData.order_no}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {receiptData.id && onOpenChallan && hasTiles && (
+            {receiptData.id && onOpenChallan && (
               <button
                 onClick={() => onOpenChallan(receiptData.id!)}
                 className="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                title="Generate Delivery Challan for Tiles"
+                title="Generate Delivery Challan"
               >
                 <Truck className="w-3.5 h-3.5" />
                 <span>Challan</span>
@@ -117,7 +132,7 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
           </div>
         </div>
 
-        {/* Printable Cash Receipt Container (Full Width A4 with 10px margin on print) */}
+        {/* Printable Cash Receipt Container */}
         <div id="printable-invoice" className="flex-1 overflow-y-auto p-6 sm:p-8 font-sans text-xs text-slate-800 thermal-sheet print:p-0">
           {/* Store Branding Header */}
           <div className="text-center pb-4 border-b-2 border-slate-900">
@@ -169,7 +184,7 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
               </div>
               <div className="flex sm:justify-between justify-end gap-2">
                 <span className="text-slate-500">Invoice No:</span>
-                <strong className="font-mono font-bold text-rose-900">{receiptData.order_no}</strong>
+                <strong className="font-mono font-bold text-blue-900">{receiptData.order_no}</strong>
               </div>
               <div className="flex sm:justify-between justify-end gap-2">
                 <span className="text-slate-500">Date:</span>
@@ -185,6 +200,9 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
                   <span>{receiptData.cashier}</span>
                 </div>
               )}
+              <div className="pt-1 flex justify-end sm:justify-start">
+                <svg ref={barcodeRef} className="max-h-10 w-auto" />
+              </div>
             </div>
           </div>
 
@@ -196,8 +214,8 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
                   <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 text-[11px]">
                     <th className="py-2.5 px-3 w-10 text-center">#</th>
                     <th className="py-2.5 px-3">Item Description</th>
-                    <th className="py-2.5 px-3 text-center">Specs / Size</th>
-                    <th className="py-2.5 px-3 text-center w-14">Qty</th>
+                    <th className="py-2.5 px-3 text-center">Specs / Model</th>
+                    <th className="py-2.5 px-3 text-center w-20">Qty</th>
                     <th className="py-2.5 px-3 text-right w-24">Rate (৳)</th>
                     <th className="py-2.5 px-3 text-right w-28">Total (৳)</th>
                   </tr>
@@ -212,12 +230,20 @@ export function ThermalReceiptModal({ receiptData, onClose, onOpenChallan }: Rec
                         {item.product_name}
                       </td>
                       <td className="py-2 px-3 text-center text-slate-600 text-[11px]">
-                        {item.tile_size ? `Size: ${item.tile_size} ` : "-"}
-                        {item.sqft_per_box ? `(${(item.quantity * item.sqft_per_box).toFixed(1)} Sft)` : ""}
-                        {item.grade ? ` [★${item.grade}]` : ""}
+                        {item.cable_size
+                          ? `${item.cable_size}${item.voltage_grade ? ` (${item.voltage_grade})` : ""}`
+                          : item.current_rating
+                          ? `Rating: ${item.current_rating}`
+                          : item.wattage
+                          ? `${item.wattage} LED`
+                          : item.gang_module
+                          ? `${item.gang_module} Module`
+                          : item.tile_size
+                          ? `Size: ${item.tile_size}`
+                          : "-"}
                       </td>
                       <td className="py-2 px-3 text-center font-bold font-mono whitespace-nowrap">
-                        {formatTileOrItemQty(item.quantity, item)}
+                        {formatElectricalQty(item.quantity, item)}
                       </td>
                       <td className="py-2 px-3 text-right font-mono">
                         {item.price.toFixed(2)}

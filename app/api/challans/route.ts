@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
                   sqft_per_box: true,
                   pcs_per_box: true,
                   grade: true,
+                  electrical_specifications: true,
                 },
               },
             },
@@ -210,7 +211,7 @@ export async function POST(req: NextRequest) {
 
       if (pendingLines.length === 0) {
         const err: any = new Error(
-          "This invoice has no pending Tiles items awaiting delivery Challan!"
+          "This invoice has no pending items awaiting delivery Challan!"
         );
         err.statusCode = 400;
         throw err;

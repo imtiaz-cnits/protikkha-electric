@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -68,6 +69,23 @@ export async function POST(req: NextRequest) {
           transaction_id: transaction_id || null,
           payment_status: newCustomerDue <= 0 ? "Paid" : "Partial",
           due_collection_date: colDate,
+          user_id: BigInt(userId),
+        },
+      });
+
+      // Record in party_ledger_entries for General Ledger & Audit trail
+      await tx.party_ledger_entries.create({
+        data: {
+          party_type: "CUSTOMER",
+          customer_id: custId,
+          transaction_type: "PAYMENT",
+          reference_type: "DUE_COLLECTION",
+          reference_no: transaction_id || (order_id ? `ORD-${order_id}` : undefined),
+          debit: new Prisma.Decimal(0),
+          credit: new Prisma.Decimal(totalDeduction.toFixed(2)),
+          balance: new Prisma.Decimal(newCustomerDue.toFixed(2)),
+          date: colDate,
+          note: note || (discNum > 0 ? `Paid: ৳${paidNum}, Discount: ৳${discNum}` : `Paid: ৳${paidNum}`),
           user_id: BigInt(userId),
         },
       });

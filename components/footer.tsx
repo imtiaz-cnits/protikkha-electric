@@ -18,7 +18,7 @@ export function Footer() {
 
   return (
     <footer className="mt-auto py-3 text-center text-xs text-slate-500 border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shrink-0">
-      &copy; {year} ARAFAT POULTRY & FISHERIES | Software By:{" "}
+      &copy; {year} PROTIKKHA ELECTRIC | Software By:{" "}
       <a
         href="https://www.codenextit.com"
         target="_blank"
