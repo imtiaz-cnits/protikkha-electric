@@ -14,6 +14,28 @@ export default function DashboardLayout({
 
   useEffect(() => {
     try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+      fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => {
+          if (!res.ok) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("role");
+            window.location.href = "/login";
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // ignore
+    }
+
+    try {
       const saved = localStorage.getItem("sidebar_collapsed");
       if (saved !== null) {
         setIsCollapsed(saved === "true");

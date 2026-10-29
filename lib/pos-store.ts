@@ -56,6 +56,7 @@ interface PosState {
   // Actions
   addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   updateQty: (productId: number, qty: number) => void;
+  updatePrice: (productId: number, price: number) => void;
   updateElectricalItem: (
     productId: number,
     data: {
@@ -130,6 +131,18 @@ export const usePosStore = create<PosState>((set, get) => ({
       cart: cart.map((item) => {
         if (item.product_id === productId) {
           return { ...item, quantity: qty };
+        }
+        return item;
+      }),
+    });
+  },
+
+  updatePrice: (productId, price) => {
+    const { cart } = get();
+    set({
+      cart: cart.map((item) => {
+        if (item.product_id === productId) {
+          return { ...item, selling_price: Math.max(0, price) };
         }
         return item;
       }),

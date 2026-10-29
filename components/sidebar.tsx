@@ -71,9 +71,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Receipt,
     children: [
       { label: "Sales Invoices", href: "/invoices", icon: Receipt },
-      { label: "Delivery Challans", href: "/challans", icon: FileSpreadsheet },
       { label: "Sales Returns", href: "/returns", icon: RotateCcw },
-      { label: "Item Cancellations", href: "/order-cancellations", icon: Ban },
       { label: "Due Collection", href: "/customer-dues", icon: Wallet },
     ],
   },
@@ -101,7 +99,6 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "Stock Movement Ledger", href: "/inventory/movements", icon: FileSpreadsheet },
       { label: "Stock Reconciliation", href: "/inventory/adjustments", icon: AlertTriangle },
       { label: "Cable Reels & Cut-Length", href: "/inventory/cable-reels", icon: Zap },
-      { label: "Store Transfers", href: "/inventory/transfers", icon: Truck },
     ],
   },
   {
@@ -126,31 +123,18 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     id: "customers",
-    label: "Customers & Contractors",
+    label: "Customers",
     icon: Users,
     children: [
       { label: "Customer Directory", href: "/customers", icon: Users },
       { label: "Customer Dues Ledger", href: "/customer-dues", icon: Wallet },
-      { label: "Contractors & Electricians", href: "/contractors", icon: Zap },
-      { label: "Contractor Commission Ledger", href: "/contractors/commissions", icon: Percent },
-    ],
-  },
-  {
-    id: "quotations",
-    label: "Project Quotations & BOQ",
-    icon: FileText,
-    children: [
-      { label: "Project Quotations", href: "/quotations", icon: FileText },
-      { label: "Contractor Jobs & BOQ", href: "/quotations/contractor-jobs", icon: FileText },
     ],
   },
   {
     id: "expenses",
-    label: "Accounts & Finance",
-    icon: Scale,
+    label: "Expense Management",
+    icon: Wallet,
     children: [
-      { label: "General Journal", href: "/accounts/journal", icon: Scale },
-      { label: "Cash Book & Bank", href: "/accounts/cash-bank", icon: Wallet },
       { label: "Daily Expenses", href: "/expenses", icon: Wallet },
       { label: "Expense Categories", href: "/expense-types", icon: Layers },
     ],
@@ -165,15 +149,6 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
-    id: "cable-drums",
-    label: "Cable Drum Management",
-    icon: Boxes,
-    children: [
-      { label: "Drum Register", href: "/cable-drums", icon: Boxes },
-      { label: "Refundable Drum Deposits", href: "/cable-drums/deposits", icon: Wallet },
-    ],
-  },
-  {
     id: "reports",
     label: "Reports & Analytics",
     icon: FileSpreadsheet,
@@ -185,16 +160,6 @@ export const NAV_ITEMS: NavItem[] = [
       { label: "General Ledger & COA", href: "/reports/general-ledger", icon: Scale },
       { label: "Income & Expense", href: "/reports/income-expense", icon: Wallet },
       { label: "Low Stock Alert", href: "/reports/stock-out", icon: AlertTriangle },
-      { label: "Audit Trails & Security", href: "/reports/audit-logs", icon: ShieldAlert },
-    ],
-  },
-  {
-    id: "staff",
-    label: "Staff & Access Control",
-    icon: Users,
-    children: [
-      { label: "Staff Directory", href: "/staff", icon: Users },
-      { label: "User Accounts & Roles", href: "/users", icon: Users },
     ],
   },
   {
@@ -203,18 +168,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Settings,
     children: [
       { label: "Store Profile Settings", href: "/settings", icon: Settings },
+      { label: "User Accounts & Roles", href: "/users", icon: Users },
+      { label: "Cable Length & Drop Calculator", href: "/tools/cable-calculator", icon: Calculator },
+      { label: "Audit Trails & Security", href: "/reports/audit-logs", icon: ShieldAlert },
       { label: "System Health Diagnostics", href: "/settings/health", icon: Activity },
       { label: "Database Backup", href: "/settings/backup", icon: Database },
       { label: "My Profile", href: "/profile", icon: User },
-    ],
-  },
-  {
-    id: "tools",
-    label: "Electrical Tools",
-    icon: Calculator,
-    children: [
-      { label: "Cable Length & Drop Calculator", href: "/tools/cable-calculator", icon: Calculator },
-      { label: "Data Import & Export", href: "/tools/import-export", icon: FileSpreadsheet },
     ],
   },
 ];

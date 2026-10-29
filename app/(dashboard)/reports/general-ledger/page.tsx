@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomDatePicker } from "@/components/ui/date-picker";
+import { CustomSelect } from "@/components/ui";
 
 interface TrialBalanceRow {
   accountCode: string;
@@ -86,6 +87,7 @@ export default function GeneralLedgerPage() {
   const [startDate, setStartDate] = useState(firstDayStr);
   const [endDate, setEndDate] = useState(todayStr);
   const [searchCoa, setSearchCoa] = useState("");
+  const [search, setSearch] = useState("");
 
   const loadData = async () => {
     try {
@@ -111,10 +113,21 @@ export default function GeneralLedgerPage() {
     loadData();
   }, [startDate, endDate]);
 
-  const setPreset = (preset: "today" | "month" | "year") => {
+  const setPreset = (preset: "today" | "yesterday" | "7days" | "month" | "year") => {
     const tStr = new Date().toISOString().split("T")[0];
     if (preset === "today") {
       setStartDate(tStr);
+      setEndDate(tStr);
+    } else if (preset === "yesterday") {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const yStr = y.toISOString().split("T")[0];
+      setStartDate(yStr);
+      setEndDate(yStr);
+    } else if (preset === "7days") {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      setStartDate(d.toISOString().split("T")[0]);
       setEndDate(tStr);
     } else if (preset === "month") {
       setStartDate(firstDayStr);
@@ -165,47 +178,6 @@ export default function GeneralLedgerPage() {
         </div>
       </div>
 
-      {/* 2. Filters & Presets */}
-      <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setPreset("today")}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setPreset("month")}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setPreset("year")}
-            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          >
-            This Year
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="w-36">
-            <CustomDatePicker
-              value={startDate}
-              onChange={(val) => setStartDate(val || "")}
-              placeholder="Start Date"
-            />
-          </div>
-          <span className="text-slate-400 text-sm">to</span>
-          <div className="w-36">
-            <CustomDatePicker
-              value={endDate}
-              onChange={(val) => setEndDate(val || "")}
-              placeholder="End Date"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* 3. Key Financial Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -284,48 +256,83 @@ export default function GeneralLedgerPage() {
         </div>
       </div>
 
-      {/* 4. Tab Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab("tb")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "tb"
-              ? "bg-[#0B3D91] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          Trial Balance (রেওয়ামিল)
-        </button>
-        <button
-          onClick={() => setActiveTab("pl")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "pl"
-              ? "bg-[#0B3D91] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          Profit & Loss Statement (লাভ-ক্ষতি বিবরণী)
-        </button>
-        <button
-          onClick={() => setActiveTab("coa")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "coa"
-              ? "bg-[#0B3D91] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          Chart of Accounts (হিসাব তালিকা)
-        </button>
-        <button
-          onClick={() => setActiveTab("vouchers")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "vouchers"
-              ? "bg-[#0B3D91] text-white shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-          }`}
-        >
-          Recent Journal Vouchers (ভাউচার লগ)
-        </button>
+      {/* 4. Filters Bar matching Image 2 */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
+        <div className="relative flex-1 max-w-sm">
+          <input
+            type="text"
+            placeholder="Search account, code, voucher..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSearchCoa(e.target.value);
+            }}
+            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
+          />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+        </div>
+
+        {/* Custom Select Filter Dropdown for Tab Navigation */}
+        <div className="w-full md:w-64">
+          <CustomSelect
+            value={activeTab}
+            onChange={(val) => setActiveTab(val as any)}
+            options={[
+              { value: "tb", label: "Trial Balance (রেওয়ামিল)" },
+              { value: "pl", label: "Profit & Loss Statement (লাভ-ক্ষতি)" },
+              { value: "coa", label: "Chart of Accounts (হিসাব তালিকা)" },
+              { value: "vouchers", label: "Recent Journal Vouchers (ভাউচার লগ)" },
+            ]}
+            placeholder="Select Statement / View"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-[130px]">
+              <CustomDatePicker
+                value={startDate}
+                onChange={(d) => setStartDate(d)}
+                placeholder="From Date"
+              />
+            </div>
+            <span className="text-xs text-slate-400">to</span>
+            <div className="w-[130px]">
+              <CustomDatePicker
+                value={endDate}
+                onChange={(d) => setEndDate(d)}
+                placeholder="To Date"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPreset("today")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setPreset("yesterday")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Yesterday
+            </button>
+            <button
+              onClick={() => setPreset("7days")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => setPreset("month")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              This Month
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Tab 1: Trial Balance */}

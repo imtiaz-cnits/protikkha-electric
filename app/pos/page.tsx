@@ -129,6 +129,7 @@ export default function PosPage() {
     orderNote,
     addItem,
     updateQty,
+    updatePrice,
     updateTileCalculation,
     removeItem,
     clearCart,
@@ -218,6 +219,13 @@ export default function PosPage() {
 
   // Synchronize Theme state
   useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+    } catch {}
     setIsDarkMode(getInitialTheme());
 
     const handleThemeChange = (e: Event) => {
@@ -1302,8 +1310,18 @@ export default function PosPage() {
                             </td>
 
                             {/* Price */}
-                            <td className="py-2 text-right text-slate-700 dark:text-slate-300 font-mono font-medium">
-                              {item.selling_price.toFixed(2)}
+                            <td className="py-2 text-right">
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                value={item.selling_price}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  updatePrice(item.product_id, isNaN(val) ? 0 : val);
+                                }}
+                                className="w-20 h-7 text-right text-xs font-bold font-mono px-2 rounded-md border-2 border-red-500 dark:border-red-600 focus:border-red-600 focus:ring-1 focus:ring-red-600 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white shadow-2xs"
+                              />
                             </td>
 
                             {/* Line Total */}

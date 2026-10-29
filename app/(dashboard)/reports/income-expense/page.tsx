@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Tag,
   Truck,
+  Search,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
 import { CustomDatePicker } from "@/components/ui/date-picker";
@@ -54,6 +55,7 @@ export default function IncomeExpensePage() {
 
   const [startDate, setStartDate] = useState(firstDayStr);
   const [endDate, setEndDate] = useState(todayStr);
+  const [search, setSearch] = useState("");
 
   const loadData = async () => {
     try {
@@ -77,10 +79,23 @@ export default function IncomeExpensePage() {
     loadData();
   }, [startDate, endDate]);
 
-  const setPreset = (preset: "today" | "month" | "last30") => {
+  const setPreset = (
+    preset: "today" | "yesterday" | "7days" | "month" | "last30"
+  ) => {
     const tStr = new Date().toISOString().split("T")[0];
     if (preset === "today") {
       setStartDate(tStr);
+      setEndDate(tStr);
+    } else if (preset === "yesterday") {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      const yStr = y.toISOString().split("T")[0];
+      setStartDate(yStr);
+      setEndDate(yStr);
+    } else if (preset === "7days") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      setStartDate(past.toISOString().split("T")[0]);
       setEndDate(tStr);
     } else if (preset === "month") {
       setStartDate(firstDayStr);
@@ -171,45 +186,64 @@ export default function IncomeExpensePage() {
         </div>
       )}
 
-      {/* 3. Date Range Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="w-[135px]">
-            <CustomDatePicker
-              value={startDate}
-              onChange={(d) => setStartDate(d)}
-              placeholder="From Date"
-            />
-          </div>
-          <span className="text-xs text-slate-400">to</span>
-          <div className="w-[135px]">
-            <CustomDatePicker
-              value={endDate}
-              onChange={(d) => setEndDate(d)}
-              placeholder="To Date"
-            />
-          </div>
+      {/* 3. Filters Bar matching Image 2 */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
+        <div className="relative flex-1 max-w-sm">
+          <input
+            type="text"
+            placeholder="Search particular, expense, supplier..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
+          />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setPreset("today")}
-            className="h-[38px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setPreset("month")}
-            className="h-[38px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-          >
-            This Month
-          </button>
-          <button
-            onClick={() => setPreset("last30")}
-            className="h-[38px] px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-          >
-            Last 30 Days
-          </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-[130px]">
+              <CustomDatePicker
+                value={startDate}
+                onChange={(d) => setStartDate(d)}
+                placeholder="From Date"
+              />
+            </div>
+            <span className="text-xs text-slate-400">to</span>
+            <div className="w-[130px]">
+              <CustomDatePicker
+                value={endDate}
+                onChange={(d) => setEndDate(d)}
+                placeholder="To Date"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPreset("today")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => setPreset("yesterday")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Yesterday
+            </button>
+            <button
+              onClick={() => setPreset("7days")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              7 Days
+            </button>
+            <button
+              onClick={() => setPreset("month")}
+              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            >
+              This Month
+            </button>
+          </div>
         </div>
       </div>
 
