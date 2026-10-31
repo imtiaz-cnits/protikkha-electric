@@ -177,49 +177,49 @@ export default function SupplierLedgerPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Date</th>
-                    <th className="py-3 px-3.5">Reference</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Supplier</th>
-                    <th className="py-3 px-3.5 min-w-[220px]">Description</th>
-                    <th className="py-3 px-3.5 text-right">Bill Amount</th>
-                    <th className="py-3 px-3.5 text-right">Paid</th>
-                    <th className="py-3 px-3.5 text-right">Balance Due</th>
-                    <th className="py-3 px-3.5 text-center">Status</th>
+                    <th className="py-2.5 px-2.5 w-[95px]">Date</th>
+                    <th className="py-2.5 px-2.5 w-[115px]">Reference</th>
+                    <th className="py-2.5 px-2.5 w-[20%]">Supplier</th>
+                    <th className="py-2.5 px-2.5">Description</th>
+                    <th className="py-2.5 px-2.5 text-right w-[110px]">Bill Amount</th>
+                    <th className="py-2.5 px-2.5 text-right w-[105px]">Paid</th>
+                    <th className="py-2.5 px-2.5 text-right w-[110px]">Balance Due</th>
+                    <th className="py-2.5 px-2 text-center w-[85px]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginated.map((e) => (
                     <tr key={e.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400 text-[11px]">
                         {e.date}
                       </td>
-                      <td className="py-3 px-3.5 whitespace-nowrap font-mono font-bold text-slate-800 dark:text-slate-200">
+                      <td className="py-2 px-2.5 whitespace-nowrap font-mono font-bold text-slate-800 dark:text-slate-200 truncate">
                         {e.reference_no}
                       </td>
-                      <td className="py-3 px-3.5">
-                        <p className="font-bold text-slate-900 dark:text-white">{e.supplier_name}</p>
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Phone className="w-2.5 h-2.5" />
+                      <td className="py-2 px-2.5 min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate" title={e.supplier_name}>{e.supplier_name}</p>
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1 truncate">
+                          <Phone className="w-2.5 h-2.5 shrink-0" />
                           {e.mobile}
                         </span>
                       </td>
-                      <td className="py-3 px-3.5 text-slate-600 dark:text-slate-300">
+                      <td className="py-2 px-2.5 text-slate-600 dark:text-slate-300 truncate" title={e.description}>
                         {e.description}
                       </td>
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
                         {formatBdCurrency(e.bill_amount)}
                       </td>
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap font-bold text-emerald-600 dark:text-emerald-400">
                         {formatBdCurrency(e.paid_amount)}
                       </td>
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap font-bold text-rose-600 dark:text-rose-400">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap font-bold text-rose-600 dark:text-rose-400">
                         {formatBdCurrency(e.balance)}
                       </td>
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                             e.status === "PAID"

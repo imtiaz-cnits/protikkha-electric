@@ -561,7 +561,7 @@ export default function CancelledTilesPage() {
                       className="p-3 flex items-center justify-between gap-3 text-xs"
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
                           <span className="font-bold text-slate-800 dark:text-slate-100">
                             {item.product_name}
                           </span>

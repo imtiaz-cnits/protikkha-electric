@@ -1,23 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PackageX,
   AlertTriangle,
   CheckCircle2,
   TrendingUp,
-  Search,
-  Printer,
   Plus,
   Loader2,
   Flame,
-  Layers,
-  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { formatBdCurrency } from "@/lib/utils";
 import { Pagination, CustomSelect } from "@/components/ui";
-import { CustomDatePicker } from "@/components/ui/date-picker";
+import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { PrintTableSheet, ReportExportActions } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
 
 interface ProductItem {
   id: number;
@@ -59,41 +57,21 @@ export default function StockOutReportPage() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  const setPreset = (preset: "today" | "yesterday" | "7days" | "month" | "all") => {
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-
-    if (preset === "today") {
-      setStartDate(todayStr);
-      setEndDate(todayStr);
-    } else if (preset === "yesterday") {
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      setStartDate(y.toISOString().split("T")[0]);
-      setEndDate(y.toISOString().split("T")[0]);
-    } else if (preset === "7days") {
-      const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      setStartDate(past);
-      setEndDate(todayStr);
-    } else if (preset === "month") {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-      setStartDate(firstDay);
-      setEndDate(todayStr);
-    } else if (preset === "all") {
-      setStartDate("");
-      setEndDate("");
-    }
-    setCurrentPage(1);
-  };
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const url = `/api/reports/stock-out?filter=${activeTab}&search=${encodeURIComponent(search)}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+      params.set("filter", activeTab);
+      if (search) params.set("search", search);
+      if (startDate) params.set("start_date", startDate);
+      if (endDate) params.set("end_date", endDate);
+
+      const res = await fetch(`/api/reports/stock-out?${params.toString()}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.status === "success") {
         setProducts(data.data);
@@ -110,17 +88,73 @@ export default function StockOutReportPage() {
   useEffect(() => {
     setCurrentPage(1);
     loadData();
-  }, [activeTab, search]);
+  }, [activeTab, search, startDate, endDate]);
 
   const startIndex = (currentPage - 1) * pageSize;
   const displayedProducts = products.slice(startIndex, startIndex + pageSize);
+
+  const reportPayload: PrintReportPayload = useMemo(
+    () => ({
+      title: "Stock-Out & Low Inventory Warning Report",
+      subtitle: "Immediate restocking alerts, depleted inventory lists, and reorder valuation",
+      metaItems: [
+        { label: "Filter View", value: activeTab.replace(/_/g, " ").toUpperCase() },
+        { label: "Out of Stock", value: `${summary?.out_of_stock_count || 0} Items` },
+        { label: "Low Stock (≤ 5)", value: `${summary?.low_stock_count || 0} Items` },
+        {
+          label: "Est. Restock Cost",
+          value: formatBdCurrency(summary?.estimated_restock_cost || 0),
+        },
+      ],
+      columns: [
+        { header: "SL", align: "center", width: "6%" },
+        { header: "Product & Barcode", align: "left", width: "29%" },
+        { header: "Category & Brand", align: "left", width: "19%" },
+        { header: "Cost Price (৳)", align: "right", width: "12%" },
+        { header: "Selling Price (৳)", align: "right", width: "12%" },
+        { header: "Current Stock", align: "center", width: "11%" },
+        { header: "Status", align: "center", width: "11%" },
+      ],
+      rows: products.map((p, idx) => [
+        { text: String(idx + 1), align: "center" },
+        { text: p.product_name, subText: p.product_code || undefined, bold: true },
+        { text: p.category, subText: p.brand },
+        { text: formatBdCurrency(p.product_cost), align: "right" },
+        { text: formatBdCurrency(p.price), align: "right", bold: true },
+        {
+          text: `${p.stock} ${p.unit}`,
+          align: "center",
+          bold: true,
+          color: p.stock <= 0 ? "rose" : p.stock <= 5 ? "amber" : "emerald",
+        },
+        {
+          text:
+            p.status === "out_of_stock"
+              ? "Out of Stock"
+              : p.status === "low_stock"
+              ? "Low Stock"
+              : "Healthy",
+          align: "center",
+          bold: true,
+          color:
+            p.status === "out_of_stock"
+              ? "rose"
+              : p.status === "low_stock"
+              ? "amber"
+              : "emerald",
+        },
+      ]),
+      filename: "low-stock-warning-report",
+    }),
+    [products, summary, activeTab]
+  );
 
   return (
     <div className="space-y-4">
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0">
             <PackageX className="w-5 h-5" />
           </div>
           <div>
@@ -133,7 +167,7 @@ export default function StockOutReportPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
           <Link
             href="/purchases"
             className="h-[38px] px-3.5 rounded-xl bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] hover:from-[#082d6c] hover:to-[#165082] text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
@@ -142,13 +176,7 @@ export default function StockOutReportPage() {
             <span>Create Purchase Order</span>
           </Link>
 
-          <button
-            onClick={() => window.print()}
-            className="h-[38px] px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#cbd5e1] dark:border-[#334155]"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print Report</span>
-          </button>
+          <ReportExportActions payload={reportPayload} />
         </div>
       </div>
 
@@ -168,7 +196,7 @@ export default function StockOutReportPage() {
 
           <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-amber-200 dark:border-amber-900/50 shadow-xs">
             <div className="flex items-center justify-between text-amber-600 text-xs font-bold">
-              <span>Low Stock Warning (≤ 5 pcs)</span>
+              <span>Low Stock Warning (≤ 5)</span>
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div className="text-xl font-black text-amber-600 mt-1">
@@ -191,7 +219,7 @@ export default function StockOutReportPage() {
           <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
             <div className="flex items-center justify-between text-slate-500 text-xs font-bold">
               <span>Estimated Restock Cost</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
+              <TrendingUp className="w-4 h-4 text-[#1E65A0]" />
             </div>
             <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
               {formatBdCurrency(summary.estimated_restock_cost)}
@@ -235,7 +263,7 @@ export default function StockOutReportPage() {
                   {fm.name}
                 </div>
                 <div className="text-[11px] text-slate-400">
-                  Sold: <strong className="text-slate-700 dark:text-slate-200">{fm.total_sold_qty}</strong> pcs
+                  Sold: <strong className="text-slate-700 dark:text-slate-200">{fm.total_sold_qty}</strong>
                 </div>
               </div>
             ))}
@@ -243,110 +271,63 @@ export default function StockOutReportPage() {
         </div>
       )}
 
-      {/* 4. Filters Bar matching Image 2 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            placeholder="Search product name, category..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-        </div>
-
-        {/* Custom Select Filter Dropdown */}
-        <div className="w-full md:w-52">
-          <CustomSelect
-            value={activeTab}
-            onChange={(val) => {
-              setActiveTab(val as any);
-              setCurrentPage(1);
-            }}
-            options={[
-              { value: "critical", label: "Critical Shortage" },
-              { value: "out_of_stock", label: "Out of Stock (0)" },
-              { value: "low_stock", label: "Low Stock (1-5)" },
-              { value: "all", label: "All Catalog" },
-            ]}
-            placeholder="Stock Status"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={startDate}
-                onChange={(d) => {
-                  setStartDate(d);
-                  setCurrentPage(1);
-                }}
-                placeholder="From Date"
-              />
-            </div>
-            <span className="text-xs text-slate-400">to</span>
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={endDate}
-                onChange={(d) => {
-                  setEndDate(d);
-                  setCurrentPage(1);
-                }}
-                placeholder="To Date"
-              />
-            </div>
+      {/* 4. Unified Dynamic Filter Bar */}
+      <ReportFilterBar
+        search={search}
+        onSearchChange={(val) => setSearch(val)}
+        searchPlaceholder="Search product name, barcode, category..."
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+        }}
+        hasExtraActiveFilter={activeTab !== "critical"}
+        onClear={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+          setActiveTab("critical");
+        }}
+        extraFilters={
+          <div className="w-[180px]">
+            <CustomSelect
+              value={activeTab}
+              onChange={(val) => {
+                setActiveTab(val as any);
+                setCurrentPage(1);
+              }}
+              options={[
+                { value: "critical", label: "Critical Shortage" },
+                { value: "out_of_stock", label: "Out of Stock (0)" },
+                { value: "low_stock", label: "Low Stock (1-5)" },
+                { value: "all", label: "All Catalog" },
+              ]}
+              placeholder="Stock Status"
+            />
           </div>
+        }
+      />
 
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPreset("today")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setPreset("yesterday")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Yesterday
-            </button>
-            <button
-              onClick={() => setPreset("7days")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setPreset("month")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              This Month
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. Desktop Critical Inventory Table (Strict Marss Corp Rule: Solid Emerald Header #15803d) */}
+      {/* 5. Compact Full-Screen Desktop Table */}
       <div className="hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full table-fixed text-left text-xs border-collapse">
           <thead>
             <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
-              <th className="py-3 px-4 w-12 text-center">SL</th>
-              <th className="py-3 px-4">Product Name</th>
-              <th className="py-3 px-3">Category & Brand</th>
-              <th className="py-3 px-3 text-right">Cost Price (৳)</th>
-              <th className="py-3 px-3 text-right">Selling Price (৳)</th>
-              <th className="py-3 px-4 text-center">Current Stock</th>
-              <th className="py-3 px-4 text-center w-28">Status</th>
+              <th className="py-2.5 px-2.5 w-[44px] text-center">SL</th>
+              <th className="py-2.5 px-3 w-[28%]">Product & Barcode</th>
+              <th className="py-2.5 px-2.5 w-[18%]">Category & Brand</th>
+              <th className="py-2.5 px-2.5 text-right w-[13%]">Cost Price (৳)</th>
+              <th className="py-2.5 px-2.5 text-right w-[13%]">Selling Price (৳)</th>
+              <th className="py-2.5 px-2.5 text-center w-[12%]">Current Stock</th>
+              <th className="py-2.5 px-2.5 text-center w-[110px]">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <tr>
                 <td colSpan={7} className="py-10 text-center text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-rose-600" />
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1E65A0]" />
                   <span>Loading inventory items...</span>
                 </td>
               </tr>
@@ -362,30 +343,32 @@ export default function StockOutReportPage() {
                   key={p.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  <td className="py-3 px-4 text-center text-slate-400 font-mono">
+                  <td className="py-2.5 px-2.5 text-center text-slate-400 font-mono">
                     {startIndex + idx + 1}
                   </td>
-                  <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">
-                    <div>{p.product_name}</div>
+                  <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-100 truncate">
+                    <div className="truncate" title={p.product_name}>
+                      {p.product_name}
+                    </div>
                     {p.product_code && (
-                      <div className="text-[10px] text-slate-400 font-mono">
-                        Code: {p.product_code}
+                      <div className="text-[10px] text-slate-400 font-mono truncate">
+                        {p.product_code}
                       </div>
                     )}
                   </td>
-                  <td className="py-3 px-3">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  <td className="py-2.5 px-2.5 truncate">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 truncate block">
                       {p.category}
                     </span>
-                    <span className="text-[11px] text-slate-400 block">{p.brand}</span>
+                    <span className="text-[11px] text-slate-400 truncate block">{p.brand}</span>
                   </td>
-                  <td className="py-3 px-3 text-right font-medium text-slate-600 dark:text-slate-400">
+                  <td className="py-2.5 px-2.5 text-right font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
                     {formatBdCurrency(p.product_cost)}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-slate-900 dark:text-white">
+                  <td className="py-2.5 px-2.5 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
                     {formatBdCurrency(p.price)}
                   </td>
-                  <td className="py-3 px-4 text-center font-black text-sm">
+                  <td className="py-2.5 px-2.5 text-center font-black text-xs whitespace-nowrap">
                     <span
                       className={
                         p.stock <= 0
@@ -398,11 +381,11 @@ export default function StockOutReportPage() {
                       {p.stock} {p.unit}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-center">
+                  <td className="py-2.5 px-2.5 text-center whitespace-nowrap">
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                      className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
                         p.status === "out_of_stock"
-                          ? "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-blue-800"
+                          ? "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
                           : p.status === "low_stock"
                           ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                           : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
@@ -499,6 +482,8 @@ export default function StockOutReportPage() {
           pageSizeOptions={[20, 50, 100, 200, 500]}
         />
       </div>
+
+      <PrintTableSheet {...reportPayload} />
     </div>
   );
 }

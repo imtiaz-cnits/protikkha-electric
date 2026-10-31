@@ -244,7 +244,232 @@ table thead th {
   background: transparent !important;
 }
 
-/* Global Print Page Margin (10px gap all around) */
+/* Global Print Page Margin (Strict 10px gap all around) & Clean Table-Only Print Engine */
 @page {
-  margin: 10px;
+  size: A4 portrait;
+  margin: 10px !important;
+}
+
+@media screen {
+  .erp-print-sheet {
+    display: none !important;
+  }
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  aside,
+  header,
+  nav,
+  footer,
+  .no-print,
+  [data-sidebar] {
+    display: none !important;
+  }
+
+  /* When printing any page that includes PrintTableSheet (and no return voucher modal is open) */
+  body:has(.erp-print-sheet):not(:has(.erp-voucher-print-modal)) main > div {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:has(.erp-print-sheet):not(:has(.erp-voucher-print-modal)) main > div > *:not(.erp-print-sheet) {
+    display: none !important;
+  }
+
+  body:has(.erp-print-sheet):not(:has(.erp-voucher-print-modal)) .erp-print-sheet {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+  }
+
+  /* When Return Voucher Modal is open, print ONLY the voucher modal cleanly */
+  body:has(.erp-voucher-print-modal) main > div > *:not(.erp-voucher-print-modal) {
+    display: none !important;
+  }
+
+  body:has(.erp-voucher-print-modal) .erp-voucher-print-modal {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow: visible !important;
+  }
+
+  /* Print Details Block Above Table */
+  .erp-print-header {
+    margin-bottom: 8px !important;
+    padding-bottom: 7px !important;
+    border-bottom: 2px solid #0B3D91 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .erp-print-header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .erp-print-brand {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #0B3D91 !important;
+    letter-spacing: 0.02em !important;
+    line-height: 1.2 !important;
+  }
+
+  .erp-print-title {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    margin-top: 2px !important;
+    line-height: 1.25 !important;
+  }
+
+  .erp-print-subtitle {
+    font-size: 9.5px !important;
+    color: #475569 !important;
+    margin-top: 1px !important;
+  }
+
+  .erp-print-stamp {
+    text-align: right !important;
+    font-size: 9.5px !important;
+    color: #475569 !important;
+    line-height: 1.4 !important;
+    white-space: nowrap !important;
+  }
+
+  .erp-print-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px 14px !important;
+    margin-top: 6px !important;
+    padding-top: 6px !important;
+    border-top: 1px dashed #cbd5e1 !important;
+    font-size: 10px !important;
+    color: #334155 !important;
+  }
+
+  /* Multi-Page Print Table with Repeating Heading */
+  .erp-print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+    font-size: 10px !important;
+    background: #ffffff !important;
+  }
+
+  .erp-print-table thead {
+    display: table-header-group !important;
+  }
+
+  .erp-print-table thead tr {
+    background: #0B3D91 !important;
+    color: #ffffff !important;
+  }
+
+  .erp-print-table thead th {
+    background: #0B3D91 !important;
+    color: #ffffff !important;
+    border: 1px solid #0B3D91 !important;
+    padding: 6px 7px !important;
+    font-size: 9.5px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  .erp-print-table tbody tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .erp-print-table tbody tr:nth-child(even) {
+    background: #f8fafc !important;
+  }
+
+  .erp-print-table tbody td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 5px 7px !important;
+    font-size: 9.8px !important;
+    line-height: 1.3 !important;
+    vertical-align: middle !important;
+    word-break: break-word !important;
+  }
+
+  .erp-print-subtext {
+    font-size: 8.5px !important;
+    color: #64748b !important;
+    margin-top: 1px !important;
+  }
+
+  .erp-print-total-row td {
+    background: #f1f5f9 !important;
+    border-top: 2px solid #0B3D91 !important;
+    font-weight: 800 !important;
+  }
+}
+
+/* Global Modal Scroll Lock (Prevents background page scroll whenever any modal is open) */
+html.modal-scroll-locked,
+body.modal-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
+body.modal-scroll-locked div.fixed.inset-0 {
+  overscroll-behavior: contain;
+}
+
+/* Strict Navy / Electric Blue Focus & Hover Border Protection (Zero Red Focus/Hover on Controls) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  border-color: #1E65A0 !important;
+  outline: none !important;
+  --tw-ring-color: rgba(30, 101, 160, 0.22) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover:not(:disabled),
+select:hover:not(:disabled),
+textarea:hover:not(:disabled) {
+  border-color: #1E65A0;
+}
+
+[class*="hover:border-rose-"]:hover,
+[class*="hover:border-red-"]:hover,
+[class*="focus:border-rose-"]:focus,
+[class*="focus:border-red-"]:focus,
+[class*="focus-within:border-rose-"]:focus-within,
+[class*="focus-within:border-red-"]:focus-within {
+  border-color: #1E65A0 !important;
+  --tw-ring-color: rgba(30, 101, 160, 0.22) !important;
+}
+
+[class*="focus:ring-rose-"]:focus,
+[class*="focus:ring-red-"]:focus,
+[class*="focus-within:ring-rose-"]:focus-within,
+[class*="focus-within:ring-red-"]:focus-within {
+  --tw-ring-color: rgba(30, 101, 160, 0.22) !important;
 }

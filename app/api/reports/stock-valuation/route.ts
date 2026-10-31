@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { buildDateRangeFilter } from "@/lib/report-date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const categoryId = searchParams.get("category_id");
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
     const search = searchParams.get("search")?.toLowerCase().trim();
 
     const where: any = {};
@@ -14,10 +17,20 @@ export async function GET(req: NextRequest) {
       where.category_id = BigInt(categoryId);
     }
 
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
+    if (dateFilter) {
+      where.OR = [
+        { created_at: dateFilter },
+        { updated_at: dateFilter },
+        { stock_movements: { some: { created_at: dateFilter } } },
+        { order_details: { some: { created_at: dateFilter } } },
+        { purchase_order_details: { some: { created_at: dateFilter } } },
+      ];
+    }
+
     const products = await prisma.products.findMany({
       where,
       orderBy: { id: "desc" },
-      take: 100,
       include: {
         categories: true,
         brands: true,

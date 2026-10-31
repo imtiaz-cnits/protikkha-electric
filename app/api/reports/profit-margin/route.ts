@@ -1,17 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { buildDateRangeFilter, formatLocalYmd } from "@/lib/report-date-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get("start_date");
+    const endDate = searchParams.get("end_date");
     const search = searchParams.get("search")?.toLowerCase().trim();
 
-    // Group sold order items to calculate realized profit
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
+
+    // Group sold order items to calculate realized profit dynamically
     const orderDetails = await prisma.order_details.findMany({
+      where: dateFilter ? { created_at: dateFilter } : undefined,
       orderBy: { id: "desc" },
-      take: 50,
       include: {
         products: {
           include: {
@@ -41,67 +46,9 @@ export async function GET(req: NextRequest) {
         cogs: cogs,
         gross_profit: grossProfit,
         profit_margin: margin,
-        date: od.created_at ? od.created_at.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        date: od.created_at ? formatLocalYmd(od.created_at) : formatLocalYmd(new Date()),
       };
     });
-
-    if (items.length < 4) {
-      const fixtures = [
-        {
-          id: 1201,
-          product_name: "BBS 1.5 RM BYA Red Wire",
-          category: "Wires & Cables",
-          sold_qty: 65,
-          unit_sell_price: 48,
-          unit_cost_price: 42,
-          sales_revenue: 3120,
-          cogs: 2730,
-          gross_profit: 390,
-          profit_margin: "12.5",
-          date: new Date().toISOString().slice(0, 10),
-        },
-        {
-          id: 1202,
-          product_name: "Schneider Easy9 16A 1P MCB Breaker",
-          category: "Circuit Protection",
-          sold_qty: 15,
-          unit_sell_price: 310,
-          unit_cost_price: 240,
-          sales_revenue: 4650,
-          cogs: 3600,
-          gross_profit: 1050,
-          profit_margin: "22.6",
-          date: new Date().toISOString().slice(0, 10),
-        },
-        {
-          id: 1203,
-          product_name: "Super Star 1-Gang Light Switch",
-          category: "Switches & Sockets",
-          sold_qty: 30,
-          unit_sell_price: 115,
-          unit_cost_price: 90,
-          sales_revenue: 3450,
-          cogs: 2700,
-          gross_profit: 750,
-          profit_margin: "21.7",
-          date: new Date().toISOString().slice(0, 10),
-        },
-        {
-          id: 1204,
-          product_name: "Super Star 18W LED Ceiling Panel Light",
-          category: "Lighting Fixtures",
-          sold_qty: 8,
-          unit_sell_price: 420,
-          unit_cost_price: 320,
-          sales_revenue: 3360,
-          cogs: 2560,
-          gross_profit: 800,
-          profit_margin: "23.8",
-          date: new Date().toISOString().slice(0, 10),
-        },
-      ];
-      items = [...items, ...fixtures.slice(0, 4 - items.length)];
-    }
 
     if (search) {
       items = items.filter(

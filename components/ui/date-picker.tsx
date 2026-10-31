@@ -292,7 +292,7 @@ export function CustomDatePicker({
             ? "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-[#cbd5e1] dark:border-[#334155]"
             : isOpen
             ? "border-[#1E65A0] ring-2 ring-[#1E65A0]/20 bg-blue-50/20 dark:bg-blue-950/20"
-            : "border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] hover:border-rose-500 hover:bg-slate-50 dark:hover:bg-slate-800/80"
+            : "border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] hover:border-[#1E65A0] hover:bg-slate-50 dark:hover:bg-slate-800/80"
         }`}
         title="Click anywhere to pick date"
       >

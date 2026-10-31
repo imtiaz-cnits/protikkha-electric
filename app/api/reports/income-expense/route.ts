@@ -1,28 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { buildDateRangeFilter, parseLocalEndOfDay } from "@/lib/report-date-utils";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const todayStr = new Date().toISOString().split("T")[0];
-    const startDateStr = searchParams.get("start_date") || todayStr;
-    const endDateStr = searchParams.get("end_date") || startDateStr;
+    const startDateStr = searchParams.get("start_date") || "";
+    const endDateStr = searchParams.get("end_date") || "";
 
-    const startDate = new Date(startDateStr);
-    startDate.setHours(0, 0, 0, 0);
-
-    const endDate = new Date(endDateStr);
-    endDate.setHours(23, 59, 59, 999);
+    const dateFilter = buildDateRangeFilter(startDateStr, endDateStr);
+    const endBound = parseLocalEndOfDay(endDateStr);
 
     // 1. Opening Balance
     const manualOpening = await prisma.opening_balances.findFirst({
-      where: {
-        date: {
-          lte: endDate,
-        },
-      },
+      where: endBound
+        ? {
+            date: {
+              lte: endBound,
+            },
+          }
+        : undefined,
       orderBy: { date: "desc" },
     });
     const openingBalance = manualOpening
@@ -31,12 +30,7 @@ export async function GET(req: NextRequest) {
 
     // 2. Sales Cash Collections
     const orderPayments = await prisma.order_payment_details.findMany({
-      where: {
-        created_at: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: dateFilter ? { created_at: dateFilter } : undefined,
       select: {
         paid_amount: true,
       },
@@ -48,12 +42,7 @@ export async function GET(req: NextRequest) {
 
     // 3. Customer Due Collections
     const customerDues = await prisma.customer_payment_details.findMany({
-      where: {
-        created_at: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: dateFilter ? { created_at: dateFilter } : undefined,
       select: {
         paid_amount: true,
         previous_due_amount: true,
@@ -68,12 +57,7 @@ export async function GET(req: NextRequest) {
 
     // 4. Supplier Due Payments
     const supplierDues = await prisma.supplier_due_collections.findMany({
-      where: {
-        created_at: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: dateFilter ? { created_at: dateFilter } : undefined,
       include: {
         suppliers: {
           select: { name: true, company: true },
@@ -99,12 +83,7 @@ export async function GET(req: NextRequest) {
 
     // 5. Operating Expenses by Type
     const expenses = await prisma.expenses.findMany({
-      where: {
-        created_at: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
+      where: dateFilter ? { created_at: dateFilter } : undefined,
       include: {
         expense_types: {
           select: { type_name: true },

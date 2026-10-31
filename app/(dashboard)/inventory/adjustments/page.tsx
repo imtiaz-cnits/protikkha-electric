@@ -181,17 +181,17 @@ export default function StockAdjustmentsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Date</th>
-                    <th className="py-3 px-3.5">Ref No</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Product</th>
-                    <th className="py-3 px-3.5 text-center">Type</th>
-                    <th className="py-3 px-3.5 text-right">Adjustment Qty</th>
-                    <th className="py-3 px-3.5 text-right">New Stock</th>
-                    <th className="py-3 px-3.5 min-w-[220px]">Reason / Notes</th>
+                    <th className="py-2.5 px-2.5 w-[95px]">Date</th>
+                    <th className="py-2.5 px-2.5 w-[110px]">Ref No</th>
+                    <th className="py-2.5 px-2.5 w-[24%]">Product</th>
+                    <th className="py-2.5 px-2 text-center w-[85px]">Type</th>
+                    <th className="py-2.5 px-2.5 text-right w-[105px]">Adj. Qty</th>
+                    <th className="py-2.5 px-2.5 text-right w-[105px]">New Stock</th>
+                    <th className="py-2.5 px-2.5">Reason / Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -199,17 +199,17 @@ export default function StockAdjustmentsPage() {
                     const isPositive = a.quantity > 0;
                     return (
                       <tr key={a.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                        <td className="py-2 px-2.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400 text-[11px]">
                           {a.date}
                         </td>
-                        <td className="py-3 px-3.5 whitespace-nowrap font-mono font-bold text-slate-800 dark:text-slate-200">
+                        <td className="py-2 px-2.5 whitespace-nowrap font-mono font-bold text-slate-800 dark:text-slate-200 truncate">
                           {a.reference_no}
                         </td>
-                        <td className="py-3 px-3.5">
-                          <p className="font-bold text-slate-900 dark:text-white">{a.product_name}</p>
-                          <span className="text-[10px] text-slate-400">{a.category}</span>
+                        <td className="py-2 px-2.5 min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white truncate" title={a.product_name}>{a.product_name}</p>
+                          <span className="text-[10px] text-slate-400 truncate block">{a.category}</span>
                         </td>
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                        <td className="py-2 px-2 text-center whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                             a.adjustment_type === "SCRAP" ? "bg-amber-50 text-amber-700 border border-amber-200" :
                             a.adjustment_type === "DAMAGE" ? "bg-rose-50 text-rose-700 border border-rose-200" :
@@ -218,15 +218,15 @@ export default function StockAdjustmentsPage() {
                             {a.adjustment_type}
                           </span>
                         </td>
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-mono font-bold">
+                        <td className="py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold">
                           <span className={isPositive ? "text-emerald-600" : "text-rose-600"}>
                             {isPositive ? `+${a.quantity}` : a.quantity} {a.unit}
                           </span>
                         </td>
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-mono font-bold text-blue-600 dark:text-blue-400">
+                        <td className="py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-blue-600 dark:text-blue-400">
                           {a.stock_after} {a.unit}
                         </td>
-                        <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 text-[11px]">
+                        <td className="py-2 px-2.5 text-slate-600 dark:text-slate-400 text-[11px] truncate" title={a.reason}>
                           {a.reason}
                         </td>
                       </tr>

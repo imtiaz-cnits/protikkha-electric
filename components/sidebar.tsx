@@ -325,7 +325,7 @@ export function Sidebar({
       <aside
         className={`fixed top-0 bottom-0 left-0 z-50 bg-gradient-to-b from-[#0B3D91] via-[#0e3271] to-[#08224d] text-white flex flex-col transition-all duration-300 ease-in-out border-r border-white/10 shadow-2xl select-none ${isCollapsed
           ? "w-[70px] -translate-x-full lg:translate-x-0"
-          : "w-[260px] " +
+          : "w-[228px] " +
           (isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")
           }`}
       >
@@ -377,7 +377,7 @@ export function Sidebar({
           <div className="relative flex-1 overflow-hidden w-full">
             {/* 1. Main Navigation Panel (Slides Left when drilled) */}
             <div
-              className={`absolute inset-0 w-full h-full overflow-y-auto px-2.5 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent !== null
+              className={`absolute inset-0 w-full h-full overflow-y-auto px-2 py-2.5 space-y-1 text-[11.5px] transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent !== null
                 ? "-translate-x-full pointer-events-none"
                 : "translate-x-0 pointer-events-auto"
                 }`}
@@ -394,16 +394,16 @@ export function Sidebar({
                       key={item.id}
                       type="button"
                       onClick={() => handleTriggerClick(item.id)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition-all duration-200 cursor-pointer group text-start ${isParentActive
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl font-semibold transition-all duration-200 cursor-pointer group text-start ${isParentActive
                         ? "bg-white/15 text-white font-bold border-l-[3px] border-[#F59E0B] shadow-xs"
                         : "text-blue-100 hover:bg-white/10 hover:text-white"
                         }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Icon className="w-4 h-4 shrink-0 opacity-90 group-hover:scale-110 transition-transform" />
                         <span className="truncate">{item.label}</span>
                       </div>
-                      <span className="shrink-0 w-5 h-5 rounded-md bg-white/10 flex items-center justify-center text-white/70 group-hover:text-white group-hover:bg-white/20 transition-all">
+                      <span className="shrink-0 w-4 h-4 rounded-md bg-white/10 flex items-center justify-center text-white/70 group-hover:text-white group-hover:bg-white/20 transition-all">
                         <ChevronRight className="w-3 h-3" />
                       </span>
                     </button>
@@ -419,12 +419,12 @@ export function Sidebar({
                     onClick={() => {
                       if (isOpen) onClose();
                     }}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold transition-all ${isSingleActive
+                    className={`flex items-center justify-between px-2.5 py-2 rounded-xl font-semibold transition-all ${isSingleActive
                       ? "bg-white text-[#0B3D91] shadow-md font-bold"
                       : "text-blue-100 hover:bg-white/10 hover:text-white"
                       }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <Icon className="w-4 h-4 shrink-0 opacity-90" />
                       <span className="truncate">{item.label}</span>
                     </div>
@@ -447,7 +447,7 @@ export function Sidebar({
             {NAV_ITEMS.filter((item) => item.children).map((parent) => (
               <div
                 key={parent.id}
-                className={`absolute inset-0 w-full h-full overflow-y-auto px-2.5 py-2.5 space-y-1 text-xs transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent === parent.id
+                className={`absolute inset-0 w-full h-full overflow-y-auto px-2 py-2.5 space-y-1 text-[11.5px] transition-transform duration-300 ease-in-out sidebar-scrollbar ${drilledParent === parent.id
                   ? "translate-x-0 pointer-events-auto"
                   : "translate-x-full pointer-events-none"
                   }`}
@@ -456,9 +456,9 @@ export function Sidebar({
                 <button
                   type="button"
                   onClick={() => setDrilledParent(null)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-blue-100 bg-white/10 hover:bg-white/20 border border-white/15 font-bold text-xs transition-all shadow-xs mb-2 cursor-pointer group"
+                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-xl text-blue-100 bg-white/10 hover:bg-white/20 border border-white/15 font-bold text-[11.5px] transition-all shadow-xs mb-2 cursor-pointer group"
                 >
-                  <ChevronLeft className="w-4 h-4 text-blue-200 group-hover:text-white transition-transform group-hover:-translate-x-0.5" />
+                  <ChevronLeft className="w-4 h-4 text-blue-200 group-hover:text-white transition-transform group-hover:-translate-x-0.5 shrink-0" />
                   <span className="truncate">{parent.label}</span>
                 </button>
 
@@ -474,7 +474,7 @@ export function Sidebar({
                         onClick={() => {
                           if (isOpen) onClose();
                         }}
-                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all ${isChildActive
+                        className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-[11.5px] transition-all ${isChildActive
                           ? "bg-white text-[#0B3D91] font-bold shadow-md"
                           : "text-blue-100/90 hover:text-white hover:bg-white/10"
                           }`}
@@ -563,19 +563,24 @@ export function Sidebar({
             onMouseLeave={() => handleTriggerLeave("settings")}
             className="relative"
           >
-            <Link
-              href={settingsItem.href || "/users"}
-              onClick={() => {
-                if (isOpen) onClose();
-              }}
-              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-semibold transition-all text-xs cursor-pointer ${isActive(settingsItem.href)
-                ? "bg-white text-[#0B3D91] shadow-md font-bold"
+            <button
+              type="button"
+              onClick={() => handleTriggerClick("settings")}
+              className={`flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl font-semibold transition-all text-[11.5px] cursor-pointer ${activeParentId === "settings" || drilledParent === "settings"
+                ? "bg-white/15 text-white font-bold border-l-[3px] border-[#F59E0B] shadow-xs"
                 : "text-blue-100 hover:bg-white/10 hover:text-white"
-                } ${isCollapsed ? "justify-center w-10 h-10 mx-auto px-0" : "w-full"}`}
+                } ${isCollapsed ? "justify-center w-10 h-10 mx-auto px-0 border-l-0" : "w-full"}`}
             >
-              <Settings className={`shrink-0 ${isCollapsed ? "w-5 h-5" : "w-4 h-4 opacity-90"}`} />
-              {!isCollapsed && <span>{settingsItem.label}</span>}
-            </Link>
+              <div className="flex items-center gap-2 min-w-0">
+                <Settings className={`shrink-0 ${isCollapsed ? "w-5 h-5" : "w-4 h-4 opacity-90"}`} />
+                {!isCollapsed && <span className="truncate">{settingsItem.label}</span>}
+              </div>
+              {!isCollapsed && (
+                <span className="shrink-0 w-4 h-4 rounded-md bg-white/10 flex items-center justify-center text-white/70">
+                  <ChevronRight className="w-3 h-3" />
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </aside>

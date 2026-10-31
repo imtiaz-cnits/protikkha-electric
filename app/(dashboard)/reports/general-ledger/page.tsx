@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Scale,
-  Calendar,
-  Printer,
-  FileSpreadsheet,
   Coins,
-  ArrowDownLeft,
-  ArrowUpRight,
   Wallet,
   Loader2,
   TrendingUp,
@@ -16,11 +11,13 @@ import {
   AlertTriangle,
   BookOpen,
   Layers,
-  Search,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomDatePicker } from "@/components/ui/date-picker";
 import { CustomSelect } from "@/components/ui";
+import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { PrintTableSheet, ReportExportActions } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
+import { getPresetDateRange } from "@/lib/report-date-utils";
 
 interface TrialBalanceRow {
   accountCode: string;
@@ -69,7 +66,6 @@ interface JournalEntry {
 export default function GeneralLedgerPage() {
   const [activeTab, setActiveTab] = useState<"tb" | "pl" | "coa" | "vouchers">("tb");
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<any>(null);
   const [trialBalance, setTrialBalance] = useState<{
     rows: TrialBalanceRow[];
     totalDebit: number;
@@ -80,23 +76,23 @@ export default function GeneralLedgerPage() {
   const [coa, setCoa] = useState<Record<string, any>>({});
   const [vouchers, setVouchers] = useState<JournalEntry[]>([]);
 
-  const now = new Date();
-  const firstDayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  const todayStr = now.toISOString().split("T")[0];
-
-  const [startDate, setStartDate] = useState(firstDayStr);
-  const [endDate, setEndDate] = useState(todayStr);
-  const [searchCoa, setSearchCoa] = useState("");
+  const initialRange = getPresetDateRange("month");
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
   const [search, setSearch] = useState("");
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const url = `/api/reports/general-ledger?start_date=${startDate}&end_date=${endDate}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+      if (startDate) params.set("start_date", startDate);
+      if (endDate) params.set("end_date", endDate);
+      const qs = params.toString();
+      const res = await fetch(`/api/reports/general-ledger${qs ? `?${qs}` : ""}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.status === "success") {
-        setSummary(data.summary);
         setTrialBalance(data.trial_balance);
         setIncomeStatement(data.income_statement);
         setCoa(data.chart_of_accounts || {});
@@ -113,38 +109,230 @@ export default function GeneralLedgerPage() {
     loadData();
   }, [startDate, endDate]);
 
-  const setPreset = (preset: "today" | "yesterday" | "7days" | "month" | "year") => {
-    const tStr = new Date().toISOString().split("T")[0];
-    if (preset === "today") {
-      setStartDate(tStr);
-      setEndDate(tStr);
-    } else if (preset === "yesterday") {
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      const yStr = y.toISOString().split("T")[0];
-      setStartDate(yStr);
-      setEndDate(yStr);
-    } else if (preset === "7days") {
-      const d = new Date();
-      d.setDate(d.getDate() - 7);
-      setStartDate(d.toISOString().split("T")[0]);
-      setEndDate(tStr);
-    } else if (preset === "month") {
-      setStartDate(firstDayStr);
-      setEndDate(tStr);
-    } else if (preset === "year") {
-      setStartDate(`${now.getFullYear()}-01-01`);
-      setEndDate(tStr);
-    }
-  };
+  const q = search.trim().toLowerCase();
 
-  const filteredCoa = Object.values(coa).filter(
-    (acc: any) =>
-      acc.code.includes(searchCoa) ||
-      acc.name.toLowerCase().includes(searchCoa.toLowerCase()) ||
-      acc.nameBn.includes(searchCoa) ||
-      acc.classification.toLowerCase().includes(searchCoa.toLowerCase())
-  );
+  const filteredTbRows = useMemo(() => {
+    const rows = trialBalance?.rows || [];
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        r.accountCode.toLowerCase().includes(q) ||
+        r.accountName.toLowerCase().includes(q) ||
+        r.accountNameBn.includes(search.trim()) ||
+        r.classification.toLowerCase().includes(q)
+    );
+  }, [trialBalance, q, search]);
+
+  const filteredCoa = useMemo(() => {
+    const list = Object.values(coa);
+    if (!q) return list;
+    return list.filter(
+      (acc: any) =>
+        acc.code.toLowerCase().includes(q) ||
+        acc.name.toLowerCase().includes(q) ||
+        acc.nameBn.includes(search.trim()) ||
+        acc.classification.toLowerCase().includes(q)
+    );
+  }, [coa, q, search]);
+
+  const filteredVouchers = useMemo(() => {
+    if (!q) return vouchers;
+    return vouchers.filter(
+      (v) =>
+        v.entryNo.toLowerCase().includes(q) ||
+        v.description.toLowerCase().includes(q) ||
+        v.referenceType.toLowerCase().includes(q)
+    );
+  }, [vouchers, q]);
+
+  const reportPayload: PrintReportPayload = useMemo(() => {
+    const periodText =
+      startDate || endDate ? `${startDate || "Start"} to ${endDate || "Today"}` : "All Periods";
+
+    if (activeTab === "pl") {
+      const plRows = [
+        [
+          "1",
+          { text: "Gross Sales of Electrical Products", bold: true },
+          "Operating Revenue",
+          { text: formatBdCurrency(incomeStatement?.grossSales || 0), align: "right" as const, bold: true },
+        ],
+        [
+          "2",
+          "Less: Sales Discounts & Concessions",
+          "Revenue Deduction",
+          {
+            text: `- ${formatBdCurrency(incomeStatement?.salesDiscounts || 0)}`,
+            align: "right" as const,
+            color: "rose" as const,
+          },
+        ],
+        [
+          "3",
+          "Add: Delivery / Carriage Charge Income",
+          "Operating Revenue",
+          { text: `+ ${formatBdCurrency(incomeStatement?.deliveryIncome || 0)}`, align: "right" as const },
+        ],
+        [
+          "4",
+          { text: "Net Sales Revenue (নিট বিক্রয় আয়)", bold: true, color: "navy" as const },
+          "Subtotal",
+          {
+            text: formatBdCurrency(incomeStatement?.netRevenue || 0),
+            align: "right" as const,
+            bold: true,
+            color: "navy" as const,
+          },
+        ],
+        [
+          "5",
+          "Less: Cost of Electrical Products Sold (COGS)",
+          "Direct Cost",
+          { text: `- ${formatBdCurrency(incomeStatement?.totalCogs || 0)}`, align: "right" as const },
+        ],
+        [
+          "6",
+          { text: "Gross Profit (মোট মুনাফা)", bold: true, color: "amber" as const },
+          "Subtotal",
+          {
+            text: formatBdCurrency(incomeStatement?.grossProfit || 0),
+            align: "right" as const,
+            bold: true,
+            color: "amber" as const,
+          },
+        ],
+        ...(incomeStatement?.operatingExpenses || []).map((exp, idx) => [
+          String(7 + idx),
+          exp.name,
+          `Expense (${exp.accountCode})`,
+          { text: `- ${formatBdCurrency(exp.amount)}`, align: "right" as const, color: "rose" as const },
+        ]),
+      ];
+
+      return {
+        title: "Profit & Loss Statement (লাভ-ক্ষতি বিবরণী)",
+        subtitle: "Operating revenue, cost of goods sold, overheads, and net business profit",
+        metaItems: [
+          { label: "Period", value: periodText },
+          { label: "Net Revenue", value: formatBdCurrency(incomeStatement?.netRevenue || 0) },
+          { label: "Gross Profit", value: formatBdCurrency(incomeStatement?.grossProfit || 0) },
+          { label: "Net Profit", value: formatBdCurrency(incomeStatement?.netProfit || 0) },
+        ],
+        columns: [
+          { header: "SL", align: "center", width: "7%" },
+          { header: "Particulars / বিবরণ", align: "left", width: "50%" },
+          { header: "Classification", align: "left", width: "21%" },
+          { header: "Amount (৳)", align: "right", width: "22%" },
+        ],
+        rows: plRows,
+        totalRow: [
+          "",
+          "NET PROFIT FOR PERIOD (শুদ্ধ মুনাফা)",
+          "",
+          {
+            text: formatBdCurrency(incomeStatement?.netProfit || 0),
+            align: "right",
+            color: (incomeStatement?.netProfit || 0) >= 0 ? "emerald" : "rose",
+          },
+        ],
+        filename: "profit-and-loss-statement",
+      };
+    }
+
+    if (activeTab === "coa") {
+      return {
+        title: "Official Chart of Accounts (চার্ট অব অ্যাকাউন্টস)",
+        subtitle: "Double-entry ledger account structure and classifications",
+        metaItems: [{ label: "Total Accounts", value: String(filteredCoa.length) }],
+        columns: [
+          { header: "Code", align: "left", width: "10%" },
+          { header: "Account Title", align: "left", width: "24%" },
+          { header: "বাংলা নাম", align: "left", width: "22%" },
+          { header: "Class", align: "center", width: "12%" },
+          { header: "Balance", align: "center", width: "10%" },
+          { header: "Purpose & Scope", align: "left", width: "22%" },
+        ],
+        rows: filteredCoa.map((acc: any) => [
+          { text: acc.code, mono: true, bold: true, color: "navy" },
+          { text: acc.name, bold: true },
+          acc.nameBn,
+          { text: acc.classification, align: "center", bold: true },
+          { text: acc.normalBalance, align: "center", mono: true },
+          acc.description,
+        ]),
+        filename: "chart-of-accounts",
+      };
+    }
+
+    if (activeTab === "vouchers") {
+      return {
+        title: "Double-Entry Journal Vouchers",
+        subtitle: "Chronological general journal debit and credit postings",
+        metaItems: [
+          { label: "Period", value: periodText },
+          { label: "Total Vouchers", value: String(filteredVouchers.length) },
+        ],
+        columns: [
+          { header: "SL", align: "center", width: "6%" },
+          { header: "Voucher No", align: "left", width: "16%" },
+          { header: "Date", align: "left", width: "12%" },
+          { header: "Type", align: "center", width: "12%" },
+          { header: "Description", align: "left", width: "34%" },
+          { header: "Debit / Credit (৳)", align: "right", width: "20%" },
+        ],
+        rows: filteredVouchers.map((v, idx) => [
+          { text: String(idx + 1), align: "center" },
+          { text: v.entryNo, mono: true, bold: true, color: "navy" },
+          new Date(v.date).toLocaleDateString("en-GB"),
+          { text: v.referenceType, align: "center" },
+          v.description,
+          { text: formatBdCurrency(v.totalDebit), align: "right", bold: true },
+        ]),
+        filename: "general-ledger-vouchers",
+      };
+    }
+
+    return {
+      title: "Trial Balance Statement (রেওয়ামিল)",
+      subtitle: "Double-entry account balances verifying total debits equal total credits",
+      metaItems: [
+        { label: "Period", value: periodText },
+        { label: "Status", value: trialBalance?.isBalanced ? "Balanced" : "Check Required" },
+        { label: "Total Debit", value: formatBdCurrency(trialBalance?.totalDebit || 0) },
+        { label: "Total Credit", value: formatBdCurrency(trialBalance?.totalCredit || 0) },
+      ],
+      columns: [
+        { header: "Code", align: "left", width: "12%" },
+        { header: "Account Title (English / বাংলা)", align: "left", width: "40%" },
+        { header: "Classification", align: "center", width: "14%" },
+        { header: "Debit Balance (৳)", align: "right", width: "17%" },
+        { header: "Credit Balance (৳)", align: "right", width: "17%" },
+      ],
+      rows: filteredTbRows.map((row) => [
+        { text: row.accountCode, mono: true, bold: true, color: "navy" },
+        { text: row.accountName, subText: row.accountNameBn, bold: true },
+        { text: row.classification, align: "center", bold: true },
+        {
+          text: row.balanceDebit > 0 ? formatBdCurrency(row.balanceDebit) : "—",
+          align: "right",
+          mono: true,
+        },
+        {
+          text: row.balanceCredit > 0 ? formatBdCurrency(row.balanceCredit) : "—",
+          align: "right",
+          mono: true,
+        },
+      ]),
+      totalRow: [
+        "",
+        "TOTAL TRIAL BALANCE (রেওয়ামিল মোট)",
+        "",
+        { text: formatBdCurrency(trialBalance?.totalDebit || 0), align: "right", color: "emerald" },
+        { text: formatBdCurrency(trialBalance?.totalCredit || 0), align: "right", color: "emerald" },
+      ],
+      filename: "trial-balance-statement",
+    };
+  }, [activeTab, filteredTbRows, trialBalance, incomeStatement, filteredCoa, filteredVouchers, startDate, endDate]);
 
   return (
     <div className="space-y-4 font-sans">
@@ -167,19 +355,10 @@ export default function GeneralLedgerPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => window.print()}
-            className="w-[38px] h-[38px] flex items-center justify-center rounded-xl border border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shadow-xs"
-            title="Print General Ledger"
-          >
-            <Printer className="w-4 h-4 text-[#1E65A0]" />
-          </button>
-        </div>
+        <ReportExportActions payload={reportPayload} />
       </div>
 
-
-      {/* 3. Key Financial Metric Cards */}
+      {/* 2. Key Financial Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
           <div className="flex items-center justify-between mb-2">
@@ -247,7 +426,13 @@ export default function GeneralLedgerPage() {
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className={`text-lg font-bold ${(incomeStatement?.netProfit || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+          <div
+            className={`text-lg font-bold ${
+              (incomeStatement?.netProfit || 0) >= 0
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
+            }`}
+          >
             {formatBdCurrency(incomeStatement?.netProfit || 0)}
           </div>
           <p className="text-[11px] text-slate-500 mt-1">
@@ -256,94 +441,48 @@ export default function GeneralLedgerPage() {
         </div>
       </div>
 
-      {/* 4. Filters Bar matching Image 2 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            placeholder="Search account, code, voucher..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setSearchCoa(e.target.value);
-            }}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-        </div>
-
-        {/* Custom Select Filter Dropdown for Tab Navigation */}
-        <div className="w-full md:w-64">
-          <CustomSelect
-            value={activeTab}
-            onChange={(val) => setActiveTab(val as any)}
-            options={[
-              { value: "tb", label: "Trial Balance (রেওয়ামিল)" },
-              { value: "pl", label: "Profit & Loss Statement (লাভ-ক্ষতি)" },
-              { value: "coa", label: "Chart of Accounts (হিসাব তালিকা)" },
-              { value: "vouchers", label: "Recent Journal Vouchers (ভাউচার লগ)" },
-            ]}
-            placeholder="Select Statement / View"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={startDate}
-                onChange={(d) => setStartDate(d)}
-                placeholder="From Date"
-              />
-            </div>
-            <span className="text-xs text-slate-400">to</span>
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={endDate}
-                onChange={(d) => setEndDate(d)}
-                placeholder="To Date"
-              />
-            </div>
+      {/* 3. Unified Dynamic Filter Bar */}
+      <ReportFilterBar
+        search={search}
+        onSearchChange={(val) => setSearch(val)}
+        searchPlaceholder="Search account, code, voucher..."
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+        }}
+        onClear={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+        }}
+        extraFilters={
+          <div className="w-[225px]">
+            <CustomSelect
+              value={activeTab}
+              onChange={(val) => setActiveTab(val as any)}
+              options={[
+                { value: "tb", label: "Trial Balance (রেওয়ামিল)" },
+                { value: "pl", label: "Profit & Loss Statement" },
+                { value: "coa", label: "Chart of Accounts (COA)" },
+                { value: "vouchers", label: "Recent Journal Vouchers" },
+              ]}
+              placeholder="Select Statement / View"
+            />
           </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPreset("today")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setPreset("yesterday")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Yesterday
-            </button>
-            <button
-              onClick={() => setPreset("7days")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setPreset("month")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              This Month
-            </button>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Tab 1: Trial Balance */}
       {activeTab === "tb" && (
         <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
           <div className="p-4 border-b border-[#cbd5e1] dark:border-[#334155] flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800 dark:text-white">
-              Trial Balance Statement as of {endDate}
+              Trial Balance Statement {endDate ? `as of ${endDate}` : "(All Periods)"}
             </h2>
             <div className="text-xs text-slate-500">
-              {trialBalance?.rows.length || 0} Active Accounts
+              {filteredTbRows.length} Active Accounts
             </div>
           </div>
 
@@ -353,80 +492,78 @@ export default function GeneralLedgerPage() {
               <p className="text-xs">Computing General Ledger Balances...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4">Code</th>
-                    <th className="py-3 px-4">Account Title (English / বাংলা)</th>
-                    <th className="py-3 px-4">Classification</th>
-                    <th className="py-3 px-4 text-right">Debit Balance (৳)</th>
-                    <th className="py-3 px-4 text-right">Credit Balance (৳)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                  {trialBalance?.rows.map((row) => (
-                    <tr
-                      key={row.accountCode}
-                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                    >
-                      <td className="py-2.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                        {row.accountCode}
-                      </td>
-                      <td className="py-2.5 px-4 font-medium">
-                        <div className="font-semibold text-slate-900 dark:text-white">
-                          {row.accountName}
-                        </div>
-                        <div className="text-[11px] text-slate-500">{row.accountNameBn}</div>
-                      </td>
-                      <td className="py-2.5 px-4">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            row.classification === "ASSET"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                              : row.classification === "LIABILITY"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                              : row.classification === "REVENUE"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                              : row.classification === "COGS"
-                              ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
-                              : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
-                          }`}
-                        >
-                          {row.classification}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                        {row.balanceDebit > 0 ? formatBdCurrency(row.balanceDebit) : "-"}
-                      </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                        {row.balanceCredit > 0 ? formatBdCurrency(row.balanceCredit) : "-"}
-                      </td>
-                    </tr>
-                  ))}
-                  {trialBalance?.rows.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-400">
-                        No financial activity recorded in selected period
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold border-t-2 border-[#0B3D91] text-xs">
-                    <td colSpan={3} className="py-3 px-4 text-slate-900 dark:text-white uppercase tracking-wider">
-                      Total Trial Balance (রেওয়ামিল মোট)
+            <table className="w-full table-fixed text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase tracking-wider text-[11px] whitespace-nowrap">
+                  <th className="py-2.5 px-3 w-[12%]">Code</th>
+                  <th className="py-2.5 px-3 w-[38%]">Account Title (English / বাংলা)</th>
+                  <th className="py-2.5 px-3 w-[16%]">Classification</th>
+                  <th className="py-2.5 px-3 text-right w-[17%]">Debit Balance (৳)</th>
+                  <th className="py-2.5 px-3 text-right w-[17%]">Credit Balance (৳)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                {filteredTbRows.map((row) => (
+                  <tr
+                    key={row.accountCode}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                      {row.accountCode}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 text-sm">
-                      {formatBdCurrency(trialBalance?.totalDebit || 0)}
+                    <td className="py-2.5 px-3 font-medium truncate">
+                      <div className="font-semibold text-slate-900 dark:text-white truncate">
+                        {row.accountName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 truncate">{row.accountNameBn}</div>
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-emerald-600 dark:text-emerald-400 text-sm">
-                      {formatBdCurrency(trialBalance?.totalCredit || 0)}
+                    <td className="py-2.5 px-3">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          row.classification === "ASSET"
+                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                            : row.classification === "LIABILITY"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                            : row.classification === "REVENUE"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                            : row.classification === "COGS"
+                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
+                            : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+                        }`}
+                      >
+                        {row.classification}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                      {row.balanceDebit > 0 ? formatBdCurrency(row.balanceDebit) : "-"}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                      {row.balanceCredit > 0 ? formatBdCurrency(row.balanceCredit) : "-"}
                     </td>
                   </tr>
-                </tfoot>
-              </table>
-            </div>
+                ))}
+                {filteredTbRows.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                      No financial activity recorded in selected period
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 dark:bg-slate-800/80 font-bold border-t-2 border-[#0B3D91] text-xs">
+                  <td colSpan={3} className="py-3 px-3 text-slate-900 dark:text-white uppercase tracking-wider">
+                    Total Trial Balance (রেওয়ামিল মোট)
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap">
+                    {formatBdCurrency(trialBalance?.totalDebit || 0)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 text-sm whitespace-nowrap">
+                    {formatBdCurrency(trialBalance?.totalCredit || 0)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           )}
         </div>
       )}
@@ -439,7 +576,9 @@ export default function GeneralLedgerPage() {
               Protikkha Electric - Statement of Profit or Loss
             </h2>
             <p className="text-xs text-slate-500">
-              For period: {startDate} to {endDate}
+              {startDate || endDate
+                ? `For period: ${startDate || "Start"} to ${endDate || "Today"}`
+                : "All recorded periods"}
             </p>
           </div>
 
@@ -549,78 +688,67 @@ export default function GeneralLedgerPage() {
       {/* Tab 3: Chart of Accounts */}
       {activeTab === "coa" && (
         <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-[#cbd5e1] dark:border-[#334155] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-4 border-b border-[#cbd5e1] dark:border-[#334155] flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-[#1E65A0]" />
               Official Chart of Accounts (COA Catalog)
             </h2>
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={searchCoa}
-                onChange={(e) => setSearchCoa(e.target.value)}
-                placeholder="Search account by code or title..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-hidden focus:border-[#1E65A0]"
-              />
-            </div>
+            <span className="text-xs text-slate-500">{filteredCoa.length} accounts</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Code</th>
-                  <th className="py-3 px-4">Title</th>
-                  <th className="py-3 px-4">বাংলা নাম</th>
-                  <th className="py-3 px-4">Classification</th>
-                  <th className="py-3 px-4">Normal Balance</th>
-                  <th className="py-3 px-4">Purpose & Scope</th>
+          <table className="w-full table-fixed text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase tracking-wider text-[11px] whitespace-nowrap">
+                <th className="py-2.5 px-3 w-[10%]">Code</th>
+                <th className="py-2.5 px-3 w-[22%]">Title</th>
+                <th className="py-2.5 px-3 w-[20%]">বাংলা নাম</th>
+                <th className="py-2.5 px-3 w-[13%]">Class</th>
+                <th className="py-2.5 px-3 w-[10%]">Balance</th>
+                <th className="py-2.5 px-3 w-[25%]">Purpose & Scope</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+              {filteredCoa.map((acc: any) => (
+                <tr
+                  key={acc.code}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                >
+                  <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                    {acc.code}
+                  </td>
+                  <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-white truncate" title={acc.name}>
+                    {acc.name}
+                  </td>
+                  <td className="py-2.5 px-3 font-medium text-slate-600 dark:text-slate-300 truncate">
+                    {acc.nameBn}
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        acc.classification === "ASSET"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
+                          : acc.classification === "LIABILITY"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                          : acc.classification === "REVENUE"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          : acc.classification === "COGS"
+                          ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
+                          : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
+                      }`}
+                    >
+                      {acc.classification}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-3 font-mono text-slate-500 font-medium">
+                    {acc.normalBalance}
+                  </td>
+                  <td className="py-2.5 px-3 text-slate-500 text-[11px] truncate" title={acc.description}>
+                    {acc.description}
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                {filteredCoa.map((acc: any) => (
-                  <tr
-                    key={acc.code}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                  >
-                    <td className="py-2.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                      {acc.code}
-                    </td>
-                    <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                      {acc.name}
-                    </td>
-                    <td className="py-2.5 px-4 font-medium text-slate-600 dark:text-slate-300">
-                      {acc.nameBn}
-                    </td>
-                    <td className="py-2.5 px-4">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          acc.classification === "ASSET"
-                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
-                            : acc.classification === "LIABILITY"
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
-                            : acc.classification === "REVENUE"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
-                            : acc.classification === "COGS"
-                            ? "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300"
-                            : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300"
-                        }`}
-                      >
-                        {acc.classification}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 font-mono text-slate-500 font-medium">
-                      {acc.normalBalance}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-500 text-[11px]">
-                      {acc.description}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -633,12 +761,12 @@ export default function GeneralLedgerPage() {
               Recent Double-Entry Journal Vouchers (Audit Log)
             </h2>
             <div className="text-xs text-slate-500">
-              Showing latest {vouchers.length} vouchers
+              Showing {filteredVouchers.length} vouchers
             </div>
           </div>
 
           <div className="p-4 space-y-4">
-            {vouchers.map((v) => (
+            {filteredVouchers.map((v) => (
               <div
                 key={v.entryNo}
                 className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2"
@@ -676,10 +804,10 @@ export default function GeneralLedgerPage() {
                           key={i}
                           className="flex justify-between py-0.5 px-2 rounded bg-white dark:bg-slate-800"
                         >
-                          <span>
+                          <span className="truncate pr-2">
                             {l.accountCode} - {l.note || coa[l.accountCode]?.name}
                           </span>
-                          <span className="font-bold text-slate-900 dark:text-white">
+                          <span className="font-bold text-slate-900 dark:text-white shrink-0">
                             {formatBdCurrency(l.debit)}
                           </span>
                         </div>
@@ -697,10 +825,10 @@ export default function GeneralLedgerPage() {
                           key={i}
                           className="flex justify-between py-0.5 px-2 rounded bg-white dark:bg-slate-800"
                         >
-                          <span>
+                          <span className="truncate pr-2">
                             {l.accountCode} - {l.note || coa[l.accountCode]?.name}
                           </span>
-                          <span className="font-bold text-slate-900 dark:text-white">
+                          <span className="font-bold text-slate-900 dark:text-white shrink-0">
                             {formatBdCurrency(l.credit)}
                           </span>
                         </div>
@@ -710,7 +838,7 @@ export default function GeneralLedgerPage() {
               </div>
             ))}
 
-            {vouchers.length === 0 && (
+            {filteredVouchers.length === 0 && (
               <div className="py-8 text-center text-slate-400 text-xs">
                 No vouchers found in selected date range
               </div>
@@ -718,6 +846,8 @@ export default function GeneralLedgerPage() {
           </div>
         </div>
       )}
+
+      <PrintTableSheet {...reportPayload} />
     </div>
   );
 }

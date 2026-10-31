@@ -252,7 +252,7 @@ export default function ExpensesPage() {
           .then((t) => {
             if (t.status === "success") setExpenseTypes(t.data);
           })
-          .catch(() => {});
+          .catch(() => { });
       } else {
         setNewCatError(data.message || "Failed to create category");
       }
@@ -458,7 +458,7 @@ export default function ExpensesPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
           {/* Category Dropdown */}
           <div className="w-[180px]">
             <CustomSelect

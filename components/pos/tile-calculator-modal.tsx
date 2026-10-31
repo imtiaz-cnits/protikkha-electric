@@ -252,16 +252,16 @@ export function TileCalculatorModal({
                       onClick={() => setSelectedBoxMode("exact")}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         selectedBoxMode === "exact"
-                          ? "bg-white dark:bg-slate-800 border-rose-600 dark:border-rose-500 shadow-xs ring-2 ring-rose-500/20"
-                          : "bg-white/60 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                          ? "bg-white dark:bg-slate-800 border-[#1E65A0] dark:border-blue-500 shadow-xs ring-2 ring-[#1E65A0]/20"
+                          : "bg-white/60 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-[#1E65A0]"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B3D91] dark:text-blue-400">
                           ভাংতি হিসাব (Exact)
                         </span>
                         {selectedBoxMode === "exact" && (
-                          <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-[#1E65A0] animate-pulse" />
                         )}
                       </div>
                       <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
@@ -277,16 +277,16 @@ export function TileCalculatorModal({
                       onClick={() => setSelectedBoxMode("full")}
                       className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         selectedBoxMode === "full"
-                          ? "bg-white dark:bg-slate-800 border-rose-600 dark:border-rose-500 shadow-xs ring-2 ring-rose-500/20"
-                          : "bg-white/60 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                          ? "bg-white dark:bg-slate-800 border-[#1E65A0] dark:border-blue-500 shadow-xs ring-2 ring-[#1E65A0]/20"
+                          : "bg-white/60 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 hover:border-[#1E65A0]"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B3D91] dark:text-blue-400">
                           পূর্ণ বক্স (Round Up)
                         </span>
                         {selectedBoxMode === "full" && (
-                          <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                          <span className="w-2 h-2 rounded-full bg-[#1E65A0] animate-pulse" />
                         )}
                       </div>
                       <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">

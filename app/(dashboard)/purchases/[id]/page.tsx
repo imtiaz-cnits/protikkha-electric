@@ -414,14 +414,21 @@ export default function PurchaseBillPage({
             border: none !important;
             box-shadow: none !important;
             margin: 0 auto !important;
-            padding: 15px 20px !important;
+            padding: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             min-height: auto !important;
           }
+          #purchasePrintSheet table thead {
+            display: table-header-group !important;
+          }
+          #purchasePrintSheet table tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 10px !important;
           }
         }
       `}</style>

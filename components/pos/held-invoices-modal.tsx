@@ -68,7 +68,7 @@ export function HeldInvoicesModal({
             heldList.map((item) => (
               <div
                 key={item.id}
-                className="bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-rose-500 transition-colors"
+                className="bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-[#1E65A0] transition-colors"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">

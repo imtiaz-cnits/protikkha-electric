@@ -96,19 +96,20 @@ export async function POST(req: NextRequest) {
       for (const item of validItems) {
         const reqQty = parseFloat(String(item.quantity || "0"));
         const [currentProd]: any = await tx.$queryRawUnsafe(
-          "SELECT product_name, quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
+          "SELECT product_name, quantity FROM products WHERE id = ?",
           BigInt(item.product_id)
         );
         const prodName = currentProd?.product_name || `Product #${item.product_id}`;
         const physicalStock = parseFloat(currentProd?.quantity || "0");
-        const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
-        const requiredBaseQty = item.base_quantity != null
-          ? parseFloat(String(item.base_quantity))
-          : reqQty * ratio;
+        const ratio = parseFloat(String(item.conversion_ratio || "1")) || 1;
+        const requiredBaseQty =
+          item.base_quantity != null
+            ? parseFloat(String(item.base_quantity))
+            : +(reqQty * ratio).toFixed(4);
 
-        if (requiredBaseQty > physicalStock) {
+        if (requiredBaseQty > physicalStock + 0.0001) {
           throw new Error(
-            `Insufficient stock for "${prodName}". In Stock: ${physicalStock}, Requested: ${requiredBaseQty}`
+            `Insufficient stock for "${prodName}". Available: ${physicalStock}, Requested: ${requiredBaseQty}`
           );
         }
       }
@@ -147,21 +148,43 @@ export async function POST(req: NextRequest) {
           },
         });
 
-        // Deduct electrical stock immediately
+        // Deduct electrical stock immediately in product base unit
         const [currentProd]: any = await tx.$queryRawUnsafe(
-          "SELECT quantity, conversion_ratio, packaging_unit FROM products WHERE id = ?",
+          "SELECT quantity, cost_price FROM products WHERE id = ?",
           BigInt(item.product_id)
         );
         const currentQty = parseFloat(currentProd?.quantity || "0");
-        const ratio = parseFloat(String(item.conversion_ratio || currentProd?.conversion_ratio || "1")) || 1;
-        const decrementQty = item.base_quantity != null
-          ? parseFloat(String(item.base_quantity))
-          : parseFloat(String(item.quantity || "0")) * ratio;
-        const newStock = Math.max(0, currentQty - decrementQty);
+        const ratio = parseFloat(String(item.conversion_ratio || "1")) || 1;
+        const decrementQty =
+          item.base_quantity != null
+            ? parseFloat(String(item.base_quantity))
+            : +(parseFloat(String(item.quantity || "0")) * ratio).toFixed(4);
+        const newStock = Math.max(0, +(currentQty - decrementQty).toFixed(4));
 
         await tx.products.update({
           where: { id: BigInt(item.product_id) },
           data: { quantity: String(newStock) },
+        });
+
+        await tx.stock_movements.create({
+          data: {
+            product_id: BigInt(item.product_id),
+            movement_type: "SALE",
+            quantity: new Prisma.Decimal(decrementQty.toFixed(3)),
+            unit_price: new Prisma.Decimal(Number(item.selling_price || 0).toFixed(2)),
+            total_value: new Prisma.Decimal(
+              (Number(item.selling_price || 0) * Number(item.quantity || 0)).toFixed(2)
+            ),
+            reference_type: "ORDER",
+            reference_id: newOrder.id,
+            reference_no: newOrder.order_no,
+            stock_after: new Prisma.Decimal(newStock.toFixed(3)),
+            date: invDate,
+            note: item.selected_unit
+              ? `POS Sale (${item.quantity} ${item.selected_unit})`
+              : `POS Sale (${item.quantity})`,
+            user_id: BigInt(userId),
+          },
         });
       }
 

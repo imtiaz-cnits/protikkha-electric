@@ -94,7 +94,7 @@ if (startIdx !== -1 && endIdx !== -1) {
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
           <div className="flex items-center gap-1.5">
             <div className="w-[130px]">
               <CustomDatePicker

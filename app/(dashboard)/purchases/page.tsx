@@ -23,6 +23,8 @@ import { CustomSelect } from "@/components/ui/custom-select";
 import { CustomDatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/components/ui/toast";
 import { Pagination, DeleteConfirmModal } from "@/components/ui";
+import { PrintTableSheet } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
 
 interface ElectricalSpec {
   spec_type: string;
@@ -208,6 +210,94 @@ export default function PurchasesPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredPurchases.slice(start, start + pageSize);
   }, [filteredPurchases, currentPage, pageSize]);
+
+  // Clean Print-Only Purchases Register Payload
+  const printPurchasesPayload: PrintReportPayload = {
+    title: "Purchases & Inward Stock Register",
+    subtitle: "Inward stock procurement bills from electrical suppliers and manufacturers",
+    filename: `purchases_register_${new Date().toISOString().slice(0, 10)}`,
+    metaItems: [
+      { label: "Total Bills", value: `${filteredPurchases.length}` },
+      {
+        label: "Supplier Filter",
+        value:
+          selectedSupplier === "all"
+            ? "All Suppliers"
+            : suppliers.find((s) => String(s.id) === selectedSupplier)?.name || selectedSupplier,
+      },
+      {
+        label: "Status Filter",
+        value: selectedStatus === "all" ? "All Statuses" : selectedStatus.toUpperCase(),
+      },
+      ...(search.trim() ? [{ label: "Search", value: search.trim() }] : []),
+    ],
+    columns: [
+      { header: "SL", align: "center", width: "40px" },
+      { header: "Purchase ID", align: "left", width: "16%" },
+      { header: "Date", align: "left", width: "13%" },
+      { header: "Supplier", align: "left", width: "24%" },
+      { header: "Total Bill (৳)", align: "right", width: "15%" },
+      { header: "Paid (৳)", align: "right", width: "15%" },
+      { header: "Due (৳)", align: "right", width: "15%" },
+    ],
+    rows: filteredPurchases.map((p, idx) => [
+      { text: String(idx + 1), align: "center", bold: true, color: "muted" },
+      {
+        text: `#${p.purchase_id}`,
+        subText: p.referance_no ? `Ref: ${p.referance_no}` : undefined,
+        bold: true,
+        mono: true,
+      },
+      { text: p.date ? new Date(p.date).toLocaleDateString("en-GB") : "—" },
+      {
+        text: p.supplier?.name || "General Supplier",
+        subText: p.supplier?.company || undefined,
+        bold: true,
+      },
+      {
+        text: formatBdCurrency(p.grand_subtotal + p.delivery_charge),
+        align: "right",
+        mono: true,
+        bold: true,
+      },
+      { text: formatBdCurrency(p.paid_amount), align: "right", mono: true, color: "emerald" },
+      {
+        text: formatBdCurrency(p.due_amount),
+        align: "right",
+        mono: true,
+        bold: true,
+        color: p.due_amount > 0 ? "rose" : "muted",
+      },
+    ]),
+    totalRow: [
+      "",
+      { text: "Total Purchases", bold: true },
+      "",
+      { text: `${filteredPurchases.length} Bills`, bold: true },
+      {
+        text: formatBdCurrency(
+          filteredPurchases.reduce((acc, p) => acc + (p.grand_subtotal + p.delivery_charge), 0)
+        ),
+        align: "right",
+        mono: true,
+        bold: true,
+      },
+      {
+        text: formatBdCurrency(filteredPurchases.reduce((acc, p) => acc + p.paid_amount, 0)),
+        align: "right",
+        mono: true,
+        bold: true,
+        color: "emerald",
+      },
+      {
+        text: formatBdCurrency(filteredPurchases.reduce((acc, p) => acc + p.due_amount, 0)),
+        align: "right",
+        mono: true,
+        bold: true,
+        color: "rose",
+      },
+    ],
+  };
 
   // Calculate Running Totals for New Purchase Form
   const subtotal = useMemo(() => {
@@ -415,7 +505,7 @@ export default function PurchasesPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
           <Link
             href="/supplier-dues"
             className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-[#1E65A0] flex items-center gap-1.5 transition-all shadow-2xs"
@@ -514,6 +604,8 @@ export default function PurchasesPage() {
                   { value: "50", label: "50" },
                   { value: "100", label: "100" },
                 ]}
+                matchTriggerWidth={true}
+                searchThreshold={99}
                 className="h-[30px] px-2 rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#1E65A0]"
               />
             </div>
@@ -614,13 +706,12 @@ export default function PurchasesPage() {
                         {/* Status */}
                         <td className="py-3 px-3.5 text-center whitespace-nowrap">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                              isPaid
-                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
-                                : isPartial
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isPaid
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                              : isPartial
                                 ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
                                 : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900"
-                            }`}
+                              }`}
                           >
                             {isPaid ? "Paid" : isPartial ? "Partial" : "Due"}
                           </span>
@@ -669,11 +760,10 @@ export default function PurchasesPage() {
                     </div>
 
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        p.due_amount <= 0
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60"
-                          : "bg-rose-50 text-rose-700 dark:bg-rose-950/60"
-                      }`}
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${p.due_amount <= 0
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60"
+                        : "bg-rose-50 text-rose-700 dark:bg-rose-950/60"
+                        }`}
                     >
                       {p.due_amount <= 0 ? "Paid" : `Due: ${formatBdCurrency(p.due_amount)}`}
                     </span>
@@ -803,7 +893,7 @@ export default function PurchasesPage() {
                     value={billDate}
                     onChange={(val) => setBillDate(val)}
                     placeholder="Select Bill Date"
-                    className="w-full h-[42px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
+                    className="w-full h-[42px] rounded-xl bg-white dark:bg-slate-800 text-xs text-slate-800 dark:text-white focus:outline-none focus:border-[#1E65A0]"
                   />
                 </div>
               </div>
@@ -1091,6 +1181,9 @@ export default function PurchasesPage() {
         warningMessage="Deleting this purchase will revert the inward stock quantities and deduct any recorded due from the supplier ledger."
         loading={deleting}
       />
+
+      {/* Clean Print-Only Sheet (Details + Multi-Page Table) */}
+      <PrintTableSheet {...printPurchasesPayload} />
     </div>
   );
 }

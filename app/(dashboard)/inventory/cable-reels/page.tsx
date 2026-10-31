@@ -190,18 +190,18 @@ export default function CableReelsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Reel Number</th>
-                    <th className="py-3 px-3.5 min-w-[220px]">Cable Product & Spec</th>
-                    <th className="py-3 px-3.5">Drum Type / Rack</th>
-                    <th className="py-3 px-3.5 text-right">Initial (m)</th>
-                    <th className="py-3 px-3.5 text-right">Sold (m)</th>
-                    <th className="py-3 px-3.5 text-right">Balance (m)</th>
-                    <th className="py-3 px-3.5 text-center">Progress</th>
-                    <th className="py-3 px-3.5 text-center">Status</th>
+                    <th className="py-2.5 px-2.5 w-[115px]">Reel No</th>
+                    <th className="py-2.5 px-2.5">Cable Product &amp; Spec</th>
+                    <th className="py-2.5 px-2.5 w-[130px]">Drum / Rack</th>
+                    <th className="py-2.5 px-2 text-right w-[85px]">Initial</th>
+                    <th className="py-2.5 px-2 text-right w-[80px]">Sold</th>
+                    <th className="py-2.5 px-2 text-right w-[85px]">Balance</th>
+                    <th className="py-2.5 px-2.5 text-center w-[105px]">Progress</th>
+                    <th className="py-2.5 px-2 text-center w-[90px]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -209,52 +209,52 @@ export default function CableReelsPage() {
                     const percentSold = Math.round((r.sold_meters / r.initial_meters) * 100);
                     return (
                       <tr key={r.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                        <td className="py-2 px-2.5 whitespace-nowrap">
+                          <span className="font-mono font-bold text-[11px] text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                             {r.reel_number}
                           </span>
                         </td>
 
-                        <td className="py-3 px-3.5">
-                          <p className="font-bold text-slate-900 dark:text-white">{r.product_name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.2 rounded">
+                        <td className="py-2 px-2.5 min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white truncate" title={r.product_name}>{r.product_name}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.2 rounded shrink-0">
                               {r.cable_size}
                             </span>
-                            <span className="text-[10px] text-slate-400">{r.conductor} • {r.color}</span>
+                            <span className="text-[10px] text-slate-400 truncate">{r.conductor} • {r.color}</span>
                           </div>
                         </td>
 
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <p className="font-medium text-slate-800 dark:text-slate-200">{r.drum_type}</p>
-                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{r.location}</span>
+                        <td className="py-2 px-2.5 min-w-0">
+                          <p className="font-medium text-slate-800 dark:text-slate-200 truncate">{r.drum_type}</p>
+                          <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold truncate block">{r.location}</span>
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-mono font-medium text-slate-600 dark:text-slate-400">
-                          {r.initial_meters} m
+                        <td className="py-2 px-2 text-right whitespace-nowrap font-mono font-medium text-slate-600 dark:text-slate-400">
+                          {r.initial_meters}m
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-mono font-bold text-rose-600">
-                          {r.sold_meters} m
+                        <td className="py-2 px-2 text-right whitespace-nowrap font-mono font-bold text-rose-600">
+                          {r.sold_meters}m
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {r.balance_meters} m
+                        <td className="py-2 px-2 text-right whitespace-nowrap font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {r.balance_meters}m
                         </td>
 
-                        <td className="py-3 px-3.5 w-32">
-                          <div className="space-y-1">
-                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <td className="py-2 px-2.5">
+                          <div className="space-y-0.5">
+                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                               <div
                                 className="bg-[#1E65A0] h-full rounded-full transition-all"
                                 style={{ width: `${percentSold}%` }}
                               />
                             </div>
-                            <span className="text-[10px] text-slate-400 text-right block">{percentSold}% cut</span>
+                            <span className="text-[9px] text-slate-400 text-right block">{percentSold}% cut</span>
                           </div>
                         </td>
 
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                        <td className="py-2 px-2 text-center whitespace-nowrap">
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                               r.status === "IN_USE"

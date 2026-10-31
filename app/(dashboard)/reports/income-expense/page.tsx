@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Scale,
-  Calendar,
-  Printer,
   Coins,
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
-  Loader2,
-  TrendingUp,
   Tag,
   Truck,
-  Search,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomDatePicker } from "@/components/ui/date-picker";
+import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { PrintTableSheet, ReportExportActions } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
+import { getPresetDateRange } from "@/lib/report-date-utils";
 
 interface StatementSummary {
   opening_balance: number;
@@ -47,26 +45,26 @@ export default function IncomeExpensePage() {
   const [suppliers, setSuppliers] = useState<SupplierBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const now = new Date();
-  const firstDayStr = new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-  const todayStr = now.toISOString().split("T")[0];
-
-  const [startDate, setStartDate] = useState(firstDayStr);
-  const [endDate, setEndDate] = useState(todayStr);
+  const initialRange = getPresetDateRange("month");
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
   const [search, setSearch] = useState("");
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const url = `/api/reports/income-expense?start_date=${startDate}&end_date=${endDate}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+      if (startDate) params.set("start_date", startDate);
+      if (endDate) params.set("end_date", endDate);
+      const qs = params.toString();
+      const res = await fetch(`/api/reports/income-expense${qs ? `?${qs}` : ""}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.status === "success") {
         setSummary(data.summary);
-        setExpenses(data.expenses_breakdown);
-        setSuppliers(data.supplier_payments_breakdown);
+        setExpenses(data.expenses_breakdown || []);
+        setSuppliers(data.supplier_payments_breakdown || []);
       }
     } catch (err) {
       console.error(err);
@@ -79,41 +77,95 @@ export default function IncomeExpensePage() {
     loadData();
   }, [startDate, endDate]);
 
-  const setPreset = (
-    preset: "today" | "yesterday" | "7days" | "month" | "last30"
-  ) => {
-    const tStr = new Date().toISOString().split("T")[0];
-    if (preset === "today") {
-      setStartDate(tStr);
-      setEndDate(tStr);
-    } else if (preset === "yesterday") {
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      const yStr = y.toISOString().split("T")[0];
-      setStartDate(yStr);
-      setEndDate(yStr);
-    } else if (preset === "7days") {
-      const past = new Date();
-      past.setDate(past.getDate() - 7);
-      setStartDate(past.toISOString().split("T")[0]);
-      setEndDate(tStr);
-    } else if (preset === "month") {
-      setStartDate(firstDayStr);
-      setEndDate(tStr);
-    } else if (preset === "last30") {
-      const past = new Date();
-      past.setDate(past.getDate() - 30);
-      setStartDate(past.toISOString().split("T")[0]);
-      setEndDate(tStr);
-    }
-  };
+  const q = search.trim().toLowerCase();
+
+  const filteredExpenses = useMemo(() => {
+    if (!q) return expenses;
+    return expenses.filter((e) => e.type_name.toLowerCase().includes(q));
+  }, [expenses, q]);
+
+  const filteredSuppliers = useMemo(() => {
+    if (!q) return suppliers;
+    return suppliers.filter((s) => s.name.toLowerCase().includes(q));
+  }, [suppliers, q]);
+
+  const reportPayload: PrintReportPayload = useMemo(() => {
+    const rows: PrintReportPayload["rows"] = [
+      [
+        { text: "1", align: "center" },
+        { text: "Opening Cash Float", bold: true },
+        "Opening Drawer Balance",
+        { text: formatBdCurrency(summary?.opening_balance || 0), align: "right", bold: true, color: "amber" },
+        { text: "—", align: "right", color: "muted" },
+      ],
+      [
+        { text: "2", align: "center" },
+        { text: "Sales Cash Collections", bold: true },
+        "Counter & POS Invoices (জমা)",
+        { text: formatBdCurrency(summary?.sales_collection || 0), align: "right", bold: true, color: "emerald" },
+        { text: "—", align: "right", color: "muted" },
+      ],
+      [
+        { text: "3", align: "center" },
+        { text: "Customer Due Collections", bold: true },
+        "Receivable Arrears Recovered (জমা)",
+        { text: formatBdCurrency(summary?.due_collection || 0), align: "right", bold: true, color: "emerald" },
+        { text: "—", align: "right", color: "muted" },
+      ],
+      ...filteredExpenses.map((exp, idx) => [
+        { text: String(4 + idx), align: "center" as const },
+        { text: exp.type_name, bold: true },
+        `Operating Overhead (${exp.count} entries)`,
+        { text: "—", align: "right" as const, color: "muted" as const },
+        { text: formatBdCurrency(exp.total_amount), align: "right" as const, bold: true, color: "rose" as const },
+      ]),
+      ...filteredSuppliers.map((sup, idx) => [
+        { text: String(4 + filteredExpenses.length + idx), align: "center" as const },
+        { text: sup.name, bold: true },
+        "Supplier Payment (খরচ)",
+        { text: "—", align: "right" as const, color: "muted" as const },
+        { text: formatBdCurrency(sup.total_paid), align: "right" as const, bold: true, color: "rose" as const },
+      ]),
+    ];
+
+    return {
+      title: "Income & Expense Statement (প্রাপ্তি-পরিশোধ বিবরণী)",
+      subtitle: "Complete receipts & payments accounting with categorized breakdown",
+      metaItems: [
+        {
+          label: "Period",
+          value: startDate || endDate ? `${startDate || "Start"} to ${endDate || "Today"}` : "All Dates",
+        },
+        { label: "Opening Balance", value: formatBdCurrency(summary?.opening_balance || 0) },
+        { label: "Total Receipts (জমা)", value: formatBdCurrency(summary?.total_inflow || 0) },
+        { label: "Total Payments (খরচ)", value: formatBdCurrency(summary?.total_outflow || 0) },
+        { label: "Closing Balance", value: formatBdCurrency(summary?.closing_balance || 0) },
+      ],
+      columns: [
+        { header: "SL", align: "center", width: "6%" },
+        { header: "Particulars / বিবরণ", align: "left", width: "34%" },
+        { header: "Category / Type", align: "left", width: "26%" },
+        { header: "Receipts / জমা (৳)", align: "right", width: "17%" },
+        { header: "Payments / খরচ (৳)", align: "right", width: "17%" },
+      ],
+      rows,
+      totalRow: [
+        "",
+        "TOTAL RECEIPTS, PAYMENTS & CLOSING BALANCE",
+        `Closing: ${formatBdCurrency(summary?.closing_balance || 0)}`,
+        { text: formatBdCurrency(summary?.total_inflow || 0), align: "right", color: "emerald" },
+        { text: formatBdCurrency(summary?.total_outflow || 0), align: "right", color: "rose" },
+      ],
+      filename: "income-expense-statement",
+    };
+  }, [summary, filteredExpenses, filteredSuppliers, startDate, endDate]);
 
   return (
     <div className="space-y-4">
       {/* 1. Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-rose-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0">
             <Scale className="w-5 h-5" />
           </div>
           <div>
@@ -126,13 +178,7 @@ export default function IncomeExpensePage() {
           </div>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="h-[38px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto border border-[#cbd5e1] dark:border-[#334155]"
-        >
-          <Printer className="w-4 h-4" />
-          <span>Print Statement</span>
-        </button>
+        <ReportExportActions payload={reportPayload} />
       </div>
 
       {/* 2. Top Summary KPI Row */}
@@ -174,7 +220,7 @@ export default function IncomeExpensePage() {
           <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
               <span>Closing Balance</span>
-              <Wallet className="w-4 h-4 text-emerald-600" />
+              <Wallet className="w-4 h-4 text-[#1E65A0]" />
             </div>
             <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
               {formatBdCurrency(summary.closing_balance)}
@@ -186,69 +232,26 @@ export default function IncomeExpensePage() {
         </div>
       )}
 
-      {/* 3. Filters Bar matching Image 2 */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            placeholder="Search particular, expense, supplier..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={startDate}
-                onChange={(d) => setStartDate(d)}
-                placeholder="From Date"
-              />
-            </div>
-            <span className="text-xs text-slate-400">to</span>
-            <div className="w-[130px]">
-              <CustomDatePicker
-                value={endDate}
-                onChange={(d) => setEndDate(d)}
-                placeholder="To Date"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPreset("today")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setPreset("yesterday")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Yesterday
-            </button>
-            <button
-              onClick={() => setPreset("7days")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setPreset("month")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
-            >
-              This Month
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* 3. Unified Dynamic Filter Bar */}
+      <ReportFilterBar
+        search={search}
+        onSearchChange={(val) => setSearch(val)}
+        searchPlaceholder="Search particular, expense, supplier..."
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+        }}
+        onClear={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+        }}
+      />
 
       {/* 4. Two-Column Dual Financial Ledger (Receipts vs Payments) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${loading ? "opacity-60" : ""}`}>
         {/* Left Card: Cash Receipts / Inflow */}
         <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
           <div className="modal-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-4 py-3 flex items-center justify-between text-white font-bold text-xs uppercase tracking-wider">
@@ -295,9 +298,9 @@ export default function IncomeExpensePage() {
 
         {/* Right Card: Cash Payments / Outflow */}
         <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-          <div className="bg-rose-700 px-4 py-3 flex items-center justify-between text-white font-bold text-xs uppercase tracking-wider">
+          <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] px-4 py-3 flex items-center justify-between text-white font-bold text-xs uppercase tracking-wider">
             <div className="flex items-center gap-2">
-              <ArrowUpRight className="w-4 h-4 text-rose-200" />
+              <ArrowUpRight className="w-4 h-4 text-amber-300" />
               <span>Cash Payments / মোট পরিশোধ (খরচ)</span>
             </div>
             <span>{formatBdCurrency(summary?.total_outflow || 0)}</span>
@@ -310,11 +313,11 @@ export default function IncomeExpensePage() {
                 <Tag className="w-3.5 h-3.5" />
                 <span>Operating Overheads Breakdown</span>
               </div>
-              {expenses.length === 0 ? (
+              {filteredExpenses.length === 0 ? (
                 <div className="text-xs text-slate-400 py-2">No operating expenses</div>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {expenses.map((exp, idx) => (
+                  {filteredExpenses.map((exp, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800"
@@ -337,11 +340,11 @@ export default function IncomeExpensePage() {
                 <Truck className="w-3.5 h-3.5" />
                 <span>Supplier Due Payments</span>
               </div>
-              {suppliers.length === 0 ? (
+              {filteredSuppliers.length === 0 ? (
                 <div className="text-xs text-slate-400 py-1">No supplier payments</div>
               ) : (
                 <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                  {suppliers.map((sup, idx) => (
+                  {filteredSuppliers.map((sup, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between text-xs py-1 border-b border-slate-100 dark:border-slate-800"
@@ -367,6 +370,8 @@ export default function IncomeExpensePage() {
           </div>
         </div>
       </div>
+
+      <PrintTableSheet {...reportPayload} />
     </div>
   );
 }

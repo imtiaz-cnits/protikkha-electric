@@ -182,19 +182,19 @@ export default function StockMovementsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Date</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Product</th>
-                    <th className="py-3 px-3.5 text-center">Type</th>
-                    <th className="py-3 px-3.5">Reference</th>
-                    <th className="py-3 px-3.5 text-right">Qty In/Out</th>
-                    <th className="py-3 px-3.5 text-right">Unit Rate</th>
-                    <th className="py-3 px-3.5 text-right">Total Value</th>
-                    <th className="py-3 px-3.5 text-right">Stock Balance</th>
-                    <th className="py-3 px-3.5 min-w-[150px]">Note</th>
+                    <th className="py-2.5 px-2 w-[90px]">Date</th>
+                    <th className="py-2.5 px-2.5 w-[22%]">Product</th>
+                    <th className="py-2.5 px-2 text-center w-[85px]">Type</th>
+                    <th className="py-2.5 px-2 w-[115px]">Reference</th>
+                    <th className="py-2.5 px-2 text-right w-[95px]">Qty In/Out</th>
+                    <th className="py-2.5 px-2 text-right w-[95px]">Rate</th>
+                    <th className="py-2.5 px-2 text-right w-[105px]">Total</th>
+                    <th className="py-2.5 px-2 text-right w-[95px]">Balance</th>
+                    <th className="py-2.5 px-2">Note</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -202,18 +202,18 @@ export default function StockMovementsPage() {
                     const isPositive = m.quantity > 0;
                     return (
                       <tr key={m.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-3 px-3.5 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                        <td className="py-2 px-2 whitespace-nowrap font-medium text-slate-600 dark:text-slate-400 text-[11px]">
                           {m.date}
                         </td>
 
-                        <td className="py-3 px-3.5">
-                          <p className="font-bold text-slate-900 dark:text-white">{m.product_name}</p>
-                          <span className="text-[10px] text-slate-400">{m.category}</span>
+                        <td className="py-2 px-2.5 min-w-0">
+                          <p className="font-bold text-slate-900 dark:text-white truncate" title={m.product_name}>{m.product_name}</p>
+                          <span className="text-[10px] text-slate-400 truncate block">{m.category}</span>
                         </td>
 
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                        <td className="py-2 px-2 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                            className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full font-bold text-[10px] ${
                               isPositive
                                 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200"
                                 : "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200"
@@ -224,32 +224,32 @@ export default function StockMovementsPage() {
                           </span>
                         </td>
 
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <p className="font-mono font-bold text-slate-800 dark:text-slate-200 text-[11px]">{m.reference_no}</p>
-                          <span className="text-[10px] text-slate-400 font-semibold">{m.reference_type}</span>
+                        <td className="py-2 px-2 min-w-0">
+                          <p className="font-mono font-bold text-slate-800 dark:text-slate-200 text-[10px] truncate">{m.reference_no}</p>
+                          <span className="text-[9px] text-slate-400 font-semibold truncate block">{m.reference_type}</span>
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                          <span className={`font-bold font-mono ${isPositive ? "text-emerald-600" : "text-rose-600"}`}>
+                        <td className="py-2 px-2 text-right whitespace-nowrap">
+                          <span className={`font-bold font-mono text-[11px] ${isPositive ? "text-emerald-600" : "text-rose-600"}`}>
                             {isPositive ? `+${m.quantity}` : m.quantity} {m.unit}
                           </span>
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                        <td className="py-2 px-2 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400 text-[11px]">
                           {formatBdCurrency(m.unit_price)}
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap font-bold text-slate-900 dark:text-white">
+                        <td className="py-2 px-2 text-right whitespace-nowrap font-bold text-slate-900 dark:text-white text-[11px]">
                           {formatBdCurrency(m.total_value)}
                         </td>
 
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                          <span className="font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded">
+                        <td className="py-2 px-2 text-right whitespace-nowrap">
+                          <span className="font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-1.5 py-0.5 rounded text-[11px]">
                             {m.stock_after} {m.unit}
                           </span>
                         </td>
 
-                        <td className="py-3 px-3.5 text-slate-500 text-[11px]">{m.note || "—"}</td>
+                        <td className="py-2 px-2 text-slate-500 text-[11px] truncate" title={m.note || ""}>{m.note || "—"}</td>
                       </tr>
                     );
                   })}

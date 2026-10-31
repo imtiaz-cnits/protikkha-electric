@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
-  Calendar,
-  Printer,
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
   Coins,
   Loader2,
-  Search,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomDatePicker } from "@/components/ui/date-picker";
 import { Pagination } from "@/components/ui";
+import { ReportFilterBar } from "@/components/reports/report-filter-bar";
+import { PrintTableSheet, ReportExportActions } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
+import { getPresetDateRange } from "@/lib/report-date-utils";
 
 interface LedgerItem {
   id: string;
@@ -46,9 +46,9 @@ export default function DailyLedgerPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const [startDate, setStartDate] = useState(todayStr);
-  const [endDate, setEndDate] = useState(todayStr);
+  const initialRange = getPresetDateRange("today");
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -56,8 +56,13 @@ export default function DailyLedgerPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const url = `/api/reports/daily-ledger?start_date=${startDate}&end_date=${endDate}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+      if (startDate) params.set("start_date", startDate);
+      if (endDate) params.set("end_date", endDate);
+      const qs = params.toString();
+      const res = await fetch(`/api/reports/daily-ledger${qs ? `?${qs}` : ""}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       if (data.status === "success") {
         setLedger(data.data);
@@ -79,33 +84,6 @@ export default function DailyLedgerPage() {
     setCurrentPage(1);
   }, [search]);
 
-  const setPreset = (preset: "today" | "yesterday" | "7days" | "month") => {
-    const now = new Date();
-    const tStr = now.toISOString().split("T")[0];
-
-    if (preset === "today") {
-      setStartDate(tStr);
-      setEndDate(tStr);
-    } else if (preset === "yesterday") {
-      const y = new Date();
-      y.setDate(y.getDate() - 1);
-      const yStr = y.toISOString().split("T")[0];
-      setStartDate(yStr);
-      setEndDate(yStr);
-    } else if (preset === "7days") {
-      const past = new Date();
-      past.setDate(past.getDate() - 7);
-      setStartDate(past.toISOString().split("T")[0]);
-      setEndDate(tStr);
-    } else if (preset === "month") {
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      setStartDate(firstDay);
-      setEndDate(tStr);
-    }
-  };
-
   const filteredLedger = ledger.filter(
     (item) =>
       item.particulars.toLowerCase().includes(search.toLowerCase()) ||
@@ -116,12 +94,71 @@ export default function DailyLedgerPage() {
   const startIndex = (currentPage - 1) * pageSize;
   const displayedLedger = filteredLedger.slice(startIndex, startIndex + pageSize);
 
+  const reportPayload: PrintReportPayload = useMemo(
+    () => ({
+      title: "Daily Cashbook Ledger (দৈনিক জমা-খরচ খাতা)",
+      subtitle: "Chronological cash inflows & outflows with real-time running balance",
+      metaItems: [
+        {
+          label: "Period",
+          value: startDate || endDate ? `${startDate || "Start"} to ${endDate || "Today"}` : "All Dates",
+        },
+        { label: "Opening Float", value: formatBdCurrency(summary?.opening_balance || 0) },
+        { label: "Total Inflow (জমা)", value: formatBdCurrency(summary?.total_inflow || 0) },
+        { label: "Total Outflow (খরচ)", value: formatBdCurrency(summary?.total_outflow || 0) },
+        { label: "Closing Balance", value: formatBdCurrency(summary?.net_balance || 0) },
+      ],
+      columns: [
+        { header: "SL", align: "center", width: "5%" },
+        { header: "Date & Time", align: "left", width: "14%" },
+        { header: "Particulars / বিবরণ", align: "left", width: "26%" },
+        { header: "Category", align: "left", width: "13%" },
+        { header: "Voucher Ref", align: "left", width: "11%" },
+        { header: "Inflow (৳)", align: "right", width: "10%" },
+        { header: "Outflow (৳)", align: "right", width: "10%" },
+        { header: "Balance (৳)", align: "right", width: "11%" },
+      ],
+      rows: filteredLedger.map((tx, idx) => [
+        { text: String(idx + 1), align: "center" },
+        { text: tx.date_formatted, mono: true },
+        { text: tx.particulars, subText: tx.party_name || undefined, bold: true },
+        tx.category,
+        { text: tx.ref_no, mono: true },
+        {
+          text: tx.inflow > 0 ? formatBdCurrency(tx.inflow) : "—",
+          align: "right",
+          bold: tx.inflow > 0,
+          color: tx.inflow > 0 ? "emerald" : "muted",
+        },
+        {
+          text: tx.outflow > 0 ? formatBdCurrency(tx.outflow) : "—",
+          align: "right",
+          bold: tx.outflow > 0,
+          color: tx.outflow > 0 ? "rose" : "muted",
+        },
+        { text: formatBdCurrency(tx.running_balance), align: "right", bold: true },
+      ]),
+      totalRow: [
+        "",
+        "",
+        "CLOSING CASHBOOK SUMMARY",
+        "",
+        "",
+        { text: formatBdCurrency(summary?.total_inflow || 0), align: "right", color: "emerald" },
+        { text: formatBdCurrency(summary?.total_outflow || 0), align: "right", color: "rose" },
+        { text: formatBdCurrency(summary?.net_balance || 0), align: "right", color: "navy" },
+      ],
+      filename: "daily-cashbook-ledger",
+    }),
+    [filteredLedger, summary, startDate, endDate]
+  );
+
   return (
     <div className="space-y-4">
       {/* 1. Header & Quick Print */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-rose-100 dark:border-slate-800 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E65A0] dark:bg-blue-950/50 dark:text-blue-400 border border-blue-100 dark:border-slate-800 flex items-center justify-center shrink-0">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
@@ -134,13 +171,7 @@ export default function DailyLedgerPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => window.print()}
-          className="h-[38px] px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto border border-[#cbd5e1] dark:border-[#334155]"
-        >
-          <Printer className="w-4 h-4" />
-          <span>Print Cashbook</span>
-        </button>
+        <ReportExportActions payload={reportPayload} />
       </div>
 
       {/* 2. Four Ledger Financial KPI Cards */}
@@ -185,7 +216,7 @@ export default function DailyLedgerPage() {
         <div className="bg-white dark:bg-[#0f172a] p-3.5 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-bold">
             <span>Closing / Net Balance</span>
-            <Wallet className="w-4 h-4 text-emerald-600" />
+            <Wallet className="w-4 h-4 text-[#1E65A0]" />
           </div>
           <div className="text-xl font-black text-slate-900 dark:text-white mt-1">
             {formatBdCurrency(summary?.net_balance || 0)}
@@ -196,91 +227,44 @@ export default function DailyLedgerPage() {
         </div>
       </div>
 
-      {/* 3. Filters Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-3 rounded-2xl border border-[#cbd5e1] dark:border-[#334155]">
-        <div className="relative flex-1 max-w-sm">
-          <input
-            type="text"
-            placeholder="Search particulars, voucher, or party..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-[38px] pl-9 pr-3 rounded-xl bg-slate-50 dark:bg-[#1e293b] border border-[#cbd5e1] dark:border-[#334155] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1E65A0] font-medium"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-        </div>
+      {/* 3. Unified Dynamic Filter Bar */}
+      <ReportFilterBar
+        search={search}
+        onSearchChange={(val) => setSearch(val)}
+        searchPlaceholder="Search particulars, voucher, or party..."
+        startDate={startDate}
+        endDate={endDate}
+        onDateRangeChange={(s, e) => {
+          setStartDate(s);
+          setEndDate(e);
+        }}
+        onClear={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+        }}
+      />
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-[135px]">
-              <CustomDatePicker
-                value={startDate}
-                onChange={(d) => setStartDate(d)}
-                placeholder="From Date"
-              />
-            </div>
-            <span className="text-xs text-slate-400">to</span>
-            <div className="w-[135px]">
-              <CustomDatePicker
-                value={endDate}
-                onChange={(d) => setEndDate(d)}
-                placeholder="To Date"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPreset("today")}
-              className={`h-[38px] px-2.5 rounded-xl text-xs font-bold ${
-                startDate === todayStr && endDate === todayStr
-                  ? "bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-              }`}
-            >
-              Today
-            </button>
-            <button
-              onClick={() => setPreset("yesterday")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-            >
-              Yesterday
-            </button>
-            <button
-              onClick={() => setPreset("7days")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setPreset("month")}
-              className="h-[38px] px-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-bold"
-            >
-              This Month
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Desktop Cashbook Table (Strict Marss Corp Emerald Header #15803d) */}
+      {/* 4. Compact Full-Screen Desktop Cashbook Table */}
       <div className="hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-        <table className="w-full text-left text-xs border-collapse">
+        <table className="w-full table-fixed text-left text-xs border-collapse">
           <thead>
             <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
-              <th className="py-3 px-3 text-center w-[50px]">SL</th>
-              <th className="py-3 px-4 w-36">Date & Time</th>
-              <th className="py-3 px-4">Particulars / বিবরণ</th>
-              <th className="py-3 px-3">Party / Category</th>
-              <th className="py-3 px-3">Voucher Ref</th>
-              <th className="py-3 px-3 text-right">Inflow / জমা (৳)</th>
-              <th className="py-3 px-3 text-right">Outflow / খরচ (৳)</th>
-              <th className="py-3 px-4 text-right">Running Balance (৳)</th>
+              <th className="py-2.5 px-2.5 text-center w-[44px]">SL</th>
+              <th className="py-2.5 px-3 w-[15%]">Date & Time</th>
+              <th className="py-2.5 px-3 w-[25%]">Particulars / বিবরণ</th>
+              <th className="py-2.5 px-2.5 w-[15%]">Category</th>
+              <th className="py-2.5 px-2.5 w-[11%]">Voucher Ref</th>
+              <th className="py-2.5 px-2.5 text-right w-[10%]">Inflow (৳)</th>
+              <th className="py-2.5 px-2.5 text-right w-[10%]">Outflow (৳)</th>
+              <th className="py-2.5 px-3 text-right w-[11%]">Balance (৳)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <tr>
                 <td colSpan={8} className="py-10 text-center text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-600" />
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1E65A0]" />
                   <span>Loading daily ledger transactions...</span>
                 </td>
               </tr>
@@ -296,30 +280,30 @@ export default function DailyLedgerPage() {
                   key={tx.id}
                   className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
-                  <td className="py-3 px-3 text-center font-bold text-slate-500">
+                  <td className="py-2.5 px-2.5 text-center font-bold text-slate-500">
                     {startIndex + idx + 1}
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                  <td className="py-2.5 px-3 font-mono text-[11px] text-slate-500 truncate">
                     {tx.date_formatted}
                   </td>
-                  <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-100">
+                  <td className="py-2.5 px-3 font-bold text-slate-800 dark:text-slate-100 truncate" title={tx.particulars}>
                     {tx.particulars}
                   </td>
-                  <td className="py-3 px-3 font-medium text-slate-600 dark:text-slate-300">
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800">
+                  <td className="py-2.5 px-2.5 font-medium text-slate-600 dark:text-slate-300 truncate">
+                    <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 truncate inline-block max-w-full">
                       {tx.category}
                     </span>
                   </td>
-                  <td className="py-3 px-3 font-mono text-[11px] text-slate-500">
+                  <td className="py-2.5 px-2.5 font-mono text-[11px] text-slate-500 truncate" title={tx.ref_no}>
                     {tx.ref_no}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400">
+                  <td className="py-2.5 px-2.5 text-right font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                     {tx.inflow > 0 ? formatBdCurrency(tx.inflow) : "—"}
                   </td>
-                  <td className="py-3 px-3 text-right font-black text-rose-600 dark:text-rose-400">
+                  <td className="py-2.5 px-2.5 text-right font-black text-rose-600 dark:text-rose-400 whitespace-nowrap">
                     {tx.outflow > 0 ? formatBdCurrency(tx.outflow) : "—"}
                   </td>
-                  <td className="py-3 px-4 text-right font-black text-slate-900 dark:text-white">
+                  <td className="py-2.5 px-3 text-right font-black text-slate-900 dark:text-white whitespace-nowrap">
                     {formatBdCurrency(tx.running_balance)}
                   </td>
                 </tr>
@@ -397,6 +381,8 @@ export default function DailyLedgerPage() {
           pageSizeOptions={[20, 50, 100, 200, 500]}
         />
       </div>
+
+      <PrintTableSheet {...reportPayload} />
     </div>
   );
 }

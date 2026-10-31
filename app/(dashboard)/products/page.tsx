@@ -21,8 +21,10 @@ import {
   Eye,
   Upload,
 } from "lucide-react";
-import { CustomSelect, Pagination, DeleteConfirmModal } from "@/components/ui";
+import { CustomSelect, Pagination, DeleteConfirmModal, TableActionMenu } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
+import { PrintTableSheet } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
 
 export const SPEC_TYPE_OPTIONS = [
   { value: "all", label: "All Spec Types" },
@@ -350,6 +352,65 @@ export default function ProductsPage() {
     const start = (currentPage - 1) * pageSize;
     return filteredProducts.slice(start, start + pageSize);
   }, [filteredProducts, currentPage, pageSize]);
+
+  // Clean Print-Only Catalog Sheet Payload
+  const printCatalogPayload: PrintReportPayload = {
+    title: "Electrical Products Catalog",
+    subtitle: "Complete catalog of wires, cables, switches, breakers, and accessories",
+    filename: `products_catalog_${new Date().toISOString().slice(0, 10)}`,
+    metaItems: [
+      { label: "Listed Products", value: `${filteredProducts.length} Items` },
+      {
+        label: "Category Filter",
+        value:
+          selectedCategory === "all"
+            ? "All Categories"
+            : categories.find((c) => String(c.id) === selectedCategory)?.category_name ||
+              selectedCategory,
+      },
+      {
+        label: "Brand Filter",
+        value:
+          selectedBrand === "all"
+            ? "All Brands"
+            : brands.find((b) => String(b.id) === selectedBrand)?.name || selectedBrand,
+      },
+      ...(search.trim() ? [{ label: "Search", value: search.trim() }] : []),
+    ],
+    columns: [
+      { header: "SL", align: "center", width: "40px" },
+      { header: "Product Name & Spec", align: "left", width: "28%" },
+      { header: "Barcode / Code", align: "left", width: "16%" },
+      { header: "Category & Brand", align: "left", width: "18%" },
+      { header: "Unit", align: "center", width: "10%" },
+      { header: "Cost Price", align: "right", width: "13%" },
+      { header: "Sell Price", align: "right", width: "13%" },
+    ],
+    rows: filteredProducts.map((p, idx) => {
+      const spec = p.electrical_spec;
+      const specLine = spec
+        ? [
+            spec.cable_size,
+            spec.current_rating,
+            spec.wattage,
+            spec.gang_module,
+            spec.voltage_grade,
+          ]
+            .filter(Boolean)
+            .join(" • ")
+        : "";
+
+      return [
+        { text: String(idx + 1), align: "center", bold: true, color: "muted" },
+        { text: p.product_name, subText: specLine || undefined, bold: true },
+        { text: p.primary_code || p.display_codes || "—", mono: true, color: "muted" },
+        { text: p.category || "—", subText: p.brand || undefined },
+        { text: p.unit || "Pcs", align: "center", bold: true },
+        { text: formatBdCurrency(p.cost_price), align: "right", mono: true },
+        { text: formatBdCurrency(p.sell_price), align: "right", mono: true, bold: true, color: "navy" },
+      ];
+    }),
+  };
 
   function handleOpenAdd() {
     setEditingProduct(null);
@@ -732,7 +793,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Top Actions: Add, Bulk Update, CSV, Print */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
           <button
             onClick={() => setBulkModalOpen(true)}
             className="h-[38px] px-3.5 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold hover:border-[#1E65A0] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
@@ -893,12 +954,12 @@ export default function ProductsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            {/* Desktop Table View — Compact Full-Screen Layout (Zero Horizontal Scroll) */}
+            <div className="hidden md:block">
+              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300 table-auto">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[10.5px] font-bold tracking-wider select-none">
                   <tr>
-                    <th className="py-3 px-3.5 w-10 text-center">
+                    <th className="py-2.5 px-2.5 w-8 text-center">
                       <input
                         type="checkbox"
                         checked={
@@ -909,15 +970,13 @@ export default function ProductsPage() {
                         className="rounded border-white/30 text-[#1E65A0] focus:ring-0 cursor-pointer"
                       />
                     </th>
-                    <th className="py-3 px-3.5">Code / Barcode</th>
-                    <th className="py-3 px-3.5 min-w-[220px]">Product & Electrical Spec</th>
-                    <th className="py-3 px-3.5">Category & Brand</th>
-                    <th className="py-3 px-3.5">Packaging</th>
-                    <th className="py-3 px-3.5 text-right">Cost Price</th>
-                    <th className="py-3 px-3.5 text-right">Sell Price</th>
-                    <th className="py-3 px-3.5 text-center">Stock</th>
-                    <th className="py-3 px-3.5 text-center">Warranty</th>
-                    <th className="py-3 px-3.5 text-center w-24">Actions</th>
+                    <th className="py-2.5 px-2.5">Product, Barcode &amp; Spec</th>
+                    <th className="py-2.5 px-2.5">Category &amp; Brand</th>
+                    <th className="py-2.5 px-2.5">Unit / Pack</th>
+                    <th className="py-2.5 px-2.5 text-right">Cost (৳)</th>
+                    <th className="py-2.5 px-2.5 text-right">Sell (৳)</th>
+                    <th className="py-2.5 px-2.5 text-center">Stock</th>
+                    <th className="py-2.5 px-2 text-center w-14">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -930,11 +989,10 @@ export default function ProductsPage() {
                     return (
                       <tr
                         key={p.id}
-                        className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${
-                          isSelected ? "bg-blue-50/70 dark:bg-blue-950/40" : ""
-                        }`}
+                        className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${isSelected ? "bg-blue-50/70 dark:bg-blue-950/40" : ""
+                          }`}
                       >
-                        <td className="py-3 px-3.5 text-center">
+                        <td className="py-2 px-2.5 text-center">
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -943,47 +1001,51 @@ export default function ProductsPage() {
                           />
                         </td>
 
-                        {/* Barcode badge */}
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                            {p.primary_code}
-                          </span>
-                        </td>
-
-                        {/* Product Name & Spec Badge */}
-                        <td className="py-3 px-3.5">
-                          <div className="space-y-1">
-                            <p className="font-bold text-slate-900 dark:text-white leading-tight">
-                              {p.product_name}
-                            </p>
+                        {/* Compact Product Name + Barcode + Spec + Warranty */}
+                        <td className="py-2 px-2.5 max-w-[290px]">
+                          <p className="font-bold text-slate-900 dark:text-white leading-tight truncate" title={p.product_name}>
+                            {p.product_name}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="font-mono text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-slate-200 dark:border-slate-700">
+                              {p.primary_code}
+                            </span>
                             {renderSpecBadge(p.electrical_spec)}
+                            {(p.electrical_spec?.warranty_months ?? 0) > 0 && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.2 rounded border border-amber-200 dark:border-amber-900">
+                                <ShieldCheck className="w-2.5 h-2.5 text-amber-500" />
+                                {p.electrical_spec?.warranty_months}M
+                              </span>
+                            )}
                           </div>
                         </td>
 
                         {/* Category & Brand */}
-                        <td className="py-3 px-3.5 whitespace-nowrap">
-                          <p className="font-medium text-slate-800 dark:text-slate-200">{p.category}</p>
-                          <p className="text-[10px] text-slate-400 font-semibold">{p.brand}</p>
+                        <td className="py-2 px-2.5 max-w-[155px]">
+                          <p className="font-medium text-slate-800 dark:text-slate-200 truncate" title={p.category}>
+                            {p.category}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-semibold truncate">{p.brand}</p>
                         </td>
 
                         {/* Packaging Conversion */}
-                        <td className="py-3 px-3.5 whitespace-nowrap">
+                        <td className="py-2 px-2.5 whitespace-nowrap">
                           {pkg ? (
                             <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                               1 {pkg.packaging_unit} = {pkg.conversion_ratio} {pkg.base_unit}
                             </span>
                           ) : (
-                            <span className="text-[11px] text-slate-400">1 {p.unit}</span>
+                            <span className="text-[11px] text-slate-500">1 {p.unit}</span>
                           )}
                         </td>
 
                         {/* Cost Price */}
-                        <td className="py-3 px-3.5 text-right font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        <td className="py-2 px-2.5 text-right font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {formatBdCurrency(p.cost_price)}
                         </td>
 
                         {/* Sell & Wholesale Price */}
-                        <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                        <td className="py-2 px-2.5 text-right whitespace-nowrap">
                           <p className="font-bold text-slate-900 dark:text-white">
                             {formatBdCurrency(p.sell_price)}
                           </p>
@@ -995,57 +1057,43 @@ export default function ProductsPage() {
                         </td>
 
                         {/* Stock */}
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                        <td className="py-2 px-2.5 text-center whitespace-nowrap">
                           <span
-                            className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
-                              p.quantity <= 0
+                            className={`px-2 py-0.5 rounded-full font-bold text-[10.5px] ${p.quantity <= 0
                                 ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900"
                                 : p.quantity <= 10
-                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
-                                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
-                            }`}
+                                  ? "bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
+                                  : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                              }`}
                           >
                             {p.quantity} {p.unit}
                           </span>
                         </td>
 
-                        {/* Warranty */}
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                          {(p.electrical_spec?.warranty_months ?? 0) > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-900">
-                              <ShieldCheck className="w-3 h-3 text-amber-500" />
-                              {p.electrical_spec?.warranty_months}M
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-slate-400">None</span>
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => setViewingProduct(p)}
-                              title="View Details"
-                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEdit(p)}
-                              title="Edit Product"
-                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setProductToDelete(p)}
-                              title="Delete Product"
-                              className="w-7 h-7 rounded-lg border border-[#cbd5e1] dark:border-[#334155] hover:border-rose-500 text-slate-600 dark:text-slate-300 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        {/* Actions (>2 actions -> Custom Portal Dropdown) */}
+                        <td className="py-2 px-2 text-center whitespace-nowrap">
+                          <TableActionMenu
+                            headerLabel={p.primary_code}
+                            actions={[
+                              {
+                                label: "View Details",
+                                icon: <Eye className="w-3.5 h-3.5" />,
+                                onClick: () => setViewingProduct(p),
+                              },
+                              {
+                                label: "Edit Product",
+                                icon: <Edit2 className="w-3.5 h-3.5" />,
+                                onClick: () => handleOpenEdit(p),
+                                variant: "primary",
+                              },
+                              {
+                                label: "Delete Product",
+                                icon: <Trash2 className="w-3.5 h-3.5" />,
+                                onClick: () => setProductToDelete(p),
+                                variant: "danger",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );
@@ -1079,11 +1127,10 @@ export default function ProductsPage() {
                       </div>
 
                       <span
-                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${
-                          p.quantity <= 0
+                        className={`px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0 ${p.quantity <= 0
                             ? "bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400"
                             : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400"
-                        }`}
+                          }`}
                       >
                         {p.quantity} {p.unit}
                       </span>
@@ -1935,33 +1982,30 @@ export default function ProductsPage() {
                   <button
                     type="button"
                     onClick={() => setBulkTargetField("sell_price")}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      bulkTargetField === "sell_price"
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${bulkTargetField === "sell_price"
                         ? "bg-[#0B3D91] text-white border-[#0B3D91]"
                         : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
-                    }`}
+                      }`}
                   >
                     Sell Price
                   </button>
                   <button
                     type="button"
                     onClick={() => setBulkTargetField("cost_price")}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      bulkTargetField === "cost_price"
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${bulkTargetField === "cost_price"
                         ? "bg-[#0B3D91] text-white border-[#0B3D91]"
                         : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
-                    }`}
+                      }`}
                   >
                     Cost Price
                   </button>
                   <button
                     type="button"
                     onClick={() => setBulkTargetField("both")}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                      bulkTargetField === "both"
+                    className={`py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${bulkTargetField === "both"
                         ? "bg-[#0B3D91] text-white border-[#0B3D91]"
                         : "border-[#cbd5e1] dark:border-[#334155] text-slate-700 dark:text-slate-300"
-                    }`}
+                      }`}
                   >
                     Both
                   </button>
@@ -2093,6 +2137,9 @@ export default function ProductsPage() {
         warningMessage="Are you sure you want to delete this electrical product? This action cannot be undone."
         loading={deleting}
       />
+
+      {/* Clean Print-Only Catalog Sheet (Details + Multi-Page Table) */}
+      <PrintTableSheet {...printCatalogPayload} />
     </div>
   );
 }

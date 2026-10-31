@@ -280,47 +280,44 @@ export default function WarrantyClaimsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Claim No</th>
-                    <th className="py-3 px-3.5">Serial No</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Product</th>
-                    <th className="py-3 px-3.5">Customer</th>
-                    <th className="py-3 px-3.5 text-center">Expiry</th>
-                    <th className="py-3 px-3.5 text-center">Status</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Defect Issue</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Resolution Note</th>
-                    <th className="py-3 px-3.5 text-center w-28">Action</th>
+                    <th className="py-2.5 px-2.5 w-[135px]">Claim &amp; Serial</th>
+                    <th className="py-2.5 px-2.5 w-[20%]">Product</th>
+                    <th className="py-2.5 px-2.5 w-[14%]">Customer</th>
+                    <th className="py-2.5 px-2 text-center w-[95px]">Expiry</th>
+                    <th className="py-2.5 px-2 text-center w-[85px]">Status</th>
+                    <th className="py-2.5 px-2.5">Defect &amp; Resolution</th>
+                    <th className="py-2.5 px-2 text-center w-[85px]">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginated.map((c) => (
                     <tr key={c.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                      <td className="py-2 px-2.5 min-w-0">
+                        <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[10px] inline-block">
                           {c.claim_no}
                         </span>
+                        <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-0.5 truncate" title={c.serial_number}>
+                          SN: {c.serial_number}
+                        </div>
                       </td>
 
-                      <td className="py-3 px-3.5 font-mono text-slate-600 dark:text-slate-300 font-bold">
-                        {c.serial_number}
-                      </td>
-
-                      <td className="py-3 px-3.5 font-bold text-slate-900 dark:text-white">
+                      <td className="py-2 px-2.5 font-bold text-slate-900 dark:text-white truncate" title={c.product_name}>
                         {c.product_name}
                       </td>
 
-                      <td className="py-3 px-3.5 text-slate-700 dark:text-slate-300">
+                      <td className="py-2 px-2.5 text-slate-700 dark:text-slate-300 truncate" title={c.customer_name}>
                         {c.customer_name}
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap font-mono text-[11px]">
+                      <td className="py-2 px-2 text-center whitespace-nowrap font-mono text-[11px]">
                         {c.expiry_date}
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                             c.status === "REPLACED"
@@ -334,15 +331,18 @@ export default function WarrantyClaimsPage() {
                         </span>
                       </td>
 
-                      <td className="py-3 px-3.5 text-slate-600 dark:text-slate-300 text-[11px] leading-snug">
-                        {c.defect_issue}
+                      <td className="py-2 px-2.5 min-w-0">
+                        <div className="text-slate-700 dark:text-slate-200 text-[11px] font-medium truncate" title={c.defect_issue}>
+                          {c.defect_issue}
+                        </div>
+                        {c.resolution && (
+                          <div className="text-[10px] text-slate-400 truncate mt-0.5" title={c.resolution}>
+                            Res: {c.resolution}
+                          </div>
+                        )}
                       </td>
 
-                      <td className="py-3 px-3.5 text-slate-600 dark:text-slate-300 text-[11px] leading-snug">
-                        {c.resolution}
-                      </td>
-
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => {
@@ -350,7 +350,7 @@ export default function WarrantyClaimsPage() {
                             setSettleStatus(c.status === "CLAIMED" ? "REPLACED" : c.status);
                             setSettleResolution(c.resolution || "");
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-[#1E65A0] dark:text-blue-300 text-[10px] font-bold border border-blue-200 dark:border-blue-800 transition cursor-pointer flex items-center gap-1 mx-auto"
+                          className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 text-[#1E65A0] dark:text-blue-300 text-[10px] font-bold border border-blue-200 dark:border-blue-800 transition cursor-pointer flex items-center gap-1 mx-auto"
                         >
                           <Wrench className="w-3 h-3" />
                           <span>Process</span>

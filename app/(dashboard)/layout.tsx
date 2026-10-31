@@ -11,30 +11,10 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-      fetch("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => {
-          if (!res.ok) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("role");
-            window.location.href = "/login";
-          }
-        })
-        .catch(() => {});
-    } catch {
-      // ignore
-    }
-
+    let active = true;
     try {
       const saved = localStorage.getItem("sidebar_collapsed");
       if (saved !== null) {
@@ -43,6 +23,41 @@ export default function DashboardLayout({
     } catch {
       // ignore
     }
+
+    const verifySession = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const res = await fetch("/api/auth/me", {
+          headers,
+          cache: "no-store",
+        });
+        if (!res.ok) {
+          await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("role");
+          window.location.replace("/login");
+          return;
+        }
+        const json = await res.json().catch(() => null);
+        if (json?.user) {
+          localStorage.setItem("user", JSON.stringify(json.user));
+          if (json.user.role) localStorage.setItem("role", json.user.role);
+        }
+        if (active) setAuthReady(true);
+      } catch {
+        window.location.replace("/login");
+      }
+    };
+
+    verifySession();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleToggleSidebar = () => {
@@ -61,9 +76,13 @@ export default function DashboardLayout({
     }
   };
 
+  if (!authReady) {
+    return <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0b0f19]" />;
+  }
+
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-[#0b0f19] transition-colors">
-      {/* Sidebar: Expanded (260px) or Collapsed (70px) + Mobile Drawer */}
+      {/* Sidebar: Expanded (228px) or Collapsed (70px) + Mobile Drawer */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -83,15 +102,15 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-          isCollapsed ? "lg:ml-[70px]" : "lg:ml-[260px]"
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out print:!ml-0 print:!w-full ${
+          isCollapsed ? "lg:ml-[70px]" : "lg:ml-[228px]"
         }`}
       >
         {/* Sticky Topbar */}
         <Topbar onToggleSidebar={handleToggleSidebar} />
 
         {/* Page Content Viewport */}
-        <main className="flex-1 p-2.5 sm:p-4 md:p-6 transition-all">
+        <main className="flex-1 p-2.5 sm:p-3.5 lg:p-4 min-w-0 transition-all print:!p-0 print:!m-0">
           {children}
         </main>
       </div>

@@ -21,6 +21,8 @@ import { formatBdCurrency } from "@/lib/utils";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Pagination } from "@/components/ui";
 import { formatElectricalQty } from "@/lib/electrical-unit-service";
+import { PrintTableSheet } from "@/components/reports/print-table-sheet";
+import type { PrintReportPayload } from "@/lib/report-pdf";
 
 interface InventoryItem {
   id: number;
@@ -259,52 +261,82 @@ export default function InventoryPage() {
   const startIndex = (currentPage - 1) * pageSize;
   const displayedItems = filteredItems.slice(startIndex, startIndex + pageSize);
 
+  const totalFilteredCostValue = filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0);
+  const totalFilteredRetailValue = filteredItems.reduce((acc, i) => acc + i.total_retail_value, 0);
+
+  const printPayload: PrintReportPayload = {
+    title: "Stock Inventory & Valuation Report",
+    subtitle: "Live stock levels, electrical packaging units, and inventory valuation",
+    filename: `stock_inventory_${new Date().toISOString().slice(0, 10)}`,
+    metaItems: [
+      {
+        label: "Stock Filter",
+        value:
+          statusFilter === "all"
+            ? "All Stock"
+            : statusFilter === "low"
+              ? "Low Stock"
+              : "Out of Stock",
+      },
+      { label: "SKUs Listed", value: String(filteredItems.length) },
+      { label: "Total Cost Value", value: formatBdCurrency(totalFilteredCostValue) },
+      { label: "Total Retail Value", value: formatBdCurrency(totalFilteredRetailValue) },
+    ],
+    columns: [
+      { header: "SL", align: "center", width: "36px" },
+      { header: "Product Name & Spec", align: "left", width: "26%" },
+      { header: "Barcode", align: "left", width: "13%" },
+      { header: "Category & Brand", align: "left", width: "16%" },
+      { header: "Stock Level", align: "center", width: "12%" },
+      { header: "Cost (৳)", align: "right", width: "10%" },
+      { header: "Sell (৳)", align: "right", width: "10%" },
+      { header: "Cost Value (৳)", align: "right", width: "13%" },
+    ],
+    rows: filteredItems.map((item, idx) => {
+      const specLine = [
+        item.cable_size ? `Size: ${item.cable_size}` : null,
+        item.current_rating ? `Rating: ${item.current_rating}` : null,
+        item.wattage ? `Wattage: ${item.wattage}` : null,
+        item.gang_module ? `Module: ${item.gang_module}` : null,
+        item.voltage_grade ? `Voltage: ${item.voltage_grade}` : null,
+      ]
+        .filter(Boolean)
+        .join(" • ");
+
+      return [
+        { text: String(idx + 1), align: "center", bold: true, color: "muted" },
+        {
+          text: item.name,
+          subText: specLine || undefined,
+          bold: true,
+        },
+        { text: item.primary_code || "—", mono: true, color: "muted" },
+        { text: item.category || "—", subText: item.brand || undefined },
+        {
+          text: item.packaging_summary || formatElectricalQty(item.quantity, { unit: item.unit }),
+          align: "center",
+          bold: true,
+          color: item.quantity <= 0 ? "rose" : item.quantity <= 10 ? "amber" : "navy",
+        },
+        { text: formatBdCurrency(item.cost_price), align: "right", mono: true },
+        { text: formatBdCurrency(item.sell_price), align: "right", mono: true, bold: true },
+        { text: formatBdCurrency(item.total_cost_value), align: "right", mono: true, bold: true, color: "navy" },
+      ];
+    }),
+    totalRow: [
+      "",
+      { text: "Total Inventory Valuation", bold: true },
+      "",
+      "",
+      { text: `${filteredItems.length} SKUs`, align: "center", bold: true },
+      "",
+      "",
+      { text: formatBdCurrency(totalFilteredCostValue), align: "right", mono: true, bold: true, color: "navy" },
+    ],
+  };
+
   return (
     <div className="space-y-4">
-      {/* Print-Only Styles and Dedicated Report Template */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10mm 10mm 12mm 10mm;
-          }
-          body {
-            background: #ffffff !important;
-            color: #000000 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          aside,
-          header,
-          nav,
-          footer,
-          .no-print {
-            display: none !important;
-          }
-          .print-only {
-            display: block !important;
-          }
-          .print-table {
-            width: 100% !important;
-            border-collapse: collapse !important;
-            font-size: 10px !important;
-          }
-          .print-table th,
-          .print-table td {
-            border: 1px solid #94a3b8 !important;
-            padding: 4px 6px !important;
-          }
-          .print-table tr {
-            page-break-inside: avoid !important;
-          }
-        }
-        @media screen {
-          .print-only {
-            display: none !important;
-          }
-        }
-      `}</style>
-
       {/* 1. Header & Actions (Screen View) */}
       <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#0f172a] p-4 rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs">
         <div className="flex items-center gap-3">
@@ -537,7 +569,7 @@ export default function InventoryPage() {
                   { value: "500", label: "Show: 500" },
                 ]}
                 matchTriggerWidth={true}
-                minPopoverWidth={125}
+                searchThreshold={99}
                 className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
               />
             </div>
@@ -545,34 +577,33 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* 4. Desktop Table (Screen View) */}
+      {/* 4. Desktop Table (Compact Full-Screen View — Zero Horizontal Scrollbar) */}
       <div className="no-print hidden md:block bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div>
+          <table className="w-full text-left text-xs border-collapse table-auto">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-bold whitespace-nowrap">
-                <th className="py-3 px-3 text-center w-[50px]">SL</th>
-                <th className="py-3 px-4">Product Name &amp; Electrical Specs</th>
-                <th className="py-3 px-3">Barcode</th>
-                <th className="py-3 px-3">Category &amp; Brand</th>
-                <th className="py-3 px-3 text-center">Stock Level (Packaging)</th>
-                <th className="py-3 px-3 text-right">Cost (৳)</th>
-                <th className="py-3 px-3 text-right">Sell (৳)</th>
-                <th className="py-3 px-3 text-right">Total Cost Value</th>
-                <th className="py-3 px-4 text-center w-24">Adjust</th>
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white text-[10.5px] uppercase tracking-wider font-bold whitespace-nowrap">
+                <th className="py-2.5 px-2 text-center w-10">SL</th>
+                <th className="py-2.5 px-2.5">Product, Barcode &amp; Specs</th>
+                <th className="py-2.5 px-2.5">Category &amp; Brand</th>
+                <th className="py-2.5 px-2.5 text-center">Stock</th>
+                <th className="py-2.5 px-2.5 text-right">Cost (৳)</th>
+                <th className="py-2.5 px-2.5 text-right">Sell (৳)</th>
+                <th className="py-2.5 px-2.5 text-right">Stock Value</th>
+                <th className="py-2.5 px-2.5 text-center w-20">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-400">
+                  <td colSpan={8} className="py-10 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#1E65A0]" />
                     <span>Loading inventory status...</span>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-400 font-bold">
+                  <td colSpan={8} className="py-10 text-center text-slate-400 font-bold">
                     No items matching filter.
                   </td>
                 </tr>
@@ -582,93 +613,77 @@ export default function InventoryPage() {
                     key={item.id}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    <td className="py-3 px-3 text-center font-bold text-slate-500">
+                    <td className="py-2 px-2 text-center font-bold text-slate-500">
                       {startIndex + idx + 1}
                     </td>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-800 dark:text-slate-100 text-xs">
+                    <td className="py-2 px-2.5 max-w-[300px]">
+                      <div className="font-bold text-slate-800 dark:text-slate-100 text-xs truncate" title={item.name}>
                         {item.name}
                       </div>
-                      {(item.cable_size ||
-                        item.current_rating ||
-                        item.voltage_grade ||
-                        item.wattage ||
-                        item.gang_module) && (
-                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                          {item.cable_size && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                              ⚡ {item.cable_size}
-                            </span>
-                          )}
-                          {item.current_rating && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                              ⚡ {item.current_rating}
-                            </span>
-                          )}
-                          {item.wattage && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                              💡 {item.wattage}
-                            </span>
-                          )}
-                          {item.gang_module && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
-                              🔌 {item.gang_module}
-                            </span>
-                          )}
-                          {item.voltage_grade && (
-                            <span className="text-[9px] font-medium text-slate-500">
-                              {item.voltage_grade}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 font-mono text-[11px] text-slate-500">
-                      {item.primary_code || "—"}
-                    </td>
-                    <td className="py-3 px-3">
-                      <div className="font-semibold text-slate-700 dark:text-slate-200">
-                        {item.category}
-                      </div>
-                      <div className="text-[10px] text-slate-400">{item.brand}</div>
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <div className="space-y-0.5">
-                        <span
-                          className={`inline-block px-2.5 py-1 rounded-full text-xs font-black ${
-                            item.quantity <= 0
-                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
-                              : item.quantity <= 10
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
-                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-                          }`}
-                        >
-                          {item.packaging_summary || `${item.quantity} ${item.unit}`}
-                        </span>
-                        {item.conversion_ratio && item.conversion_ratio > 1 && (
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            ({item.quantity} {item.unit})
-                          </div>
+                      <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                        {item.primary_code && (
+                          <span className="font-mono text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            {item.primary_code}
+                          </span>
+                        )}
+                        {item.cable_size && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                            ⚡ {item.cable_size}
+                          </span>
+                        )}
+                        {item.current_rating && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+                            ⚡ {item.current_rating}
+                          </span>
+                        )}
+                        {item.wattage && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+                            💡 {item.wattage}
+                          </span>
+                        )}
+                        {item.gang_module && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300">
+                            🔌 {item.gang_module}
+                          </span>
                         )}
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right font-medium text-slate-600 dark:text-slate-300">
+                    <td className="py-2 px-2.5 max-w-[155px]">
+                      <div className="font-semibold text-slate-700 dark:text-slate-200 truncate" title={item.category}>
+                        {item.category}
+                      </div>
+                      <div className="text-[10px] text-slate-400 truncate">{item.brand}</div>
+                    </td>
+                    <td className="py-2 px-2.5 text-center whitespace-nowrap">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-black ${
+                          item.quantity <= 0
+                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400"
+                            : item.quantity <= 10
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400"
+                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                        }`}
+                      >
+                        {item.quantity} {item.unit}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2.5 text-right font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                       {item.cost_price.toFixed(2)}
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
+                    <td className="py-2 px-2.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
                       {item.sell_price.toFixed(2)}
                     </td>
-                    <td className="py-3 px-3 text-right font-black text-sky-700 dark:text-sky-400">
+                    <td className="py-2 px-2.5 text-right font-black text-[#0B3D91] dark:text-sky-400 whitespace-nowrap">
                       {formatBdCurrency(item.total_cost_value)}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2 px-2.5 text-center whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => handleOpenAdjust(item)}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1 mx-auto transition-colors cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#0B3D91] dark:text-blue-300 border border-blue-200 dark:border-slate-700 font-bold text-[11px] inline-flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         title="Adjust Stock Quantity"
                       >
-                        <Edit2 className="w-3.5 h-3.5 text-[#1E65A0]" />
+                        <Edit2 className="w-3 h-3 text-[#1E65A0]" />
                         <span>Adjust</span>
                       </button>
                     </td>
@@ -891,167 +906,8 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* 7. DEDICATED PRINT-ONLY REPORT TEMPLATE */}
-      <div className="print-only p-2 text-black bg-white">
-        {/* Report Header */}
-        <div className="border-b-2 border-slate-900 pb-2 mb-3">
-          <div className="flex justify-between items-start">
-            <div className="flex items-start gap-2.5">
-              <img
-                src="/logo.png"
-                alt="Protikkha Electric"
-                className="h-9 w-auto max-w-[150px] object-contain shrink-0"
-              />
-              <div>
-                <h1 className="text-lg font-black tracking-tight text-[#0B3D91] m-0 leading-tight">
-                  PROTIKKHA ELECTRIC
-                </h1>
-                <p className="text-[11px] text-slate-600 font-medium m-0">
-                  Electrical Retail &amp; Wholesale POS &amp; Inventory Management
-                </p>
-                <h2 className="text-xs font-bold text-slate-800 mt-1 uppercase tracking-wider">
-                  Stock Inventory &amp; Valuation Report
-                </h2>
-              </div>
-            </div>
-            <div className="text-right text-[10px] text-slate-600">
-              <p>
-                Printed: {new Date().toLocaleDateString("en-GB")}{" "}
-                {new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-              <p>
-                Filter:{" "}
-                <strong className="text-slate-900">
-                  {statusFilter === "all"
-                    ? "All Stock"
-                    : statusFilter === "low"
-                      ? "Low Stock"
-                      : "Out of Stock"}
-                </strong>
-              </p>
-              <p>
-                SKUs Listed: <strong className="text-slate-900">{filteredItems.length}</strong>
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Valuation Summary Bar */}
-          <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-300 text-[10px]">
-            <div className="p-1 bg-slate-100 rounded border border-slate-300">
-              <span className="text-slate-500 block">Total SKUs</span>
-              <strong className="text-slate-900 text-[11px]">{filteredItems.length}</strong>
-            </div>
-            <div className="p-1 bg-slate-100 rounded border border-slate-300">
-              <span className="text-slate-500 block">Total Stock Cost Value</span>
-              <strong className="text-slate-900 text-[11px]">
-                {formatBdCurrency(filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0))}
-              </strong>
-            </div>
-            <div className="p-1 bg-slate-100 rounded border border-slate-300">
-              <span className="text-slate-500 block">Total Retail Value</span>
-              <strong className="text-slate-900 text-[11px]">
-                {formatBdCurrency(filteredItems.reduce((acc, i) => acc + i.total_retail_value, 0))}
-              </strong>
-            </div>
-            <div className="p-1 bg-slate-100 rounded border border-slate-300">
-              <span className="text-slate-500 block">Potential Margin</span>
-              <strong className="text-slate-900 text-[11px]">
-                {formatBdCurrency(
-                  Math.max(
-                    0,
-                    filteredItems.reduce((acc, i) => acc + i.total_retail_value, 0) -
-                      filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0)
-                  )
-                )}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Printable Table */}
-        <table className="print-table">
-          <thead>
-            <tr className="bg-slate-200 text-slate-900 font-bold text-left">
-              <th className="text-center w-8">SL</th>
-              <th>Product Name &amp; Specification</th>
-              <th>Barcode</th>
-              <th>Category</th>
-              <th>Brand</th>
-              <th className="text-center">Stock Level</th>
-              <th className="text-right">Cost (৳)</th>
-              <th className="text-right">Sell (৳)</th>
-              <th className="text-right">Cost Value (৳)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredItems.map((item, idx) => (
-              <tr key={item.id} className="text-slate-800">
-                <td className="text-center font-bold">{idx + 1}</td>
-                <td>
-                  <div className="font-bold">{item.name}</div>
-                  {(item.cable_size ||
-                    item.current_rating ||
-                    item.voltage_grade ||
-                    item.wattage ||
-                    item.gang_module) && (
-                    <div className="text-[9px] text-slate-500">
-                      {[
-                        item.cable_size ? `Size: ${item.cable_size}` : null,
-                        item.current_rating ? `Rating: ${item.current_rating}` : null,
-                        item.wattage ? `Wattage: ${item.wattage}` : null,
-                        item.gang_module ? `Module: ${item.gang_module}` : null,
-                        item.voltage_grade ? `Voltage: ${item.voltage_grade}` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </div>
-                  )}
-                </td>
-                <td className="font-mono text-[9px]">{item.primary_code || "—"}</td>
-                <td>{item.category}</td>
-                <td>{item.brand}</td>
-                <td className="text-center font-bold">
-                  {item.packaging_summary || `${item.quantity} ${item.unit}`}
-                </td>
-                <td className="text-right">{item.cost_price.toFixed(2)}</td>
-                <td className="text-right">{item.sell_price.toFixed(2)}</td>
-                <td className="text-right font-bold">{formatBdCurrency(item.total_cost_value)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="bg-slate-100 font-bold border-t-2 border-slate-900">
-              <td colSpan={5} className="text-right py-1.5 px-2">
-                Total Inventory Valuation:
-              </td>
-              <td className="text-center py-1.5 px-2">
-                {filteredItems.reduce((acc, i) => acc + i.quantity, 0)} Units
-              </td>
-              <td></td>
-              <td></td>
-              <td className="text-right py-1.5 px-2 font-black">
-                {formatBdCurrency(filteredItems.reduce((acc, i) => acc + i.total_cost_value, 0))}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-
-        {/* Signatures */}
-        <div className="flex justify-between items-end mt-12 pt-8 text-[11px] text-slate-600">
-          <div className="text-center">
-            <div className="w-40 border-t border-slate-400 mb-1"></div>
-            <span>Prepared By</span>
-          </div>
-          <div className="text-center">
-            <div className="w-40 border-t border-slate-400 mb-1"></div>
-            <span>Store Manager</span>
-          </div>
-          <div className="text-center">
-            <div className="w-40 border-t border-slate-400 mb-1"></div>
-            <span>Authorized Signature</span>
-          </div>
-        </div>
-      </div>
+      {/* 7. Clean Print-Only Sheet (Details + Multi-Page Table) */}
+      <PrintTableSheet {...printPayload} />
     </div>
   );
 }

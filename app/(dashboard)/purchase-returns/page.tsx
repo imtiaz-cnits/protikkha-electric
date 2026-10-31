@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   RotateCcw,
@@ -26,7 +26,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomSelect, Pagination, CustomDatePicker } from "@/components/ui";
+import { CustomSelect, Pagination, CustomDatePicker, TableActionMenu } from "@/components/ui";
 import { useToast } from "@/components/ui/toast";
 
 function formatElectricalQty(qty: number | string, item?: any): string {
@@ -95,6 +95,7 @@ interface SearchRecordData {
 function PurchaseReturnsManagementContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // History List State
   const [returnsList, setReturnsList] = useState<ReturnItem[]>([]);
@@ -424,7 +425,7 @@ function PurchaseReturnsManagementContent() {
         </p>
 
         <form onSubmit={handleQuickSearchSubmit} className="flex flex-row items-stretch gap-2.5">
-          <div className="flex-1 min-w-0 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 shadow-xs transition-all">
+          <div className="flex-1 min-w-0 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] focus-within:ring-2 focus-within:ring-[#1E65A0]/20 shadow-xs transition-all">
             <input
               type="text"
               value={quickSearchInput}
@@ -507,12 +508,14 @@ function PurchaseReturnsManagementContent() {
                   { label: "50", value: "50" },
                   { label: "100", value: "100" },
                 ]}
+                matchTriggerWidth={true}
+                searchThreshold={99}
               />
             </div>
             <span className="text-xs font-bold text-slate-700 dark:text-slate-300">entries</span>
           </div>
 
-          <div className="w-full sm:w-72 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 shadow-2xs">
+          <div className="w-full sm:w-72 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] shadow-2xs">
             <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
             <input
               type="text"
@@ -527,26 +530,26 @@ function PurchaseReturnsManagementContent() {
           </div>
         </div>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        {/* Desktop Table View (Compact Full-Screen Fit) */}
+        <div className="hidden md:block">
+          <table className="w-full table-fixed text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
-                <th className="p-3 text-center w-[45px]">SL</th>
-                <th className="p-3 w-[120px] whitespace-nowrap">Return Date</th>
-                <th className="p-3 min-w-[170px] whitespace-nowrap">Purchase Memo</th>
-                <th className="p-3">Supplier Name</th>
-                <th className="p-3">Returned Product</th>
-                <th className="p-3 text-center w-[110px]">Qty</th>
-                <th className="p-3 text-right w-[150px]">Adjusted Amount</th>
-                <th className="p-3 text-center w-[120px] whitespace-nowrap">Action</th>
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap">
+                <th className="px-2 py-2.5 text-center w-[40px]">SL</th>
+                <th className="px-2.5 py-2.5 w-[105px]">Date</th>
+                <th className="px-2.5 py-2.5 w-[145px]">Purchase Memo</th>
+                <th className="px-2.5 py-2.5 w-[18%]">Supplier</th>
+                <th className="px-2.5 py-2.5">Returned Product &amp; Barcode</th>
+                <th className="px-2 py-2.5 text-center w-[95px]">Qty</th>
+                <th className="px-2.5 py-2.5 text-right w-[125px]">Adjusted</th>
+                <th className="px-2 py-2.5 text-center w-[64px]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-rose-600" />
+                    <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-[#1E65A0]" />
                     Loading purchase return records...
                   </td>
                 </tr>
@@ -567,111 +570,96 @@ function PurchaseReturnsManagementContent() {
                       key={item.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                     >
-                      <td className="p-3 text-center font-bold text-slate-400">
+                      <td className="px-2 py-2 text-center font-bold text-slate-400">
                         {startIndex + idx + 1}
                       </td>
-                      <td className="p-3 font-medium whitespace-nowrap text-slate-600 dark:text-slate-300">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-rose-600" />
+                      <td className="px-2.5 py-2 font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 text-[11px]">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#1E65A0] shrink-0" />
                           <span>{item.date || "N/A"}</span>
                         </div>
                       </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <div className="flex flex-col items-start gap-1">
-                          {/* Return Badge */}
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs">
+                      <td className="px-2.5 py-2 whitespace-nowrap">
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
                             {returnBadge}
                           </span>
-                          {/* Clickable Purchase Memo Link */}
                           {purchaseUrl ? (
                             <Link
                               href={purchaseUrl}
-                              className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 px-2 py-0.5 rounded-md hover:bg-rose-100 hover:text-rose-800 dark:hover:bg-rose-900/60 transition-colors group/pur cursor-pointer"
+                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-[#0B3D91] dark:text-blue-400 hover:underline truncate max-w-[130px]"
                               title={`Open Original Purchase Memo ${item.record_no}`}
                             >
-                              <span>{item.record_no}</span>
-                              <ExternalLink className="w-2.5 h-2.5 opacity-70 group-hover/pur:opacity-100 transition-opacity" />
+                              <span className="truncate">{item.record_no}</span>
+                              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                             </Link>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                            <span className="font-mono text-[10px] text-slate-500 truncate max-w-[130px]">
                               {item.record_no}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="p-3">
+                      <td className="px-2.5 py-2 min-w-0">
                         {supplierUrl ? (
                           <Link
                             href={supplierUrl}
-                            className="font-bold text-slate-800 dark:text-white hover:text-rose-700 dark:hover:text-rose-400 hover:underline transition-colors inline-flex items-center gap-1 group/supp"
+                            className="font-bold text-slate-800 dark:text-white hover:text-[#1E65A0] dark:hover:text-blue-400 hover:underline transition-colors block truncate"
                             title="View Supplier Profile"
                           >
-                            <span>{item.party_name}</span>
-                            <ExternalLink className="w-2.5 h-2.5 text-rose-600 opacity-0 group-hover/supp:opacity-100 transition-opacity" />
+                            {item.party_name}
                           </Link>
                         ) : (
-                          <div className="font-bold text-slate-800 dark:text-white">{item.party_name}</div>
+                          <div className="font-bold text-slate-800 dark:text-white truncate">{item.party_name}</div>
                         )}
                         {item.party_mobile && (
-                          <div className="text-[10px] text-slate-400 font-normal">{item.party_mobile}</div>
+                          <div className="text-[10px] text-slate-400 font-normal truncate">{item.party_mobile}</div>
                         )}
                       </td>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800 dark:text-white">{item.product_name}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] font-mono text-slate-400">Code: {item.product_code}</span>
-                          {item.tile_size && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
-                              📐 {item.tile_size}
-                            </span>
-                          )}
+                      <td className="px-2.5 py-2 min-w-0">
+                        <div className="font-bold text-slate-800 dark:text-white truncate" title={item.product_name}>
+                          {item.product_name}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] font-mono text-slate-400 truncate">Code: {item.product_code}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-center font-bold text-slate-800 dark:text-white">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-xs whitespace-nowrap">
+                      <td className="px-2 py-2 text-center font-bold text-slate-800 dark:text-white">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-[11px] whitespace-nowrap">
                           {formatElectricalQty(item.quantity, item)}
                         </span>
                       </td>
-                      <td className="p-3 text-right font-black text-rose-700 dark:text-rose-400 text-xs">
+                      <td className="px-2.5 py-2 text-right font-black text-rose-700 dark:text-rose-400 text-xs whitespace-nowrap">
                         {formatBdCurrency(item.amount)}
                       </td>
-                      <td className="p-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* 1. Quick View (Eye) */}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedReturnForQuickView(item)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs cursor-pointer"
-                            title="Quick View Summary"
-                            aria-label="Quick View"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* 2. Open Original Purchase Memo (FileText) */}
-                          {purchaseUrl && (
-                            <Link
-                              href={purchaseUrl}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 hover:bg-blue-600 hover:text-white transition-all shadow-2xs"
-                              title="Open Original Purchase Memo"
-                              aria-label="Open Memo"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-
-                          {/* 3. Supplier Profile (User) */}
-                          {supplierUrl && (
-                            <Link
-                              href={supplierUrl}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
-                              title="View Supplier Profile"
-                              aria-label="View Profile"
-                            >
-                              <User className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-                        </div>
+                      <td className="px-2 py-2 text-center whitespace-nowrap">
+                        <TableActionMenu
+                          headerLabel={returnBadge}
+                          actions={[
+                            {
+                              label: "Quick View Summary",
+                              icon: <Eye className="w-3.5 h-3.5" />,
+                              variant: "primary",
+                              onClick: () => setSelectedReturnForQuickView(item),
+                            },
+                            {
+                              label: "Open Purchase Memo",
+                              icon: <FileText className="w-3.5 h-3.5" />,
+                              hidden: !purchaseUrl,
+                              onClick: () => {
+                                if (purchaseUrl) router.push(purchaseUrl);
+                              },
+                            },
+                            {
+                              label: "Supplier Profile",
+                              icon: <User className="w-3.5 h-3.5" />,
+                              hidden: !supplierUrl,
+                              onClick: () => {
+                                if (supplierUrl) router.push(supplierUrl);
+                              },
+                            },
+                          ]}
+                        />
                       </td>
                     </tr>
                   );
@@ -865,7 +853,7 @@ function PurchaseReturnsManagementContent() {
                   Search Purchase Memo Number
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-[42px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 shadow-2xs">
+                  <div className="flex-1 h-[42px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] shadow-2xs">
                     <Search className="w-4 h-4 text-slate-400 shrink-0 mr-2" />
                     <input
                       type="text"
@@ -1006,13 +994,12 @@ function PurchaseReturnsManagementContent() {
                           return (
                             <tr
                               key={item.detail_id}
-                              className={`transition-colors ${
-                                !isEligible
+                              className={`transition-colors ${!isEligible
                                   ? "opacity-50 bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed"
                                   : isSelected
-                                  ? "bg-rose-50/60 dark:bg-rose-950/30"
-                                  : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                              }`}
+                                    ? "bg-rose-50/60 dark:bg-rose-950/30"
+                                    : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                                }`}
                             >
                               <td className="p-2.5 text-center">
                                 <input
@@ -1020,7 +1007,7 @@ function PurchaseReturnsManagementContent() {
                                   disabled={!isEligible}
                                   checked={isSelected}
                                   onChange={() => handleToggleSelect(item.detail_id)}
-                                  className="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 cursor-pointer disabled:cursor-not-allowed"
+                                  className="w-4 h-4 rounded text-[#0B3D91] focus:ring-[#1E65A0] cursor-pointer disabled:cursor-not-allowed"
                                 />
                               </td>
                               <td className="p-2.5">
@@ -1428,7 +1415,7 @@ function PurchaseReturnsManagementContent() {
 
             {/* Modal Footer: Sticky Bottom Navigation & Actions */}
             <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
                 {selectedReturnForQuickView.purchase_id && (
                   <Link
                     href={`/purchases/${selectedReturnForQuickView.purchase_id}`}
@@ -1477,7 +1464,7 @@ function PurchaseReturnsManagementContent() {
 
       {/* 7. Printable Return Document Voucher Modal */}
       {selectedReturnForPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+        <div className="erp-voucher-print-modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
           <div className="bg-white text-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:border-none print:shadow-none print:w-full">
             {/* Top Bar - Hidden in Print */}
             <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">

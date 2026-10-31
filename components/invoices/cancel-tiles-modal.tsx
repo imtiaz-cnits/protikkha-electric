@@ -297,9 +297,8 @@ export function CancelTilesModal({
                 Current Due
               </span>
               <span
-                className={`font-black block mt-0.5 ${
-                  invoice.due_amount > 0 ? "text-rose-600" : "text-emerald-600"
-                }`}
+                className={`font-black block mt-0.5 ${invoice.due_amount > 0 ? "text-rose-600" : "text-emerald-600"
+                  }`}
               >
                 {formatBdCurrency(invoice.due_amount)}
               </span>
@@ -328,13 +327,13 @@ export function CancelTilesModal({
                 <button
                   type="button"
                   onClick={toggleAll}
-                  className="w-5 h-5 rounded-md border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] flex items-center justify-center cursor-pointer hover:border-rose-500 transition-colors"
+                  className="w-5 h-5 rounded-md border-[1.5px] border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] flex items-center justify-center cursor-pointer hover:border-[#1E65A0] transition-colors"
                 >
                   {isAllSelected && (
-                    <Check className="w-3.5 h-3.5 text-rose-600 stroke-[3]" />
+                    <Check className="w-3.5 h-3.5 text-[#1E65A0] stroke-[3]" />
                   )}
                   {!isAllSelected && selectedIds.length > 0 && (
-                    <div className="w-2 h-2 rounded-xs bg-rose-600" />
+                    <div className="w-2 h-2 rounded-xs bg-[#1E65A0]" />
                   )}
                 </button>
                 <label
@@ -366,11 +365,10 @@ export function CancelTilesModal({
                     <div
                       key={item.id}
                       onClick={() => toggleItem(item.id)}
-                      className={`p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-colors select-none ${
-                        isChecked
+                      className={`p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer transition-colors select-none ${isChecked
                           ? "bg-rose-50/40 dark:bg-rose-950/20"
                           : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <button
@@ -379,17 +377,16 @@ export function CancelTilesModal({
                             e.stopPropagation();
                             toggleItem(item.id);
                           }}
-                          className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-all ${
-                            isChecked
-                              ? "bg-rose-600 border-rose-600 text-white"
-                              : "border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] hover:border-rose-400"
-                          }`}
+                          className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center shrink-0 cursor-pointer transition-all ${isChecked
+                              ? "bg-[#1E65A0] border-[#1E65A0] text-white"
+                              : "border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] hover:border-[#1E65A0]"
+                            }`}
                         >
                           {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                         </button>
 
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                               {item.product_name}
                             </span>
@@ -424,11 +421,10 @@ export function CancelTilesModal({
                       {/* Middle: Editable Box & Pcs Inputs */}
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className={`flex items-center gap-2 shrink-0 px-2.5 py-1.5 rounded-xl border transition-all ${
-                          isChecked
+                        className={`flex items-center gap-2 shrink-0 px-2.5 py-1.5 rounded-xl border transition-all ${isChecked
                             ? "bg-white dark:bg-slate-800/90 border-rose-200 dark:border-rose-900/60 shadow-xs"
                             : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 opacity-60"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
@@ -449,7 +445,7 @@ export function CancelTilesModal({
                                 itemData.pcsPerBox
                               );
                             }}
-                            className="w-12 h-7 px-1 text-center font-mono font-bold text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500 disabled:opacity-50"
+                            className="w-12 h-7 px-1 text-center font-mono font-bold text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#1E65A0] disabled:opacity-50"
                           />
                         </div>
                         <div className="flex items-center gap-1">
@@ -471,7 +467,7 @@ export function CancelTilesModal({
                                 itemData.pcsPerBox
                               );
                             }}
-                            className="w-12 h-7 px-1 text-center font-mono font-bold text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-rose-500 disabled:opacity-50"
+                            className="w-12 h-7 px-1 text-center font-mono font-bold text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#1E65A0] disabled:opacity-50"
                           />
                         </div>
                       </div>
@@ -522,9 +518,8 @@ export function CancelTilesModal({
                 <div>
                   <span className="text-slate-400 block text-[11px]">New Due Amount:</span>
                   <span
-                    className={`font-bold ${
-                      projectedDue > 0 ? "text-rose-600" : "text-emerald-600"
-                    }`}
+                    className={`font-bold ${projectedDue > 0 ? "text-rose-600" : "text-emerald-600"
+                      }`}
                   >
                     {formatBdCurrency(projectedDue)}
                   </span>

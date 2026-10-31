@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   RotateCcw,
@@ -26,7 +26,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { formatBdCurrency } from "@/lib/utils";
-import { CustomSelect, Pagination } from "@/components/ui";
+import { CustomSelect, Pagination, TableActionMenu } from "@/components/ui";
 import { CustomDatePicker } from "@/components/ui/date-picker";
 import { formatBoxAndPcs, formatTileOrItemQty, parseBoxAndPcs } from "@/lib/electrical-unit-service";
 import { useToast } from "@/components/ui/toast";
@@ -123,6 +123,7 @@ function formatReturnDisplayQty(item: {
 function ReturnsManagementContent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Mode Tab: 'sales' or 'purchase'
   const [activeTab, setActiveTab] = useState<"sales" | "purchase">("sales");
@@ -509,7 +510,7 @@ function ReturnsManagementContent() {
         </p>
 
         <form onSubmit={handleQuickSearchSubmit} className="flex flex-row items-stretch gap-2.5">
-          <div className="flex-1 min-w-0 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 shadow-xs transition-all">
+          <div className="flex-1 min-w-0 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] focus-within:ring-2 focus-within:ring-[#1E65A0]/20 shadow-xs transition-all">
             <input
               type="text"
               value={quickSearchInput}
@@ -550,7 +551,7 @@ function ReturnsManagementContent() {
           {/* Search Bar + Show Entries */}
           <div className="flex items-center gap-2.5 w-full md:w-auto">
             {/* Filter Search */}
-            <div className="flex-1 md:w-64 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 shadow-xs transition-all">
+            <div className="flex-1 md:w-64 h-[38px] flex items-center px-3 bg-white dark:bg-slate-800/90 rounded-xl border-[1.5px] border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] focus-within:ring-2 focus-within:ring-[#1E65A0]/20 shadow-xs transition-all">
               <Search className="w-4 h-4 text-slate-400 mr-2 shrink-0" />
               <input
                 type="text"
@@ -589,39 +590,39 @@ function ReturnsManagementContent() {
                   { value: "500", label: "Show: 500" },
                 ]}
                 matchTriggerWidth={true}
-                minPopoverWidth={125}
+                searchThreshold={99}
                 className="[&_button]:!min-h-[38px] [&_button]:!h-[38px] [&_button]:!py-1"
               />
             </div>
           </div>
         </div>
 
-        {/* 5. Desktop History Table (MARSS reference layout with solid brand header) */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        {/* 5. Desktop History Table (Compact Full-Screen Fit) */}
+        <div className="hidden md:block">
+          <table className="w-full table-fixed text-left text-xs border-collapse">
             <thead>
-              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider whitespace-nowrap">
-                <th className="p-3 text-center w-[45px]">SL</th>
-                <th className="p-3 w-[120px] whitespace-nowrap">Return Date</th>
-                <th className="p-3 min-w-[170px] whitespace-nowrap">
-                  {activeTab === "purchase" ? "Purchase Memo No" : "Invoice No"}
+              <tr className="table-header-brand bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap">
+                <th className="px-2 py-2.5 text-center w-[40px]">SL</th>
+                <th className="px-2.5 py-2.5 w-[105px]">Date</th>
+                <th className="px-2.5 py-2.5 w-[145px]">
+                  {activeTab === "purchase" ? "Memo No" : "Invoice No"}
                 </th>
-                <th className="p-3">
-                  {activeTab === "purchase" ? "Supplier Name" : "Customer Name"}
+                <th className="px-2.5 py-2.5 w-[18%]">
+                  {activeTab === "purchase" ? "Supplier" : "Customer"}
                 </th>
-                <th className="p-3">Returned Product</th>
-                <th className="p-3 text-center w-[110px]">Qty</th>
-                <th className="p-3 text-right w-[150px]">
-                  {activeTab === "purchase" ? "Adjusted Amount" : "Refund Amount"}
+                <th className="px-2.5 py-2.5">Returned Product &amp; Barcode</th>
+                <th className="px-2 py-2.5 text-center w-[95px]">Qty</th>
+                <th className="px-2.5 py-2.5 text-right w-[125px]">
+                  {activeTab === "purchase" ? "Adjusted" : "Refund"}
                 </th>
-                <th className="p-3 text-center w-[120px] whitespace-nowrap">Action</th>
+                <th className="px-2 py-2.5 text-center w-[64px]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-slate-400">
-                    <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-rose-600" />
+                    <Loader2 className="w-5 h-5 animate-spin inline mr-2 text-[#1E65A0]" />
                     Loading return records...
                   </td>
                 </tr>
@@ -640,127 +641,112 @@ function ReturnsManagementContent() {
                         ? `/purchases/${item.purchase_id}`
                         : null
                       : item.order_id
-                      ? `/invoices/${item.order_id}`
-                      : null;
+                        ? `/invoices/${item.order_id}`
+                        : null;
                   const profileUrl =
                     item.type === "purchase"
                       ? item.supplier_id
                         ? `/suppliers/${item.supplier_id}`
                         : null
                       : item.customer_id
-                      ? `/customers/${item.customer_id}`
-                      : null;
+                        ? `/customers/${item.customer_id}`
+                        : null;
 
                   return (
                     <tr
                       key={item.id}
                       className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                     >
-                      <td className="p-3 text-center font-bold text-slate-400">
+                      <td className="px-2 py-2 text-center font-bold text-slate-400">
                         {startIndex + idx + 1}
                       </td>
-                      <td className="p-3 font-medium whitespace-nowrap text-slate-600 dark:text-slate-300">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-rose-600" />
+                      <td className="px-2.5 py-2 font-medium whitespace-nowrap text-slate-600 dark:text-slate-300 text-[11px]">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#1E65A0] shrink-0" />
                           <span>{item.date || "N/A"}</span>
                         </div>
                       </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <div className="flex flex-col items-start gap-1">
-                          {/* Return Badge */}
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-2xs">
+                      <td className="px-2.5 py-2 whitespace-nowrap">
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900">
                             {returnBadge}
                           </span>
-                          {/* Clickable Original Invoice / Memo Link */}
                           {invoiceUrl ? (
                             <Link
                               href={invoiceUrl}
-                              className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 px-2 py-0.5 rounded-md hover:bg-rose-100 hover:text-rose-800 dark:hover:bg-rose-900/60 transition-colors group/inv cursor-pointer"
+                              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-[#0B3D91] dark:text-blue-400 hover:underline truncate max-w-[130px]"
                               title={`Open Original ${item.type === "purchase" ? "Purchase Memo" : "Invoice"} ${item.record_no}`}
                             >
-                              <span>{item.record_no}</span>
-                              <ExternalLink className="w-2.5 h-2.5 opacity-70 group-hover/inv:opacity-100 transition-opacity" />
+                              <span className="truncate">{item.record_no}</span>
+                              <ExternalLink className="w-2.5 h-2.5 shrink-0" />
                             </Link>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                            <span className="font-mono text-[10px] text-slate-500 truncate max-w-[130px]">
                               {item.record_no}
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="p-3">
+                      <td className="px-2.5 py-2 min-w-0">
                         {profileUrl ? (
                           <Link
                             href={profileUrl}
-                            className="font-bold text-slate-800 dark:text-white hover:text-rose-700 dark:hover:text-rose-400 hover:underline transition-colors inline-flex items-center gap-1 group/party"
+                            className="font-bold text-slate-800 dark:text-white hover:text-[#1E65A0] dark:hover:text-blue-400 hover:underline transition-colors block truncate"
                             title={`View ${item.type === "purchase" ? "Supplier" : "Customer"} Profile`}
                           >
-                            <span>{item.party_name}</span>
-                            <ExternalLink className="w-2.5 h-2.5 text-rose-600 opacity-0 group-hover/party:opacity-100 transition-opacity" />
+                            {item.party_name}
                           </Link>
                         ) : (
-                          <div className="font-bold text-slate-800 dark:text-white">{item.party_name}</div>
+                          <div className="font-bold text-slate-800 dark:text-white truncate">{item.party_name}</div>
                         )}
                         {item.party_mobile && (
-                          <div className="text-[10px] text-slate-400 font-normal">{item.party_mobile}</div>
+                          <div className="text-[10px] text-slate-400 font-normal truncate">{item.party_mobile}</div>
                         )}
                       </td>
-                      <td className="p-3">
-                        <div className="font-bold text-slate-800 dark:text-white">{item.product_name}</div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] font-mono text-slate-400">Code: {item.product_code}</span>
-                          {item.tile_size && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
-                              📐 {item.tile_size}
-                            </span>
-                          )}
+                      <td className="px-2.5 py-2 min-w-0">
+                        <div className="font-bold text-slate-800 dark:text-white truncate" title={item.product_name}>
+                          {item.product_name}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] font-mono text-slate-400 truncate">Code: {item.product_code}</span>
                         </div>
                       </td>
-                      <td className="p-3 text-center font-bold text-slate-800 dark:text-white">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-xs whitespace-nowrap">
+                      <td className="px-2 py-2 text-center font-bold text-slate-800 dark:text-white">
+                        <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 font-bold text-[11px] whitespace-nowrap">
                           {formatReturnDisplayQty(item)}
                         </span>
                       </td>
-                      <td className="p-3 text-right font-black text-rose-700 dark:text-rose-400 text-xs">
+                      <td className="px-2.5 py-2 text-right font-black text-rose-700 dark:text-rose-400 text-xs whitespace-nowrap">
                         {formatBdCurrency(item.amount)}
                       </td>
-                      <td className="p-3 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* 1. Quick View Summary (Eye) */}
-                          <button
-                            type="button"
-                            onClick={() => setSelectedReturnForQuickView(item)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-600 hover:text-white transition-all shadow-2xs cursor-pointer"
-                            title="Quick View Summary"
-                            aria-label="Quick View"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* 2. Open Original Invoice / Purchase (FileText) */}
-                          {invoiceUrl && (
-                            <Link
-                              href={invoiceUrl}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 hover:bg-blue-600 hover:text-white transition-all shadow-2xs"
-                              title={`Open Original ${item.type === "purchase" ? "Purchase Memo" : "Invoice"}`}
-                              aria-label="Open Transaction"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-
-                          {/* 3. Customer / Supplier Profile (User) */}
-                          {profileUrl && (
-                            <Link
-                              href={profileUrl}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 hover:bg-purple-600 hover:text-white transition-all shadow-2xs"
-                              title={`View ${item.type === "purchase" ? "Supplier" : "Customer"} Profile`}
-                              aria-label="View Profile"
-                            >
-                              <User className="w-3.5 h-3.5" />
-                            </Link>
-                          )}
-                        </div>
+                      <td className="px-2 py-2 text-center whitespace-nowrap">
+                        <TableActionMenu
+                          headerLabel={returnBadge}
+                          actions={[
+                            {
+                              label: "Quick View Summary",
+                              icon: <Eye className="w-3.5 h-3.5" />,
+                              variant: "primary",
+                              onClick: () => setSelectedReturnForQuickView(item),
+                            },
+                            {
+                              label: item.type === "purchase" ? "Open Purchase Memo" : "Open Invoice",
+                              icon: <FileText className="w-3.5 h-3.5" />,
+                              hidden: !invoiceUrl,
+                              onClick: () => {
+                                if (invoiceUrl) router.push(invoiceUrl);
+                              },
+                            },
+                            {
+                              label: item.type === "purchase" ? "Supplier Profile" : "Customer Profile",
+                              icon: <User className="w-3.5 h-3.5" />,
+                              hidden: !profileUrl,
+                              onClick: () => {
+                                if (profileUrl) router.push(profileUrl);
+                              },
+                            },
+                          ]}
+                        />
                       </td>
                     </tr>
                   );
@@ -823,16 +809,16 @@ function ReturnsManagementContent() {
                     ? `/purchases/${item.purchase_id}`
                     : null
                   : item.order_id
-                  ? `/invoices/${item.order_id}`
-                  : null;
+                    ? `/invoices/${item.order_id}`
+                    : null;
               const profileUrl =
                 item.type === "purchase"
                   ? item.supplier_id
                     ? `/suppliers/${item.supplier_id}`
                     : null
                   : item.customer_id
-                  ? `/customers/${item.customer_id}`
-                  : null;
+                    ? `/customers/${item.customer_id}`
+                    : null;
 
               return (
                 <div
@@ -982,7 +968,7 @@ function ReturnsManagementContent() {
                   {activeTab === "purchase" ? "Search Purchase Memo Number" : "Search Invoice Number"}
                 </label>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-[38px] flex items-center px-3 bg-white dark:bg-slate-700/60 rounded-xl border border-[#cbd5e1] dark:border-[#334155] focus-within:border-rose-600 focus-within:ring-2 focus-within:ring-rose-600/20 shadow-xs">
+                  <div className="flex-1 h-[38px] flex items-center px-3 bg-white dark:bg-slate-700/60 rounded-xl border border-[#cbd5e1] dark:border-[#334155] focus-within:border-[#1E65A0] focus-within:ring-2 focus-within:ring-[#1E65A0]/20 shadow-xs">
                     <input
                       type="text"
                       value={modalSearchQuery}
@@ -1094,7 +1080,7 @@ function ReturnsManagementContent() {
                               type="checkbox"
                               checked={Boolean(isAllEligibleSelected)}
                               onChange={(e) => toggleSelectAll(e.target.checked)}
-                              className="rounded text-rose-600 focus:ring-rose-500 cursor-pointer"
+                              className="rounded text-[#0B3D91] focus:ring-[#1E65A0] cursor-pointer"
                               title="Select All Eligible Items"
                             />
                           </th>
@@ -1115,13 +1101,12 @@ function ReturnsManagementContent() {
                           return (
                             <tr
                               key={item.detail_id}
-                              className={`transition-colors ${
-                                isChecked
+                              className={`transition-colors ${isChecked
                                   ? "bg-rose-50/50 dark:bg-rose-950/30"
                                   : !isEligible
-                                  ? "opacity-40 bg-slate-50 dark:bg-slate-800/20"
-                                  : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
-                              }`}
+                                    ? "opacity-40 bg-slate-50 dark:bg-slate-800/20"
+                                    : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                }`}
                             >
                               <td className="p-2.5 text-center">
                                 <input
@@ -1131,7 +1116,7 @@ function ReturnsManagementContent() {
                                   onChange={() =>
                                     toggleItemCheckbox(item.detail_id, item.returnable_quantity)
                                   }
-                                  className="rounded text-rose-600 focus:ring-rose-500 cursor-pointer disabled:cursor-not-allowed"
+                                  className="rounded text-[#0B3D91] focus:ring-[#1E65A0] cursor-pointer disabled:cursor-not-allowed"
                                 />
                               </td>
                               <td className="p-2.5">
@@ -1183,7 +1168,7 @@ function ReturnsManagementContent() {
                               </td>
                               <td className="p-2.5 text-center">
                                 <div className="inline-flex items-center justify-center">
-                                  <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 overflow-hidden focus-within:border-rose-600 shadow-2xs">
+                                  <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-slate-800 overflow-hidden focus-within:border-[#1E65A0] shadow-2xs">
                                     <input
                                       type="number"
                                       min="1"
@@ -1569,7 +1554,7 @@ function ReturnsManagementContent() {
 
             {/* Modal Footer: Sticky Bottom Navigation & Actions */}
             <div className="shrink-0 bg-slate-50 dark:bg-slate-900/95 px-5 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
                 {selectedReturnForQuickView.type === "purchase" ? (
                   <>
                     {selectedReturnForQuickView.purchase_id && (
@@ -1642,7 +1627,7 @@ function ReturnsManagementContent() {
 
       {/* 9. Printable Return Document Voucher Modal */}
       {selectedReturnForPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+        <div className="erp-voucher-print-modal fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
           <div className="bg-white text-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:border-none print:shadow-none print:w-full">
             {/* Top Bar - Hidden in Print */}
             <div className="bg-gradient-to-r from-[#0B3D91] via-[#1248a3] to-[#1E65A0] text-white px-5 py-3.5 flex items-center justify-between shrink-0 print:hidden">

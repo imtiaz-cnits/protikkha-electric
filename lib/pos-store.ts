@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { ProductUnitOption } from "@/lib/electrical-units";
 
 export interface CartItem {
   product_id: number;
@@ -9,6 +10,11 @@ export interface CartItem {
   quantity: number;
   stock: number;
   unit: string;
+  base_unit?: string;
+  selected_unit?: string;
+  base_sell_price?: number;
+  base_cost_price?: number;
+  unit_options?: ProductUnitOption[];
   category?: string | null;
   brand?: string | null;
   // Electrical properties
@@ -57,6 +63,7 @@ interface PosState {
   addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
   updateQty: (productId: number, qty: number) => void;
   updatePrice: (productId: number, price: number) => void;
+  updateItemUnit: (productId: number, selectedUnit: string, ratio: number) => void;
   updateElectricalItem: (
     productId: number,
     data: {
@@ -109,11 +116,30 @@ export const usePosStore = create<PosState>((set, get) => ({
 
     if (existingIndex > -1) {
       const updated = [...cart];
-      updated[existingIndex].quantity += qty;
+      const nextQty = +(updated[existingIndex].quantity + qty).toFixed(4);
+      const ratio = updated[existingIndex].conversion_ratio ?? 1;
+      updated[existingIndex] = {
+        ...updated[existingIndex],
+        quantity: nextQty,
+        base_quantity: +(nextQty * ratio).toFixed(4),
+      };
       set({ cart: updated });
     } else {
+      const ratio = product.conversion_ratio ?? 1;
       set({
-        cart: [...cart, { ...product, quantity: qty }],
+        cart: [
+          ...cart,
+          {
+            ...product,
+            base_unit: product.base_unit || product.unit,
+            selected_unit: product.selected_unit || product.unit,
+            base_sell_price: product.base_sell_price ?? product.selling_price,
+            base_cost_price: product.base_cost_price ?? product.cost_price,
+            conversion_ratio: ratio,
+            quantity: qty,
+            base_quantity: +(qty * ratio).toFixed(4),
+          },
+        ],
       });
     }
   },
@@ -130,7 +156,12 @@ export const usePosStore = create<PosState>((set, get) => ({
     set({
       cart: cart.map((item) => {
         if (item.product_id === productId) {
-          return { ...item, quantity: qty };
+          const ratio = item.conversion_ratio ?? 1;
+          return {
+            ...item,
+            quantity: qty,
+            base_quantity: +(qty * ratio).toFixed(4),
+          };
         }
         return item;
       }),
@@ -143,6 +174,29 @@ export const usePosStore = create<PosState>((set, get) => ({
       cart: cart.map((item) => {
         if (item.product_id === productId) {
           return { ...item, selling_price: Math.max(0, price) };
+        }
+        return item;
+      }),
+    });
+  },
+
+  updateItemUnit: (productId, selectedUnit, ratio) => {
+    const { cart } = get();
+    const safeRatio = ratio > 0 ? ratio : 1;
+    set({
+      cart: cart.map((item) => {
+        if (item.product_id === productId) {
+          const baseSell = item.base_sell_price ?? item.selling_price;
+          const baseCost = item.base_cost_price ?? item.cost_price;
+          return {
+            ...item,
+            unit: selectedUnit,
+            selected_unit: selectedUnit,
+            conversion_ratio: safeRatio,
+            selling_price: +(baseSell * safeRatio).toFixed(2),
+            cost_price: +(baseCost * safeRatio).toFixed(2),
+            base_quantity: +(item.quantity * safeRatio).toFixed(4),
+          };
         }
         return item;
       }),

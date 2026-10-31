@@ -162,55 +162,55 @@ export default function GoodsReceiptsPage() {
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">GRN No</th>
-                    <th className="py-3 px-3.5">Purchase Bill</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Supplier & Warehouse</th>
-                    <th className="py-3 px-3.5 text-center">Date</th>
-                    <th className="py-3 px-3.5 text-right">Bill Total</th>
-                    <th className="py-3 px-3.5 text-right">Freight & Labor</th>
-                    <th className="py-3 px-3.5 text-right">Total Landed Cost</th>
-                    <th className="py-3 px-3.5 text-center">Status</th>
+                    <th className="py-2.5 px-2.5 w-[110px]">GRN No</th>
+                    <th className="py-2.5 px-2.5 w-[115px]">Purchase Bill</th>
+                    <th className="py-2.5 px-2.5">Supplier &amp; Warehouse</th>
+                    <th className="py-2.5 px-2 text-center w-[95px]">Date</th>
+                    <th className="py-2.5 px-2.5 text-right w-[115px]">Bill Total</th>
+                    <th className="py-2.5 px-2.5 text-right w-[115px]">Freight &amp; Labor</th>
+                    <th className="py-2.5 px-2.5 text-right w-[125px]">Landed Cost</th>
+                    <th className="py-2.5 px-2 text-center w-[95px]">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginated.map((r) => (
                     <tr key={r.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span className="font-mono font-bold text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
+                      <td className="py-2 px-2.5 whitespace-nowrap">
+                        <span className="font-mono font-bold text-[11px] text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                           {r.grn_no}
                         </span>
                       </td>
 
-                      <td className="py-3 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2.5 whitespace-nowrap font-mono text-[11px] text-slate-600 dark:text-slate-400 truncate">
                         {r.purchase_no}
                       </td>
 
-                      <td className="py-3 px-3.5">
-                        <p className="font-bold text-slate-900 dark:text-white">{r.supplier_name}</p>
-                        <span className="text-[10px] text-slate-400">{r.warehouse} • {r.items_count} items</span>
+                      <td className="py-2 px-2.5 min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate" title={r.supplier_name}>{r.supplier_name}</p>
+                        <span className="text-[10px] text-slate-400 truncate block">{r.warehouse} • {r.items_count} items</span>
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2 text-center whitespace-nowrap font-medium text-slate-600 dark:text-slate-400 text-[11px]">
                         {r.received_date}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
                         {formatBdCurrency(r.bill_amount)}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap text-amber-600 dark:text-amber-400 font-medium">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap text-amber-600 dark:text-amber-400 font-medium">
                         +{formatBdCurrency(r.freight_charges + r.unloading_charges)}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap font-bold text-[#0B3D91] dark:text-blue-400">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap font-bold text-[#0B3D91] dark:text-blue-400">
                         {formatBdCurrency(r.total_landed_cost)}
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle className="w-3 h-3" />
                           {r.status}

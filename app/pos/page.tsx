@@ -35,12 +35,13 @@ import {
   X,
 } from "lucide-react";
 import { usePosStore, CartItem, Customer } from "@/lib/pos-store";
+import { getProductUnitOptions, allowsDecimalQty } from "@/lib/electrical-units";
+import { PosUnitSelector } from "@/components/pos/pos-unit-selector";
 import { formatBdCurrency } from "@/lib/utils";
 import { ThermalReceiptModal } from "@/components/pos/thermal-receipt";
 import { CameraScannerModal } from "@/components/pos/camera-scanner";
 import { CustomerModal } from "@/components/pos/customer-modal";
 import { HeldInvoicesModal, HeldInvoice } from "@/components/pos/held-invoices-modal";
-import { ChallanModal } from "@/components/challan/challan-modal";
 import { PosDatePicker } from "@/components/pos/date-picker";
 import { QuickProductModal } from "@/components/pos/quick-product-modal";
 import { getInitialTheme, applyTheme } from "@/lib/theme";
@@ -130,6 +131,7 @@ export default function PosPage() {
     addItem,
     updateQty,
     updatePrice,
+    updateItemUnit,
     updateTileCalculation,
     removeItem,
     clearCart,
@@ -177,7 +179,7 @@ export default function PosPage() {
   const [isHeldModalOpen, setIsHeldModalOpen] = useState(false);
   const [isQuickProductModalOpen, setIsQuickProductModalOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<any | null>(null);
-  const [challanOrderId, setChallanOrderId] = useState<number | null>(null);
+  const [authReady, setAuthReady] = useState(false);
 
   // Held invoices
   const [heldInvoices, setHeldInvoices] = useState<HeldInvoice[]>([]);
@@ -217,15 +219,29 @@ export default function PosPage() {
   }, [triggerGlobalToast]);
 
 
-  // Synchronize Theme state
+  // Synchronize Theme state & strict session check (zero unauthenticated flash)
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
+    let active = true;
+    const checkSession = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch("/api/auth/me", { headers, cache: "no-store" });
+        if (!res.ok) {
+          await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("role");
+          window.location.replace("/login");
+          return;
+        }
+        if (active) setAuthReady(true);
+      } catch {
+        window.location.replace("/login");
       }
-    } catch {}
+    };
+    checkSession();
     setIsDarkMode(getInitialTheme());
 
     const handleThemeChange = (e: Event) => {
@@ -236,6 +252,7 @@ export default function PosPage() {
     };
     window.addEventListener("theme-change", handleThemeChange);
     return () => {
+      active = false;
       window.removeEventListener("theme-change", handleThemeChange);
     };
   }, []);
@@ -444,16 +461,24 @@ export default function PosPage() {
     setSearchResults(filtered.slice(0, 10));
   };
 
-  // Ring product into cart
+  // Ring product into cart with full per-product multi-unit options
   const ringProduct = (p: Product) => {
+    const baseUnit = p.unit || "Pcs";
+    const unitOptions = getProductUnitOptions(baseUnit, p.packaging_conversions);
     addItem({
       product_id: p.id,
       product_name: p.name || p.product_name,
       barcode: p.primary_code,
       cost_price: p.cost_price,
       selling_price: p.sell_price,
+      base_cost_price: p.cost_price,
+      base_sell_price: p.sell_price,
       stock: p.quantity,
-      unit: p.unit || "Pcs",
+      unit: baseUnit,
+      base_unit: baseUnit,
+      selected_unit: baseUnit,
+      conversion_ratio: 1,
+      unit_options: unitOptions,
       category: p.category,
       brand: p.brand,
       spec_type: p.electrical_spec?.spec_type,
@@ -462,8 +487,7 @@ export default function PosPage() {
       current_rating: p.electrical_spec?.current_rating,
       wattage: p.electrical_spec?.wattage,
       gang_module: p.electrical_spec?.gang_module,
-      packaging_unit: p.packaging_conversions?.[0]?.packaging_unit,
-      conversion_ratio: p.packaging_conversions?.[0]?.conversion_ratio,
+      packaging_unit: baseUnit,
     });
   };
 
@@ -572,12 +596,18 @@ export default function PosPage() {
       payment_method: paymentMethod,
       transaction_id: transactionId,
       payment_status: dueAmount <= 0 ? "Paid" : paidAmount > 0 ? "Partial Paid" : "Due",
-      products: cart.map((item) => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.cost_price,
-        selling_price: item.selling_price,
-      })),
+      products: cart.map((item) => {
+        const ratio = item.conversion_ratio ?? 1;
+        return {
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.cost_price,
+          selling_price: item.selling_price,
+          selected_unit: item.selected_unit || item.unit || "Pcs",
+          conversion_ratio: ratio,
+          base_quantity: item.base_quantity ?? +(item.quantity * ratio).toFixed(4),
+        };
+      }),
     };
 
     try {
@@ -615,11 +645,13 @@ export default function PosPage() {
           details: cart.map((c) => ({
             product_name: c.product_name,
             quantity: c.quantity,
+            unit: c.selected_unit || c.unit || "Pcs",
             price: c.selling_price,
             total: c.selling_price * c.quantity,
-            tile_size: c.tile_size || null,
-            sqft_per_box: c.sqft_per_box || null,
-            grade: c.grade || null,
+            cable_size: c.cable_size || null,
+            current_rating: c.current_rating || null,
+            wattage: c.wattage || null,
+            gang_module: c.gang_module || null,
             category: c.category || null,
           })),
         });
@@ -636,6 +668,7 @@ export default function PosPage() {
         }
 
         clearCart();
+        loadData();
         showToast("Order Placed Successfully! (Invoice: " + data.order_no + ")", "success");
       } else {
         showToast(data.message || "Failed to place order", "error");
@@ -696,6 +729,10 @@ export default function PosPage() {
   const paymentStatus =
     dueAmount <= 0 ? "PAID" : paidAmount > 0 ? "PARTIAL PAID" : "DUE";
 
+  if (!authReady) {
+    return <div className="min-h-screen bg-[#F8F9FA] dark:bg-[#0b0f19]" />;
+  }
+
   return (
     <div className="fixed inset-0 h-screen w-full max-h-screen max-w-full overflow-hidden flex flex-col bg-slate-100 dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 select-none">
       {/* TOP COMPACT NAVIGATION BAR (Marss Corp Rule: Compact, Emerald Theme) */}
@@ -739,7 +776,7 @@ export default function PosPage() {
           <button
             type="button"
             onClick={toggleDarkMode}
-            className="w-[32px] h-[32px] rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
+            className="w-[32px] h-[32px] rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] hover:border-[#1E65A0] transition-colors cursor-pointer"
             title="Toggle Light/Dark Theme"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
@@ -749,7 +786,7 @@ export default function PosPage() {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="w-[32px] h-[32px] rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-rose-600 transition-colors cursor-pointer"
+            className="w-[32px] h-[32px] rounded-xl border border-[#cbd5e1] dark:border-[#334155] bg-slate-50 dark:bg-[#1e293b] flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] hover:border-[#1E65A0] transition-colors cursor-pointer"
             title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
@@ -1222,95 +1259,107 @@ export default function PosPage() {
               </div>
             ) : (
               <table className="w-full text-left text-xs border-collapse">
-                    <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                    <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-[#1e293b] border-b border-slate-200 dark:border-slate-800 text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                       <tr>
-                        <th className="py-2 pl-3">Item &amp; Specs</th>
-                        <th className="py-2 text-center w-36">Qty &amp; Mode</th>
-                        <th className="py-2 text-right w-24">Rate (৳)</th>
-                        <th className="py-2 text-right w-24">Total (৳)</th>
-                        <th className="py-2 pr-3 text-center w-10"></th>
+                        <th className="py-1.5 pl-2.5">Item &amp; Specs</th>
+                        <th className="py-1.5 text-center w-[142px]">Qty &amp; Unit</th>
+                        <th className="py-1.5 text-right w-[74px]">Rate (৳)</th>
+                        <th className="py-1.5 text-right w-[74px]">Total (৳)</th>
+                        <th className="py-1.5 pr-2 text-center w-8"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {cart.map((item, idx) => {
-                        const isCable = item.spec_type === "CABLE" || Boolean(item.cable_size);
+                      {cart.map((item) => {
+                        const activeUnit = item.selected_unit || item.unit || "Pcs";
+                        const isDec = allowsDecimalQty(activeUnit);
+                        const unitOptions =
+                          item.unit_options && item.unit_options.length > 0
+                            ? item.unit_options
+                            : getProductUnitOptions(item.base_unit || item.unit || "Pcs");
                         return (
                           <tr
                             key={item.product_id}
                             className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                           >
-                            <td className="py-2 pl-3">
-                              <div className="font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
+                            <td className="py-1.5 pl-2.5 pr-1.5">
+                              <div className="font-bold text-[11.5px] text-slate-800 dark:text-slate-200 line-clamp-1 leading-tight">
                                 {item.product_name}
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                                 {item.cable_size && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-[#0B3D91] dark:text-blue-300">
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-[#0B3D91] dark:text-blue-300">
                                     ⚡ {item.cable_size}
                                   </span>
                                 )}
                                 {item.current_rating && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
                                     ⚡ {item.current_rating}
                                   </span>
                                 )}
                                 {item.wattage && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
                                     💡 {item.wattage}
                                   </span>
                                 )}
                                 {item.gang_module && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300">
+                                  <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-purple-100 dark:bg-purple-950 text-purple-800 dark:text-purple-300">
                                     ⚡ {item.gang_module}
                                   </span>
                                 )}
                               </div>
                             </td>
 
-                            {/* QTY Controller */}
-                            <td className="py-2 text-center">
-                              <div className="inline-flex items-center rounded-lg border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] overflow-hidden shadow-2xs">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const step = isCable ? 1 : 1;
-                                    const next = Math.max(0.1, parseFloat((item.quantity - step).toFixed(2)));
-                                    updateQty(item.product_id, next);
-                                  }}
-                                  className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </button>
-                                <input
-                                  type="number"
-                                  step={isCable ? "any" : "1"}
-                                  min="0.1"
-                                  value={item.quantity}
-                                  onChange={(e) => {
-                                    const val = parseFloat(e.target.value);
-                                    updateQty(item.product_id, isNaN(val) ? 0 : val);
-                                  }}
-                                  className="w-16 h-6 text-center text-xs font-bold bg-transparent border-x border-[#cbd5e1] dark:border-[#334155] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-1"
+                            {/* Compact QTY Controller + Unit on the Right */}
+                            <td className="py-1.5 px-1 text-center">
+                              <div className="inline-flex items-center justify-center gap-1">
+                                <div className="inline-flex items-center rounded-md border border-[#cbd5e1] dark:border-[#334155] bg-white dark:bg-[#1e293b] overflow-hidden shadow-2xs h-[24px]">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const step = isDec && item.quantity <= 1 ? 0.5 : 1;
+                                      const next = parseFloat((item.quantity - step).toFixed(2));
+                                      updateQty(item.product_id, Math.max(isDec ? 0.25 : 1, next));
+                                    }}
+                                    className="w-5 h-full flex items-center justify-center hover:bg-blue-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                                  >
+                                    <Minus className="w-2.5 h-2.5" />
+                                  </button>
+                                  <input
+                                    type="number"
+                                    step={isDec ? "any" : "1"}
+                                    min={isDec ? "0.05" : "1"}
+                                    value={item.quantity}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value);
+                                      if (!isNaN(val) && val > 0) {
+                                        updateQty(item.product_id, val);
+                                      }
+                                    }}
+                                    className="w-10 h-full text-center text-[11px] font-bold bg-transparent border-x border-[#cbd5e1] dark:border-[#334155] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-0.5"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = parseFloat((item.quantity + 1).toFixed(2));
+                                      updateQty(item.product_id, next);
+                                    }}
+                                    className="w-5 h-full flex items-center justify-center hover:bg-blue-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                                  >
+                                    <Plus className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+
+                                <PosUnitSelector
+                                  selectedUnit={activeUnit}
+                                  baseSellPrice={item.base_sell_price ?? item.selling_price}
+                                  options={unitOptions}
+                                  onSelect={(u, ratio) => updateItemUnit(item.product_id, u, ratio)}
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const step = isCable ? 1 : 1;
-                                    const next = parseFloat((item.quantity + step).toFixed(2));
-                                    updateQty(item.product_id, next);
-                                  }}
-                                  className="w-6 h-6 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
-                              </div>
-                              <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-0.5">
-                                {isCable ? `${item.quantity} Mtr (Cut)` : item.unit || "Pcs"}
                               </div>
                             </td>
 
-                            {/* Price */}
-                            <td className="py-2 text-right">
+                            {/* Editable Price with Navy/Electric Blue Border */}
+                            <td className="py-1.5 text-right">
                               <input
                                 type="number"
                                 step="any"
@@ -1320,17 +1369,17 @@ export default function PosPage() {
                                   const val = parseFloat(e.target.value);
                                   updatePrice(item.product_id, isNaN(val) ? 0 : val);
                                 }}
-                                className="w-20 h-7 text-right text-xs font-bold font-mono px-2 rounded-md border-2 border-red-500 dark:border-red-600 focus:border-red-600 focus:ring-1 focus:ring-red-600 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white shadow-2xs"
+                                className="w-[68px] h-[25px] text-right text-[11px] font-bold font-mono px-1.5 rounded-md border-[1.5px] border-[#1E65A0] dark:border-blue-500 focus:border-[#0B3D91] focus:ring-2 focus:ring-[#1E65A0]/20 bg-white dark:bg-[#1e293b] text-slate-900 dark:text-white shadow-2xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </td>
 
                             {/* Line Total */}
-                            <td className="py-2 text-right font-bold font-mono text-slate-900 dark:text-white">
+                            <td className="py-1.5 text-right font-bold font-mono text-[11.5px] text-slate-900 dark:text-white">
                               {(item.selling_price * item.quantity).toFixed(2)}
                             </td>
 
                             {/* Delete */}
-                            <td className="py-2 pr-3 text-center">
+                            <td className="py-1.5 pr-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => removeItem(item.product_id)}
@@ -1650,20 +1699,6 @@ export default function PosPage() {
         <ThermalReceiptModal
           receiptData={receiptData}
           onClose={() => setReceiptData(null)}
-          onOpenChallan={(oid) => setChallanOrderId(oid)}
-        />
-      )}
-
-      {/* Challan Modal */}
-      {challanOrderId && (
-        <ChallanModal
-          orderId={challanOrderId}
-          isOpen={!!challanOrderId}
-          onClose={() => setChallanOrderId(null)}
-          onChallanGenerated={() => {
-            loadData();
-            showToast("Challan successfully dispatched", "success");
-          }}
         />
       )}
 

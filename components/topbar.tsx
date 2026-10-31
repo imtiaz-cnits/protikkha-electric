@@ -80,12 +80,13 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
   async function handleLogout() {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    } finally {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("role");
-      router.push("/login");
-    } catch {
-      router.push("/login");
+      window.location.replace("/login");
     }
   }
 

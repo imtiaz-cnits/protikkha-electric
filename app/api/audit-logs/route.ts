@@ -28,8 +28,9 @@ export async function GET(req: NextRequest) {
     const entityType = searchParams.get("entityType") || undefined;
     const entityId = searchParams.get("entityId") || undefined;
     const userId = searchParams.get("userId") ? parseInt(searchParams.get("userId")!, 10) : undefined;
-    const startDate = searchParams.get("startDate") || undefined;
-    const endDate = searchParams.get("endDate") || undefined;
+    const startDate = searchParams.get("start_date") || searchParams.get("startDate") || undefined;
+    const endDate = searchParams.get("end_date") || searchParams.get("endDate") || undefined;
+    const search = searchParams.get("search") || undefined;
 
     const result = await queryAuditLogs({
       page,
@@ -40,6 +41,7 @@ export async function GET(req: NextRequest) {
       userId,
       startDate,
       endDate,
+      search,
     });
 
     return NextResponse.json({

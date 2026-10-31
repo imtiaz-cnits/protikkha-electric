@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { buildDateRangeFilter, formatLocalYmd } from "@/lib/report-date-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,25 +13,9 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")?.trim().toLowerCase();
 
     const where: any = {};
-
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-
-      where.created_at = {
-        gte: start,
-        lte: end,
-      };
-    } else if (startDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-      where.created_at = { gte: start };
-    } else if (endDate) {
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      where.created_at = { lte: end };
+    const dateFilter = buildDateRangeFilter(startDate, endDate);
+    if (dateFilter) {
+      where.created_at = dateFilter;
     }
 
     if (customerId && customerId !== "all") {
@@ -69,14 +54,6 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    let totalSalesAmount = 0;
-    let totalCostAmount = 0;
-    let totalGrossProfit = 0;
-    let totalPaidAmount = 0;
-    let totalDueAmount = 0;
-    let totalDiscountAmount = 0;
-    let totalReturnAmount = 0;
-
     let formatted = orders.map((o) => {
       const returnAmount = o.product_returns.reduce(
         (sum, r) => sum + parseFloat(String(r.amount || 0)),
@@ -105,17 +82,9 @@ export async function GET(req: NextRequest) {
       const due = parseFloat(String(o.due_amount || 0));
       const profit = netInvoiceAmount - costSum - returnAmount;
 
-      totalSalesAmount += netInvoiceAmount;
-      totalCostAmount += costSum;
-      totalGrossProfit += profit;
-      totalPaidAmount += paid;
-      totalDueAmount += due;
-      totalDiscountAmount += discount;
-      totalReturnAmount += returnAmount;
-
       const dateStr = o.invoice_date
         ? o.invoice_date.toISOString().split("T")[0]
-        : o.created_at.toISOString().split("T")[0];
+        : formatLocalYmd(o.created_at);
 
       return {
         id: Number(o.id),
@@ -145,6 +114,24 @@ export async function GET(req: NextRequest) {
           o.customer_name.toLowerCase().includes(search) ||
           o.customer_mobile.includes(search)
       );
+    }
+
+    let totalSalesAmount = 0;
+    let totalCostAmount = 0;
+    let totalGrossProfit = 0;
+    let totalPaidAmount = 0;
+    let totalDueAmount = 0;
+    let totalDiscountAmount = 0;
+    let totalReturnAmount = 0;
+
+    for (const row of formatted) {
+      totalSalesAmount += row.net_amount;
+      totalCostAmount += row.cost_amount;
+      totalGrossProfit += row.profit_amount;
+      totalPaidAmount += row.paid_amount;
+      totalDueAmount += row.due_amount;
+      totalDiscountAmount += row.discount_amount;
+      totalReturnAmount += row.return_amount;
     }
 
     return NextResponse.json({

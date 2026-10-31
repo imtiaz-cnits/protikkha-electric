@@ -321,130 +321,140 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ROW 2: Receivable Due, Payable Due, Return, Discount */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* ROW 2: Compact Height Horizontal Cards — Receivable Due, Payable Due, Return, Discount */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Card 5: Receivable Due */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] px-3.5 py-2.5 shadow-xs flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/50 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 m-0 leading-tight truncate">
                 Receivable Due
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
-              {formatBdCurrency(banner.receivableDue)}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-[11px] text-amber-600 font-bold">
-              <AlertCircle className="w-3.5 h-3.5" />
-              <span>Customer Balance</span>
+              </p>
+              <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white m-0 mt-0.5 leading-tight truncate">
+                {formatBdCurrency(banner.receivableDue)}
+              </p>
             </div>
           </div>
 
           {/* Card 6: Payable Due */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] px-3.5 py-2.5 shadow-xs flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[#1E65A0] dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 flex items-center justify-center shrink-0">
+              <Truck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 m-0 leading-tight truncate">
                 Payable Due
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1E65A0] dark:text-blue-400 flex items-center justify-center">
-                <Truck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
-              {formatBdCurrency(banner.payableDue)}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-[11px] text-blue-600 font-bold">
-              <Truck className="w-3.5 h-3.5" />
-              <span>Vendor Payable</span>
+              </p>
+              <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white m-0 mt-0.5 leading-tight truncate">
+                {formatBdCurrency(banner.payableDue)}
+              </p>
             </div>
           </div>
 
           {/* Card 7: Return */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] px-3.5 py-2.5 shadow-xs flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center shrink-0">
+              <RotateCcw className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 m-0 leading-tight truncate">
                 Return
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-                <RotateCcw className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
-              {formatBdCurrency(banner.returns)}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-[11px] text-rose-600 font-bold">
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Sales Adjustments</span>
+              </p>
+              <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white m-0 mt-0.5 leading-tight truncate">
+                {formatBdCurrency(banner.returns)}
+              </p>
             </div>
           </div>
 
           {/* Card 8: Discount */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 sm:p-5 shadow-xs">
-            <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] px-3.5 py-2.5 shadow-xs flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-[#0B3D91] dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shrink-0">
+              <Percent className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 m-0 leading-tight truncate">
                 Discount
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                <Percent className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-lg sm:text-2xl font-black text-slate-800 dark:text-white">
-              {formatBdCurrency(banner.discount)}
-            </div>
-            <div className="flex items-center gap-1.5 mt-2 text-[11px] text-indigo-600 font-bold">
-              <Percent className="w-3.5 h-3.5" />
-              <span>Total Discounts</span>
+              </p>
+              <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white m-0 mt-0.5 leading-tight truncate">
+                {formatBdCurrency(banner.discount)}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* ROW 3: Total Product, Total Customer, Total Supplier */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {/* Card 9: Total Product */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center shrink-0 shadow-2xs">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 m-0">
-                Total Products
-              </p>
-              <p className="text-xl font-black text-slate-800 dark:text-white m-0 leading-tight">
+        {/* ROW 3: Unified Horizontal 3-Column Strip (Matching Image 1 in Project Blue & Amber Theme) */}
+        <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-1.5 shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200/80 dark:divide-slate-800">
+            {/* Section 1: Total Products */}
+            <Link
+              href="/products"
+              className="flex items-center justify-between px-4 py-2.5 sm:py-3 rounded-xl md:rounded-r-none bg-gradient-to-r from-blue-50/80 via-blue-50/25 to-transparent dark:from-blue-950/35 dark:via-transparent dark:to-transparent hover:from-blue-100/80 dark:hover:from-blue-900/40 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-100/80 dark:bg-blue-950/70 text-[#0B3D91] dark:text-blue-400 border border-blue-200/70 dark:border-blue-900/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <ShoppingBag className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold text-slate-800 dark:text-white group-hover:text-[#0B3D91] dark:group-hover:text-blue-400 m-0 leading-tight truncate transition-colors">
+                    Total Products
+                  </p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 m-0 mt-0.5 leading-tight truncate">
+                    Active Catalog Items
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums pl-3">
                 {banner.totalProduct}
-              </p>
-            </div>
-          </div>
+              </span>
+            </Link>
 
-          {/* Card 10: Total Customer */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-teal-50 dark:bg-teal-950/50 text-teal-600 flex items-center justify-center shrink-0 shadow-2xs">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 m-0">
-                Total Customers
-              </p>
-              <p className="text-xl font-black text-slate-800 dark:text-white m-0 leading-tight">
+            {/* Section 2: Total Customers */}
+            <Link
+              href="/customers"
+              className="flex items-center justify-between px-4 py-2.5 sm:py-3 bg-gradient-to-r from-sky-50/75 via-sky-50/20 to-transparent dark:from-sky-950/30 dark:via-transparent dark:to-transparent hover:from-sky-100/80 dark:hover:from-sky-900/40 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-100/80 dark:bg-sky-950/70 text-[#1E65A0] dark:text-sky-400 border border-sky-200/70 dark:border-sky-900/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold text-slate-800 dark:text-white group-hover:text-[#1E65A0] dark:group-hover:text-sky-400 m-0 leading-tight truncate transition-colors">
+                    Total Customers
+                  </p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 m-0 mt-0.5 leading-tight truncate">
+                    Registered Client Profiles
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums pl-3">
                 {banner.totalCustomer}
-              </p>
-            </div>
-          </div>
+              </span>
+            </Link>
 
-          {/* Card 11: Total Supplier */}
-          <div className="bg-white dark:bg-[#0f172a] rounded-2xl border border-[#cbd5e1] dark:border-[#334155] p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 m-0">
-                Total Suppliers
-              </p>
-              <p className="text-xl font-black text-slate-800 dark:text-white m-0 leading-tight">
+            {/* Section 3: Total Suppliers */}
+            <Link
+              href="/suppliers"
+              className="flex items-center justify-between px-4 py-2.5 sm:py-3 rounded-xl md:rounded-l-none bg-gradient-to-r from-amber-50/75 via-amber-50/20 to-transparent dark:from-amber-950/30 dark:via-transparent dark:to-transparent hover:from-amber-100/80 dark:hover:from-amber-900/40 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-100/80 dark:bg-amber-950/70 text-amber-600 dark:text-amber-400 border border-amber-200/70 dark:border-amber-900/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-extrabold text-slate-800 dark:text-white group-hover:text-amber-700 dark:group-hover:text-amber-400 m-0 leading-tight truncate transition-colors">
+                    Total Suppliers
+                  </p>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400 m-0 mt-0.5 leading-tight truncate">
+                    Verified Brand Vendors
+                  </p>
+                </div>
+              </div>
+              <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums pl-3">
                 {banner.totalSupplier}
-              </p>
-            </div>
+              </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -496,6 +506,8 @@ export default function DashboardPage() {
                   { value: "50", label: "Show 50" },
                   { value: "100", label: "Show 100" },
                 ]}
+                matchTriggerWidth={true}
+                searchThreshold={99}
                 placeholder="Show entries"
               />
             </div>

@@ -247,77 +247,77 @@ export default function PriceListsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
-                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none">
+            {/* Desktop Table (Compact Full-Screen Fit) */}
+            <div className="hidden md:block">
+              <table className="w-full table-fixed text-left text-xs text-slate-700 dark:text-slate-300">
+                <thead className="bg-gradient-to-r from-[#0B3D91] to-[#1E65A0] text-white uppercase text-[11px] font-bold tracking-wider select-none whitespace-nowrap">
                   <tr>
-                    <th className="py-3 px-3.5">Code</th>
-                    <th className="py-3 px-3.5 min-w-[200px]">Product & Specification</th>
-                    <th className="py-3 px-3.5">Category & Brand</th>
-                    <th className="py-3 px-3.5 text-center">Unit</th>
-                    <th className="py-3 px-3.5 text-right">Cost Price</th>
-                    <th className="py-3 px-3.5 text-right">Retail Price</th>
-                    <th className="py-3 px-3.5 text-right">Wholesale Price</th>
-                    <th className="py-3 px-3.5 text-center">Margins</th>
-                    <th className="py-3 px-3.5 text-center w-20">Edit</th>
+                    <th className="py-2.5 px-2.5 w-[28%]">Product, Barcode &amp; Spec</th>
+                    <th className="py-2.5 px-2.5 w-[16%]">Category &amp; Brand</th>
+                    <th className="py-2.5 px-2 text-center w-[64px]">Unit</th>
+                    <th className="py-2.5 px-2.5 text-right w-[105px]">Cost</th>
+                    <th className="py-2.5 px-2.5 text-right w-[105px]">Retail</th>
+                    <th className="py-2.5 px-2.5 text-right w-[110px]">Wholesale</th>
+                    <th className="py-2.5 px-2 text-center w-[115px]">Margins</th>
+                    <th className="py-2.5 px-2 text-center w-[56px]">Edit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {paginatedItems.map((item) => (
                     <tr key={item.id} className="hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-                          {item.code}
-                        </span>
+                      <td className="py-2 px-2.5 min-w-0">
+                        <p className="font-bold text-slate-900 dark:text-white truncate" title={item.name}>
+                          {item.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <span className="font-mono text-[10px] font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-slate-200 dark:border-slate-700 truncate max-w-[130px]">
+                            {item.code}
+                          </span>
+                          {item.spec && (
+                            <span className="text-[10px] text-slate-400 font-semibold truncate">{item.spec}</span>
+                          )}
+                        </div>
                       </td>
 
-                      <td className="py-3 px-3.5">
-                        <p className="font-bold text-slate-900 dark:text-white">{item.name}</p>
-                        {item.spec && (
-                          <span className="text-[10px] text-slate-400 font-semibold">{item.spec}</span>
-                        )}
+                      <td className="py-2 px-2.5 min-w-0">
+                        <p className="font-medium text-slate-800 dark:text-slate-200 truncate">{item.category}</p>
+                        <p className="text-[10px] text-slate-400 font-semibold truncate">{item.brand}</p>
                       </td>
 
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <p className="font-medium text-slate-800 dark:text-slate-200">{item.category}</p>
-                        <p className="text-[10px] text-slate-400 font-semibold">{item.brand}</p>
-                      </td>
-
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
+                      <td className="py-2 px-2 text-center whitespace-nowrap font-medium text-slate-600 dark:text-slate-400">
                         {item.unit}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right font-medium text-slate-500 whitespace-nowrap">
+                      <td className="py-2 px-2.5 text-right font-medium text-slate-500 whitespace-nowrap">
                         {formatBdCurrency(item.cost_price)}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                      <td className="py-2 px-2.5 text-right font-bold text-slate-900 dark:text-white whitespace-nowrap">
                         {formatBdCurrency(item.retail_price)}
                       </td>
 
-                      <td className="py-3 px-3.5 text-right whitespace-nowrap">
-                        <span className="font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-900">
+                      <td className="py-2 px-2.5 text-right whitespace-nowrap">
+                        <span className="font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900">
                           {formatBdCurrency(item.wholesale_price)}
                         </span>
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5 text-[11px]">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1 text-[10px]">
                           <span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Retail Margin">
-                            R: {item.retail_margin}%
+                            R:{item.retail_margin}%
                           </span>
                           <span className="text-slate-300">|</span>
                           <span className="text-blue-600 dark:text-blue-400 font-bold" title="Wholesale Margin">
-                            W: {item.wholesale_margin}%
+                            W:{item.wholesale_margin}%
                           </span>
                         </div>
                       </td>
 
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-2 px-2 text-center whitespace-nowrap">
                         <button
                           onClick={() => handleOpenEdit(item)}
-                          className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                          className="w-7 h-7 mx-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#1E65A0] text-slate-600 dark:text-slate-300 hover:text-[#1E65A0] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>

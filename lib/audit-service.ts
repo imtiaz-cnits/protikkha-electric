@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { buildDateRangeFilter } from "@/lib/report-date-utils";
 
 export interface LogAuditParams {
   userId?: bigint | number | null;
@@ -56,7 +57,7 @@ export interface AuditQueryFilter {
  */
 export async function queryAuditLogs(filter: AuditQueryFilter = {}) {
   const page = Math.max(1, filter.page || 1);
-  const pageSize = Math.min(100, Math.max(1, filter.pageSize || 20));
+  const pageSize = Math.min(500, Math.max(1, filter.pageSize || 20));
   const skip = (page - 1) * pageSize;
 
   const where: Prisma.audit_logsWhereInput = {};
@@ -77,16 +78,20 @@ export async function queryAuditLogs(filter: AuditQueryFilter = {}) {
     where.user_id = BigInt(filter.userId);
   }
 
-  if (filter.startDate || filter.endDate) {
-    where.created_at = {};
-    if (filter.startDate) {
-      where.created_at.gte = new Date(filter.startDate);
-    }
-    if (filter.endDate) {
-      const end = new Date(filter.endDate);
-      end.setHours(23, 59, 59, 999);
-      where.created_at.lte = end;
-    }
+  const dateFilter = buildDateRangeFilter(filter.startDate, filter.endDate);
+  if (dateFilter) {
+    where.created_at = dateFilter;
+  }
+
+  if (filter.search?.trim()) {
+    const q = filter.search.trim();
+    where.OR = [
+      { entity_id: { contains: q } },
+      { entity_type: { contains: q } },
+      { action: { contains: q } },
+      { ip_address: { contains: q } },
+      { users: { name: { contains: q } } },
+    ];
   }
 
   const [totalCount, logs] = await Promise.all([
